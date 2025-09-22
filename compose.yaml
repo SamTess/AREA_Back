@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: 'postgres:15'
+    environment:
+      - 'POSTGRES_DB=area_db'
+      - 'POSTGRES_PASSWORD=area_password'
+      - 'POSTGRES_USER=area_user'
+    ports:
+      - '5432:5432'
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'

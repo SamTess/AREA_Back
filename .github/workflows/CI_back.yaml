@@ -28,7 +28,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Run Maven checkstyle
-        run: mvn checkstyle:check || echo "Checkstyle warnings found but continuing..."
+        run: mvn checkstyle:check
 
   test:
     name: Run Tests

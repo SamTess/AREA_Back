@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Ignore magic number checks in test files -->
+    <suppress checks="MagicNumber" files=".*Test\.java"/>
+
+    <!-- Allow star imports for common packages -->
+    <suppress checks="AvoidStarImport" files=".*" message=".*jakarta\.persistence\.\*"/>
+    <suppress checks="AvoidStarImport" files=".*" message=".*springframework\.web\.bind\.annotation\.\*"/>
+
+    <!-- Allow longer parameter lists in controllers (common in REST APIs) -->
+    <suppress checks="ParameterNumber" files=".*Controller\.java"/>
+
+    <!-- Allow inline conditionals in simple cases -->
+    <suppress checks="AvoidInlineConditionals" files=".*Controller\.java"/>
+
+    <!-- Allow non-final parameters in Spring controllers and services -->
+    <suppress checks="FinalParameters" files=".*Controller\.java"/>
+    <suppress checks="FinalParameters" files=".*Service\.java"/>
+    <suppress checks="FinalParameters" files=".*Config\.java"/>
+    <suppress checks="FinalParameters" files=".*Application\.java"/>
+
+    <!-- Allow utility class constructor check for Spring Boot main class -->
+    <suppress checks="HideUtilityClassConstructor" files=".*Application\.java"/>
+
+    <!-- Allow certain violations in DTOs and entities -->
+    <suppress checks="VisibilityModifier" files=".*(Dto|Entity|Request|Response)\.java"/>
+    <suppress checks="FinalParameters" files=".*(Dto|Entity|Request|Response)\.java"/>
+
+    <!-- Allow tabs in some files (if needed for formatting) -->
+    <suppress checks="FileTabCharacter" files=".*Application\.java"/>
+
+    <!-- More lenient import order for Spring projects -->
+    <suppress checks="ImportOrder" files=".*"/>
+</suppressions>

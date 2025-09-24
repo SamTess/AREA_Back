@@ -11,9 +11,9 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .info(new Info()
-                        .title("AREA Backend API")
-                        .description("API pour la gestion des utilisateurs, services et areas dans l'application AREA")
-                        .version("1.0.0"));
+            .info(new Info()
+                .title("AREA Backend API")
+                .description("API for managing users, services, and areas in the AREA application")
+                .version("1.0.0"));
     }
 }

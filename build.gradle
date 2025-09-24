@@ -36,7 +36,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	// implementation 'org.springframework.boot:spring-boot-starter-data-rest'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
 	implementation 'org.springframework.boot:spring-boot-starter-quartz'
@@ -78,7 +77,6 @@ tasks.named('asciidoctor') {
 	dependsOn test
 }
 
-// Configuration JaCoCo pour la coverage
 jacoco {
 	toolVersion = "0.8.10"
 }
@@ -103,7 +101,6 @@ jacocoTestCoverageVerification {
 	}
 }
 
-// Configuration Checkstyle
 checkstyle {
 	toolVersion = '10.12.4'
 	configFile = file("config/checkstyle/checkstyle.xml")
@@ -128,7 +125,6 @@ checkstyleTest {
 	}
 }
 
-// Ajouter checkstyle à la tâche check
 tasks.named('check') {
 	dependsOn 'checkstyleMain', 'checkstyleTest'
 }

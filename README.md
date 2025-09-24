@@ -1,188 +1,260 @@
 # AREA Backend
 
-Backend REST API for the AREA (Action REAction) application - a service for creating automated workflows between different applications.
+A Spring Boot backend application for the AREA project (Action REAction), providing a platform to connect different services and automate workflows.
 
-## Features
+## Table of Contents
 
-✅ **Spring Boot Application** with Java 21  
-✅ **Spring Data JPA** repositories for User, Service, and Area entities  
-✅ **REST Controllers** with full CRUD operations  
-✅ **PostgreSQL** database with Flyway migrations  
-✅ **Unit Tests** for repositories  
-✅ **Integration Tests** with Testcontainers  
-✅ **OpenAPI/Swagger** documentation (configured but requires proper setup)  
-✅ **Security** with BCrypt password encoding  
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Project Structure](#project-structure)
+- [API Documentation](#api-documentation)
+- [Testing](#testing)
+- [Code Quality](#code-quality)
+- [Database](#database)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
 
-## Quick Start
+## Overview
 
-### Prerequisites
-- Java 21+
-- Docker & Docker Compose
-- Gradle (wrapper included)
+AREA Backend is a microservice-based application built with Spring Boot that allows users to create automated workflows by connecting different services. The application provides REST APIs for managing users, services, and areas (automated workflows).
 
-### 1. Start the Database
+## Prerequisites
+
+Before running this application, make sure you have the following installed:
+
+- **Java 21** or higher
+- **Docker** and **Docker Compose**
+- **Git**
+- **Gradle** (wrapper included in the project)
+
+### System Requirements
+
+- **Memory**: Minimum 2GB RAM
+- **Storage**: Minimum 1GB free space
+- **Network**: Internet connection for downloading dependencies
+
+## Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd AREA_Back
+   ```
+
+2. **Set up environment variables:**
+   Create a `.env` file in the root directory with the necessary environment variables:
+   ```bash
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=area_db
+   DB_USERNAME=area_user
+   DB_PASSWORD=area_password
+   
+   # Redis Configuration
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   
+   # Application Configuration
+   SPRING_PROFILES_ACTIVE=dev
+   ```
+
+3. **Start the infrastructure services:**
+   ```bash
+   docker-compose up -d
+   ```
+   This will start PostgreSQL and Redis containers.
+
+## Running the Application
+
+### Using Gradle Wrapper (Recommended)
+
+1. **Build the application:**
+   ```bash
+   ./gradlew build
+   ```
+
+2. **Run the application:**
+   ```bash
+   ./gradlew bootRun
+   ```
+
+### Using the start script
+
 ```bash
-docker-compose up -d postgres
+./start.sh
 ```
 
-### 2. Run the Application
+### Using Docker
+
+Build and run with Docker:
 ```bash
-./gradlew bootRun
+docker build -t area-backend .
+docker run -p 8080:8080 area-backend
 ```
 
-### 3. Run Tests
+The application will be available at: `http://localhost:8080`
+
+## Project Structure
+
+```
+AREA_Back/
+├── src/
+│   ├── main/
+│   │   ├── java/area/server/AREA_Back/
+│   │   │   ├── config/          # Configuration classes
+│   │   │   ├── controller/      # REST controllers
+│   │   │   ├── dto/            # Data Transfer Objects
+│   │   │   ├── entity/         # JPA entities
+│   │   │   ├── repository/     # Data repositories
+│   │   │   └── service/        # Business logic services
+│   │   └── resources/
+│   │       ├── db/migration/   # Flyway database migrations
+│   │       └── application.yml # Application configuration
+│   └── test/                   # Test classes
+├── config/
+│   └── checkstyle/            # Checkstyle configuration
+├── docs/                      # Project documentation
+├── build.gradle              # Gradle build configuration
+├── compose.yaml              # Docker Compose configuration
+└── README.md                 # This file
+```
+
+## API Documentation
+
+The application provides interactive API documentation using OpenAPI/Swagger.
+
+- **Swagger UI**: `http://localhost:8080/swagger-ui.html`
+- **OpenAPI JSON**: `http://localhost:8080/v3/api-docs`
+
+### Main Endpoints
+
+- **Users**: `/api/users` - User management
+- **Services**: `/api/services` - Service management
+- **Areas**: `/api/areas` - Workflow management
+- **About**: `/about.json` - Application information
+
+## Testing
+
+### Running Tests
+
 ```bash
 # Run all tests
 ./gradlew test
 
-# Run only repository tests
-./gradlew test --tests "*.repository.*"
+# Run tests with coverage report
+./gradlew jacocoTestReport
+
+# View coverage report
+open build/jacocoHtml/index.html
 ```
 
-## API Endpoints
+### Test Coverage
 
-### Users API (`/api/users`)
-- `GET /api/users` - Get paginated users list
-- `GET /api/users/{id}` - Get user by ID
-- `POST /api/users` - Create new user
-- `PUT /api/users/{id}` - Update user
-- `DELETE /api/users/{id}` - Delete user
-- `GET /api/users/search?query={emailOrUsername}` - Search users
+The project aims for at least 80% test coverage. Coverage reports are generated in:
+- **HTML**: `build/jacocoHtml/index.html`
+- **XML**: `build/reports/jacoco/test/jacocoTestReport.xml`
 
-### Services API (`/api/services`)
-- `GET /api/services` - Get paginated services list
-- `GET /api/services/{id}` - Get service by ID
-- `GET /api/services/enabled` - Get enabled services only
-- `POST /api/services` - Create new service
-- `PUT /api/services/{id}` - Update service
-- `DELETE /api/services/{id}` - Delete service
-- `GET /api/services/search?name={serviceName}` - Search services by name
+### Test Technologies
 
-### Areas API (`/api/areas`)
-- `GET /api/areas` - Get paginated areas list
-- `GET /api/areas/{id}` - Get area by ID
-- `GET /api/areas/user/{userId}` - Get areas by user
-- `POST /api/areas` - Create new area
-- `PUT /api/areas/{id}` - Update area
-- `DELETE /api/areas/{id}` - Delete area
-- `PATCH /api/areas/{id}/toggle` - Toggle area enabled status
-- `GET /api/areas/search?name={areaName}` - Search areas by name
+- **JUnit 5**: Main testing framework
+- **Mockito**: Mocking framework
+- **Spring Boot Test**: Integration testing
+- **Testcontainers**: Database testing with real PostgreSQL
+- **H2**: In-memory database for unit tests
 
-## Database Schema
+## Code Quality
 
-### Users Table
-- `id` - Primary key
-- `email` - Unique email address
-- `username` - Unique username
-- `password` - BCrypt encoded password
-- `first_name`, `last_name` - User personal info
-- `enabled` - Account status
-- `created_at`, `updated_at` - Timestamps
+### Checkstyle
 
-### Services Table
-- `id` - Primary key
-- `name` - Unique service name
-- `description` - Service description
-- `icon_url` - Service icon URL
-- `api_endpoint` - Service API endpoint
-- `auth_type` - Authentication type (OAUTH2, API_KEY, BASIC_AUTH, NONE)
-- `enabled` - Service status
-- `created_at`, `updated_at` - Timestamps
+Code style is enforced using Checkstyle:
 
-### Areas Table
-- `id` - Primary key
-- `name` - Area name
-- `description` - Area description
-- `user_id` - Foreign key to users
-- `action_service_id` - Foreign key to services (trigger)
-- `action_type`, `action_config` - Action configuration
-- `reaction_service_id` - Foreign key to services (reaction)
-- `reaction_type`, `reaction_config` - Reaction configuration
-- `enabled` - Area status
-- `last_triggered` - Last trigger timestamp
-- `created_at`, `updated_at` - Timestamps
-
-## Configuration
-
-### Development (application.properties)
-```properties
-# Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/area_db
-spring.datasource.username=area_user
-spring.datasource.password=area_password
-
-# JPA
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# Security (Basic Auth for development)
-spring.security.user.name=admin
-spring.security.user.password=admin123
-```
-
-### Testing (application-test.properties)
-```properties
-# H2 in-memory database for tests
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.jpa.hibernate.ddl-auto=create-drop
-spring.flyway.enabled=false
-```
-
-## Authentication
-
-Currently uses HTTP Basic Authentication:
-- **Username**: `admin`
-- **Password**: `admin123`
-
-All API endpoints require authentication.
-
-## Sample Data
-
-The application includes sample services in the migration:
-- Gmail (OAUTH2)
-- GitHub (OAUTH2)  
-- Slack (OAUTH2)
-- Discord (OAUTH2)
-- Weather API (API_KEY)
-
-## Development
-
-### Project Structure
-```
-src/main/java/area/server/AREA_Back/
-├── entity/          # JPA entities
-├── repository/      # Spring Data repositories
-├── controller/      # REST controllers
-├── dto/             # Data transfer objects
-├── config/          # Configuration classes
-└── AreaBackApplication.java
-
-src/test/java/area/server/AREA_Back/
-├── repository/      # Repository unit tests
-└── AreaBackApplicationTests.java
-```
-
-### Building
 ```bash
-./gradlew build
+# Run checkstyle
+./gradlew checkstyleMain checkstyleTest
+
+# View checkstyle reports
+open build/reports/checkstyle/main.html
+open build/reports/checkstyle/test.html
 ```
 
-### Running with Docker
-```bash
-# Start all services
-docker-compose up
+### Quality Gates
 
-# Or just the backend (after starting postgres)
-./gradlew bootRun
-```
+- **Test Coverage**: Minimum 80%
+- **Checkstyle**: Maximum 50 warnings, 20 errors
+- **Build**: Must pass all tests and quality checks
 
-## TODOs
+## Database
 
-- [ ] Implement proper OpenAPI/Swagger configuration
-- [ ] Add comprehensive integration tests with Testcontainers
-- [ ] Implement JWT authentication
-- [ ] Add service implementations for actual integrations
-- [ ] Add area triggering/execution logic
-- [ ] Add API versioning
-- [ ] Add comprehensive logging and monitoring
-- [ ] Add Docker image for the application
+### Database Schema
+
+The application uses PostgreSQL with Flyway for database migrations.
+
+- **Database**: PostgreSQL 15
+- **Migration Tool**: Flyway
+- **ORM**: Spring Data JPA with Hibernate
+
+### Database Access
+
+- **Host**: localhost:5432 (when using Docker Compose)
+- **Database**: area_db
+- **User**: area_user
+- **Password**: area_password
+
+### Migrations
+
+Database migrations are located in `src/main/resources/db/migration/` and are automatically applied on application startup.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Write tests for your changes
+4. Ensure all tests pass and code quality checks pass
+5. Submit a pull request
+
+### Code Style
+
+- Follow the project's Checkstyle rules
+- Write comprehensive tests
+- Use meaningful commit messages
+- Document your code appropriately
+
+## Documentation
+
+Detailed documentation is available in the `docs/` directory:
+
+- [Unit Testing Guide](docs/unit-testing-guide.md)
+- [Checkstyle Guide](docs/checkstyle-guide.md)
+- [Data Migration Guide](docs/data-migration-guide.md)
+
+## Dependencies
+
+### Main Dependencies
+
+- **Spring Boot 3.5.6**: Main framework
+- **Spring Security**: Authentication and authorization
+- **Spring Data JPA**: Database abstraction
+- **Spring Data Redis**: Caching
+- **PostgreSQL**: Database driver
+- **Flyway**: Database migrations
+- **OpenAPI**: API documentation
+- **Lombok**: Code generation
+
+### Development Dependencies
+
+- **Spring Boot DevTools**: Hot reload
+- **H2**: In-memory database for testing
+- **Testcontainers**: Integration testing
+- **JaCoCo**: Code coverage
+- **Checkstyle**: Code style checking
+
+## License
+
+This project is licensed under the terms specified in the LICENSE file.
+
+## Support
+
+For support and questions, please refer to the project documentation or contact the development team.

@@ -34,7 +34,7 @@
 - Config/env to set/update: …
 
 ## Related
-- Issue: #
+- Issue: SamTess/{AREA/AREA_Back/AREA_Web/AREA_Mobile}#
 
 ## Docs / Changelog
 - [ ] Docs updated — Link:

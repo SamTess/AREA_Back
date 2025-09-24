@@ -7,9 +7,15 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ServiceRepository extends JpaRepository<Service, Long> {
+public interface ServiceRepository extends JpaRepository<Service, UUID> {
+
+    /**
+     * Find service by key
+     */
+    Optional<Service> findByKey(String key);
 
     /**
      * Find service by name
@@ -17,20 +23,20 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
     Optional<Service> findByName(String name);
 
     /**
-     * Check if service exists by name
+     * Check if service exists by key
      */
-    boolean existsByName(String name);
+    boolean existsByKey(String key);
 
     /**
      * Find all enabled services
      */
-    @Query("SELECT s FROM Service s WHERE s.enabled = true")
+    @Query("SELECT s FROM Service s WHERE s.isActive = true")
     List<Service> findAllEnabledServices();
 
     /**
      * Find services by authentication type
      */
-    List<Service> findByAuthType(Service.AuthType authType);
+    List<Service> findByAuth(Service.AuthType auth);
 
     /**
      * Find services by name containing (case-insensitive search)

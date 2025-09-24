@@ -5,26 +5,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AreaResponse {
-    private Long id;
+    private UUID id;
     private String name;
     private String description;
     private Boolean enabled;
-    private Long userId;
-    private String userUsername;
-    private Long actionServiceId;
-    private String actionServiceName;
-    private String actionType;
-    private String actionConfig;
-    private Long reactionServiceId;
-    private String reactionServiceName;
-    private String reactionType;
-    private String reactionConfig;
-    private LocalDateTime lastTriggered;
+    private UUID userId;
+    private String userEmail;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

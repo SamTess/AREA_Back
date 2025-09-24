@@ -5,17 +5,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse {
-    private Long id;
+    private UUID id;
     private String email;
-    private String username;
-    private String firstName;
-    private String lastName;
-    private Boolean enabled;
+    private Boolean isActive;
+    private Boolean isAdmin;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime confirmedAt;
+    private LocalDateTime lastLoginAt;
+    private String avatarUrl;
 }

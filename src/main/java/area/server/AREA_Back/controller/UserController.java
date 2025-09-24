@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -51,8 +52,8 @@ public class UserController {
             @Parameter(description = "Direction du tri (asc ou desc)")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+            ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<User> users = userRepository.findAll(pageable);
@@ -70,7 +71,7 @@ public class UserController {
     })
     public ResponseEntity<UserResponse> getUserById(
             @Parameter(description = "ID de l'utilisateur")
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         Optional<User> user = userRepository.findById(id);
         if (user.isPresent()) {
             return ResponseEntity.ok(convertToResponse(user.get()));
@@ -78,26 +79,40 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/enabled")
+    @Operation(summary = "Récupérer les utilisateurs activés",
+               description = "Récupère la liste de tous les utilisateurs activés")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Liste des utilisateurs activés récupérée avec succès")
+    })
+    public ResponseEntity<List<UserResponse>> getEnabledUsers() {
+        List<User> enabledUsers = userRepository.findAllEnabledUsers();
+        List<UserResponse> userResponses = enabledUsers.stream()
+            .map(this::convertToResponse)
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(userResponses);
+    }
+
     @PostMapping
     @Operation(summary = "Créer un nouvel utilisateur",
                description = "Crée un nouvel utilisateur avec les informations fournies")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès"),
-        @ApiResponse(responseCode = "409", description = "Utilisateur existe déjà (email ou nom d'utilisateur)")
+        @ApiResponse(responseCode = "409", description = "Utilisateur existe déjà (email)")
     })
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        if (userRepository.existsByUsername(request.getUsername()))
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
 
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEnabled(true);
+        if (request.getPassword() != null) {
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
+        user.setAvatarUrl(request.getAvatarUrl());
+        user.setIsActive(true);
+        user.setIsAdmin(false);
 
         User savedUser = userRepository.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedUser));
@@ -112,27 +127,31 @@ public class UserController {
     })
     public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "ID de l'utilisateur")
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
 
         Optional<User> optionalUser = userRepository.findById(id);
-        if (!optionalUser.isPresent())
+        if (!optionalUser.isPresent()) {
             return ResponseEntity.notFound().build();
+        }
 
         User user = optionalUser.get();
 
-        if (request.getEmail() != null)
+        if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
-        if (request.getUsername() != null)
-            user.setUsername(request.getUsername());
-        if (request.getPassword() != null)
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        if (request.getFirstName() != null)
-            user.setFirstName(request.getFirstName());
-        if (request.getLastName() != null)
-            user.setLastName(request.getLastName());
-        if (request.getEnabled() != null)
-            user.setEnabled(request.getEnabled());
+        }
+        if (request.getPassword() != null) {
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
+        if (request.getIsActive() != null) {
+            user.setIsActive(request.getIsActive());
+        }
+        if (request.getIsAdmin() != null) {
+            user.setIsAdmin(request.getIsAdmin());
+        }
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(convertToResponse(updatedUser));
@@ -147,7 +166,7 @@ public class UserController {
     })
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID de l'utilisateur")
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         if (!userRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -158,14 +177,14 @@ public class UserController {
 
     @GetMapping("/search")
     @Operation(summary = "Rechercher un utilisateur",
-               description = "Recherche un utilisateur par email ou nom d'utilisateur")
+               description = "Recherche un utilisateur par email")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Recherche effectuée avec succès")
     })
     public ResponseEntity<List<UserResponse>> searchUsers(
-            @Parameter(description = "Email ou nom d'utilisateur à rechercher")
-            @RequestParam String query) {
-        Optional<User> user = userRepository.findByEmailOrUsername(query);
+            @Parameter(description = "Email à rechercher")
+            @RequestParam String email) {
+        Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()) {
             return ResponseEntity.ok(List.of(convertToResponse(user.get())));
         }
@@ -176,12 +195,12 @@ public class UserController {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setEmail(user.getEmail());
-        response.setUsername(user.getUsername());
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setEnabled(user.getEnabled());
+        response.setIsActive(user.getIsActive());
+        response.setIsAdmin(user.getIsAdmin());
         response.setCreatedAt(user.getCreatedAt());
-        response.setUpdatedAt(user.getUpdatedAt());
+        response.setConfirmedAt(user.getConfirmedAt());
+        response.setLastLoginAt(user.getLastLoginAt());
+        response.setAvatarUrl(user.getAvatarUrl());
         return response;
     }
 }

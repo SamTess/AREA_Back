@@ -2,7 +2,6 @@ package area.server.AREA_Back.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,40 +9,42 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "services")
+@Table(name = "a_services", schema = "area")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Service {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
+
+    @NotBlank(message = "Service key is required")
+    @Column(unique = true, nullable = false)
+    private String key;
 
     @NotBlank(message = "Service name is required")
-    @Size(min = 2, max = 100, message = "Service name must be between 2 and 100 characters")
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @NotBlank(message = "Service icon URL is required")
-    @Column(name = "icon_url")
-    private String iconUrl;
-
-    @Column(nullable = false)
-    private Boolean enabled = true;
-
-    @Column(name = "api_endpoint")
-    private String apiEndpoint;
-
-    @Column(name = "auth_type")
+    @Column
     @Enumerated(EnumType.STRING)
-    private AuthType authType = AuthType.OAUTH2;
+    private AuthType auth = AuthType.OAUTH2;
+
+    @Column(name = "docs_url")
+    private String docsUrl;
+
+    @Column(name = "icon_light_url")
+    private String iconLightUrl;
+
+    @Column(name = "icon_dark_url")
+    private String iconDarkUrl;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -53,13 +54,7 @@ public class Service {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "actionService", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Area> actionAreas;
-
-    @OneToMany(mappedBy = "reactionService", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Area> reactionAreas;
-
     public enum AuthType {
-        OAUTH2, API_KEY, BASIC_AUTH, NONE
+        OAUTH2, APIKEY, NONE
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,8 +48,8 @@ public class ServiceController {
             @Parameter(description = "Direction du tri (asc ou desc)")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+            ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Service> services = serviceRepository.findAll(pageable);
@@ -58,7 +59,7 @@ public class ServiceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ServiceResponse> getServiceById(@PathVariable Long id) {
+    public ResponseEntity<ServiceResponse> getServiceById(@PathVariable UUID id) {
         Optional<Service> service = serviceRepository.findById(id);
         if (service.isPresent()) {
             return ResponseEntity.ok(convertToResponse(service.get()));
@@ -77,16 +78,18 @@ public class ServiceController {
 
     @PostMapping
     public ResponseEntity<ServiceResponse> createService(@Valid @RequestBody CreateServiceRequest request) {
-        if (serviceRepository.existsByName(request.getName()))
+        if (serviceRepository.existsByKey(request.getKey())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
 
         Service service = new Service();
+        service.setKey(request.getKey());
         service.setName(request.getName());
-        service.setDescription(request.getDescription());
-        service.setIconUrl(request.getIconUrl());
-        service.setApiEndpoint(request.getApiEndpoint());
-        service.setAuthType(request.getAuthType());
-        service.setEnabled(true);
+        service.setAuth(request.getAuth());
+        service.setDocsUrl(request.getDocsUrl());
+        service.setIconLightUrl(request.getIconLightUrl());
+        service.setIconDarkUrl(request.getIconDarkUrl());
+        service.setIsActive(true);
 
         Service savedService = serviceRepository.save(service);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedService));
@@ -94,28 +97,31 @@ public class ServiceController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ServiceResponse> updateService(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody CreateServiceRequest request) {
 
         Optional<Service> optionalService = serviceRepository.findById(id);
-        if (!optionalService.isPresent())
+        if (!optionalService.isPresent()) {
             return ResponseEntity.notFound().build();
+        }
 
         Service service = optionalService.get();
+        service.setKey(request.getKey());
         service.setName(request.getName());
-        service.setDescription(request.getDescription());
-        service.setIconUrl(request.getIconUrl());
-        service.setApiEndpoint(request.getApiEndpoint());
-        service.setAuthType(request.getAuthType());
+        service.setAuth(request.getAuth());
+        service.setDocsUrl(request.getDocsUrl());
+        service.setIconLightUrl(request.getIconLightUrl());
+        service.setIconDarkUrl(request.getIconDarkUrl());
 
         Service updatedService = serviceRepository.save(service);
         return ResponseEntity.ok(convertToResponse(updatedService));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteService(@PathVariable Long id) {
-        if (!serviceRepository.existsById(id))
+    public ResponseEntity<Void> deleteService(@PathVariable UUID id) {
+        if (!serviceRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
+        }
 
         serviceRepository.deleteById(id);
         return ResponseEntity.noContent().build();
@@ -133,12 +139,13 @@ public class ServiceController {
     private ServiceResponse convertToResponse(Service service) {
         ServiceResponse response = new ServiceResponse();
         response.setId(service.getId());
+        response.setKey(service.getKey());
         response.setName(service.getName());
-        response.setDescription(service.getDescription());
-        response.setIconUrl(service.getIconUrl());
-        response.setEnabled(service.getEnabled());
-        response.setApiEndpoint(service.getApiEndpoint());
-        response.setAuthType(service.getAuthType());
+        response.setAuth(service.getAuth());
+        response.setDocsUrl(service.getDocsUrl());
+        response.setIconLightUrl(service.getIconLightUrl());
+        response.setIconDarkUrl(service.getIconDarkUrl());
+        response.setIsActive(service.getIsActive());
         response.setCreatedAt(service.getCreatedAt());
         response.setUpdatedAt(service.getUpdatedAt());
         return response;

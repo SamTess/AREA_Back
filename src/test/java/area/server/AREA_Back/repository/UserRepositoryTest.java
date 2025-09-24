@@ -6,15 +6,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@TestPropertySource(locations = "classpath:application-repository-test.properties")
 class UserRepositoryTest {
 
     @Autowired
@@ -29,113 +34,152 @@ class UserRepositoryTest {
     void setUp() {
         testUser = new User();
         testUser.setEmail("test@example.com");
-        testUser.setUsername("testuser");
-        testUser.setPassword("password123");
-        testUser.setFirstName("Test");
-        testUser.setLastName("User");
-        testUser.setEnabled(true);
+        testUser.setPasswordHash("hashedPassword123");
+        testUser.setIsActive(true);
+        testUser.setIsAdmin(false);
+        testUser.setCreatedAt(LocalDateTime.now());
+        testUser.setAvatarUrl("https://example.com/avatar.jpg");
+        
+        entityManager.persistAndFlush(testUser);
     }
 
     @Test
-    void shouldFindUserByEmail() {
-        // Given
-        entityManager.persistAndFlush(testUser);
-
-        // When
-        Optional<User> found = userRepository.findByEmail("test@example.com");
-
-        // Then
-        assertThat(found).isPresent();
-        assertThat(found.get().getUsername()).isEqualTo("testuser");
+    void testFindByEmail() {
+        Optional<User> foundUser = userRepository.findByEmail("test@example.com");
+        
+        assertTrue(foundUser.isPresent());
+        assertEquals("test@example.com", foundUser.get().getEmail());
+        assertEquals("hashedPassword123", foundUser.get().getPasswordHash());
     }
 
     @Test
-    void shouldFindUserByUsername() {
-        // Given
-        entityManager.persistAndFlush(testUser);
-
-        // When
-        Optional<User> found = userRepository.findByUsername("testuser");
-
-        // Then
-        assertThat(found).isPresent();
-        assertThat(found.get().getEmail()).isEqualTo("test@example.com");
+    void testFindByEmailNotFound() {
+        Optional<User> foundUser = userRepository.findByEmail("notfound@example.com");
+        
+        assertFalse(foundUser.isPresent());
     }
 
     @Test
-    void shouldReturnTrueWhenUserExistsByEmail() {
-        // Given
-        entityManager.persistAndFlush(testUser);
-
-        // When
+    void testExistsByEmail() {
         boolean exists = userRepository.existsByEmail("test@example.com");
-
-        // Then
-        assertThat(exists).isTrue();
+        assertTrue(exists);
+        
+        boolean notExists = userRepository.existsByEmail("notfound@example.com");
+        assertFalse(notExists);
     }
 
     @Test
-    void shouldReturnFalseWhenUserDoesNotExistByEmail() {
-        // When
-        boolean exists = userRepository.existsByEmail("nonexistent@example.com");
+    void testFindAllEnabledUsers() {
+        // Create another active user
+        User activeUser = new User();
+        activeUser.setEmail("active@example.com");
+        activeUser.setPasswordHash("hashedPassword456");
+        activeUser.setIsActive(true);
+        activeUser.setIsAdmin(false);
+        entityManager.persistAndFlush(activeUser);
 
-        // Then
-        assertThat(exists).isFalse();
-    }
+        // Create an inactive user
+        User inactiveUser = new User();
+        inactiveUser.setEmail("inactive@example.com");
+        inactiveUser.setPasswordHash("hashedPassword789");
+        inactiveUser.setIsActive(false);
+        inactiveUser.setIsAdmin(false);
+        entityManager.persistAndFlush(inactiveUser);
 
-    @Test
-    void shouldReturnTrueWhenUserExistsByUsername() {
-        // Given
-        entityManager.persistAndFlush(testUser);
-
-        // When
-        boolean exists = userRepository.existsByUsername("testuser");
-
-        // Then
-        assertThat(exists).isTrue();
-    }
-
-    @Test
-    void shouldFindAllEnabledUsers() {
-        // Given
-        User disabledUser = new User();
-        disabledUser.setEmail("disabled@example.com");
-        disabledUser.setUsername("disableduser");
-        disabledUser.setPassword("password123");
-        disabledUser.setEnabled(false);
-
-        entityManager.persistAndFlush(testUser);
-        entityManager.persistAndFlush(disabledUser);
-
-        // When
         List<User> enabledUsers = userRepository.findAllEnabledUsers();
-
-        // Then
-        assertThat(enabledUsers).hasSize(1);
-        assertThat(enabledUsers.get(0).getUsername()).isEqualTo("testuser");
+        
+        assertEquals(2, enabledUsers.size());
+        assertTrue(enabledUsers.stream().allMatch(User::getIsActive));
+        assertTrue(enabledUsers.stream().anyMatch(u -> u.getEmail().equals("test@example.com")));
+        assertTrue(enabledUsers.stream().anyMatch(u -> u.getEmail().equals("active@example.com")));
+        assertFalse(enabledUsers.stream().anyMatch(u -> u.getEmail().equals("inactive@example.com")));
     }
 
     @Test
-    void shouldFindUserByEmailOrUsername() {
-        // Given
-        entityManager.persistAndFlush(testUser);
+    void testSaveUser() {
+        User newUser = new User();
+        newUser.setEmail("new@example.com");
+        newUser.setPasswordHash("newHashedPassword");
+        newUser.setIsActive(true);
+        newUser.setIsAdmin(false);
+        newUser.setCreatedAt(LocalDateTime.now());
 
-        // When
-        Optional<User> foundByEmail = userRepository.findByEmailOrUsername("test@example.com");
-        Optional<User> foundByUsername = userRepository.findByEmailOrUsername("testuser");
-
-        // Then
-        assertThat(foundByEmail).isPresent();
-        assertThat(foundByUsername).isPresent();
-        assertThat(foundByEmail.get().getId()).isEqualTo(foundByUsername.get().getId());
+        User savedUser = userRepository.save(newUser);
+        
+        assertNotNull(savedUser.getId());
+        assertEquals("new@example.com", savedUser.getEmail());
+        assertEquals("newHashedPassword", savedUser.getPasswordHash());
+        assertTrue(savedUser.getIsActive());
+        assertFalse(savedUser.getIsAdmin());
     }
 
     @Test
-    void shouldReturnEmptyWhenUserNotFoundByEmailOrUsername() {
-        // When
-        Optional<User> found = userRepository.findByEmailOrUsername("nonexistent");
+    void testUpdateUser() {
+        testUser.setPasswordHash("updatedPassword");
+        testUser.setIsAdmin(true);
+        
+        User updatedUser = userRepository.save(testUser);
+        
+        assertEquals(testUser.getId(), updatedUser.getId());
+        assertEquals("updatedPassword", updatedUser.getPasswordHash());
+        assertTrue(updatedUser.getIsAdmin());
+    }
 
-        // Then
-        assertThat(found).isEmpty();
+    @Test
+    void testDeleteUser() {
+        UUID userId = testUser.getId();
+        
+        userRepository.delete(testUser);
+        
+        Optional<User> deletedUser = userRepository.findById(userId);
+        assertFalse(deletedUser.isPresent());
+    }
+
+    @Test
+    void testFindById() {
+        Optional<User> foundUser = userRepository.findById(testUser.getId());
+        
+        assertTrue(foundUser.isPresent());
+        assertEquals(testUser.getId(), foundUser.get().getId());
+        assertEquals("test@example.com", foundUser.get().getEmail());
+    }
+
+    @Test
+    void testFindAll() {
+        User anotherUser = new User();
+        anotherUser.setEmail("another@example.com");
+        anotherUser.setPasswordHash("anotherPassword");
+        anotherUser.setIsActive(true);
+        anotherUser.setIsAdmin(false);
+        entityManager.persistAndFlush(anotherUser);
+
+        List<User> allUsers = userRepository.findAll();
+        
+        assertEquals(2, allUsers.size());
+    }
+
+    @Test
+    void testExistsById() {
+        boolean exists = userRepository.existsById(testUser.getId());
+        assertTrue(exists);
+        
+        boolean notExists = userRepository.existsById(UUID.randomUUID());
+        assertFalse(notExists);
+    }
+
+    @Test
+    void testCount() {
+        long count = userRepository.count();
+        assertEquals(1, count);
+        
+        User anotherUser = new User();
+        anotherUser.setEmail("count@example.com");
+        anotherUser.setPasswordHash("countPassword");
+        anotherUser.setIsActive(true);
+        anotherUser.setIsAdmin(false);
+        entityManager.persistAndFlush(anotherUser);
+        
+        long newCount = userRepository.count();
+        assertEquals(2, newCount);
     }
 }

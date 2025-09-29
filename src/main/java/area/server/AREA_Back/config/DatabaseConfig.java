@@ -12,12 +12,12 @@ import org.springframework.context.annotation.Profile;
 import javax.sql.DataSource;
 
 /**
- * Configuration de la base de données PostgreSQL.
- * Cette classe configure explicitement le DataSource pour PostgreSQL
- * et valide la configuration au démarrage de l'application.
- * 
- * Note: Cette configuration n'est active que pour les profils non-test
- * pour éviter les conflits avec les configurations de test.
+ * PostgreSQL database configuration.
+ * This class explicitly configures the DataSource for PostgreSQL
+ * and validates the configuration at application startup.
+ *
+ * Note: This configuration is only active for non-test profiles
+ * to avoid conflicts with test configurations.
  */
 @Configuration
 @Profile("!test & !repository-test & !integration-test & !service-test & !default")
@@ -33,11 +33,11 @@ public class DatabaseConfig {
     private String driverClassName;
 
     /**
-     * Configuration du DataSource principal pour PostgreSQL.
-     * Cette méthode valide que toutes les propriétés de base de données sont définies.
+     * Main DataSource configuration for PostgreSQL.
+     * This method validates that all database properties are set.
      *
-     * @return DataSource configuré pour PostgreSQL
-     * @throws IllegalStateException si les propriétés de base de données ne sont pas définies
+     * @return DataSource configured for PostgreSQL
+     * @throws IllegalStateException if database properties are not set
      */
     @Bean
     @Primary
@@ -45,7 +45,7 @@ public class DatabaseConfig {
     @ConditionalOnProperty(name = "spring.datasource.url")
     public DataSource dataSource() {
         validateDatabaseConfiguration();
-        
+
         return DataSourceBuilder.create()
                 .driverClassName(driverClassName)
                 .url(databaseUrl)
@@ -54,28 +54,28 @@ public class DatabaseConfig {
     }
 
     /**
-     * Valide que toutes les propriétés de base de données requises sont définies.
-     * Cette validation fait échouer le démarrage de l'application si des propriétés sont manquantes.
+     * Validates that all required database properties are set.
+     * This validation will fail application startup if properties are missing.
      */
     private void validateDatabaseConfiguration() {
         if (databaseUrl == null || databaseUrl.trim().isEmpty()) {
             throw new IllegalStateException(
-                "DATABASE_URL environment variable is required but not set. " +
-                "Please set DATABASE_URL to your PostgreSQL connection string."
+                "DATABASE_URL environment variable is required but not set. "
+                + "Please set DATABASE_URL to your PostgreSQL connection string."
             );
         }
-        
+
         if (databaseUsername == null || databaseUsername.trim().isEmpty()) {
             throw new IllegalStateException(
-                "DATABASE_USERNAME environment variable is required but not set. " +
-                "Please set DATABASE_USERNAME to your PostgreSQL username."
+                "DATABASE_USERNAME environment variable is required but not set. "
+                + "Please set DATABASE_USERNAME to your PostgreSQL username."
             );
         }
-        
+
         if (!databaseUrl.contains("postgresql")) {
             throw new IllegalStateException(
-                "DATABASE_URL must be a PostgreSQL connection string. " +
-                "Expected URL format: jdbc:postgresql://host:port/database"
+                "DATABASE_URL must be a PostgreSQL connection string. "
+                + "Expected URL format: jdbc:postgresql://host:port/database"
             );
         }
     }

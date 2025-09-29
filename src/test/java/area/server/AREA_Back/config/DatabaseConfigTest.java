@@ -9,7 +9,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.sql.DataSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests unitaires pour la configuration de la base de données.
@@ -29,10 +32,10 @@ class DatabaseConfigTest {
     @Test
     void testDataSourceConfigurationWithValidProperties() {
         // Given
-        ReflectionTestUtils.setField(databaseConfig, "databaseUrl", 
+        ReflectionTestUtils.setField(databaseConfig, "databaseUrl",
             "jdbc:postgresql://localhost:5432/test_db");
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "test_user");
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "org.postgresql.Driver");
 
         // When
@@ -47,13 +50,13 @@ class DatabaseConfigTest {
         // Given
         ReflectionTestUtils.setField(databaseConfig, "databaseUrl", "");
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "test_user");
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "org.postgresql.Driver");
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> databaseConfig.dataSource());
-        
+
         assertTrue(exception.getMessage().contains("DATABASE_URL environment variable is required"),
             "Exception message should mention DATABASE_URL is required");
     }
@@ -63,13 +66,13 @@ class DatabaseConfigTest {
         // Given
         ReflectionTestUtils.setField(databaseConfig, "databaseUrl", null);
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "test_user");
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "org.postgresql.Driver");
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> databaseConfig.dataSource());
-        
+
         assertTrue(exception.getMessage().contains("DATABASE_URL environment variable is required"),
             "Exception message should mention DATABASE_URL is required");
     }
@@ -77,16 +80,16 @@ class DatabaseConfigTest {
     @Test
     void testDataSourceFailsWithEmptyUsername() {
         // Given
-        ReflectionTestUtils.setField(databaseConfig, "databaseUrl", 
+        ReflectionTestUtils.setField(databaseConfig, "databaseUrl",
             "jdbc:postgresql://localhost:5432/test_db");
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "");
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "org.postgresql.Driver");
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> databaseConfig.dataSource());
-        
+
         assertTrue(exception.getMessage().contains("DATABASE_USERNAME environment variable is required"),
             "Exception message should mention DATABASE_USERNAME is required");
     }
@@ -94,16 +97,16 @@ class DatabaseConfigTest {
     @Test
     void testDataSourceFailsWithNullUsername() {
         // Given
-        ReflectionTestUtils.setField(databaseConfig, "databaseUrl", 
+        ReflectionTestUtils.setField(databaseConfig, "databaseUrl",
             "jdbc:postgresql://localhost:5432/test_db");
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", null);
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "org.postgresql.Driver");
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> databaseConfig.dataSource());
-        
+
         assertTrue(exception.getMessage().contains("DATABASE_USERNAME environment variable is required"),
             "Exception message should mention DATABASE_USERNAME is required");
     }
@@ -111,16 +114,16 @@ class DatabaseConfigTest {
     @Test
     void testDataSourceFailsWithNonPostgreSQLUrl() {
         // Given
-        ReflectionTestUtils.setField(databaseConfig, "databaseUrl", 
+        ReflectionTestUtils.setField(databaseConfig, "databaseUrl",
             "jdbc:mysql://localhost:3306/test_db");
         ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "test_user");
-        ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+        ReflectionTestUtils.setField(databaseConfig, "driverClassName",
             "com.mysql.cj.jdbc.Driver");
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
             () -> databaseConfig.dataSource());
-        
+
         assertTrue(exception.getMessage().contains("DATABASE_URL must be a PostgreSQL connection string"),
             "Exception message should mention PostgreSQL requirement");
     }
@@ -137,7 +140,7 @@ class DatabaseConfigTest {
         for (String url : validUrls) {
             ReflectionTestUtils.setField(databaseConfig, "databaseUrl", url);
             ReflectionTestUtils.setField(databaseConfig, "databaseUsername", "test_user");
-            ReflectionTestUtils.setField(databaseConfig, "driverClassName", 
+            ReflectionTestUtils.setField(databaseConfig, "driverClassName",
                 "org.postgresql.Driver");
 
             // When & Then

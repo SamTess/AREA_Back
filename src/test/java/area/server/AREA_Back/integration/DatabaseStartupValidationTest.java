@@ -7,46 +7,46 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test d'intégration léger pour valider que l'application peut démarrer
- * avec la configuration de base de données PostgreSQL.
+ * Lightweight integration test to validate that the application can start
+ * with the PostgreSQL database configuration.
  * 
- * Ce test fonctionne avec H2 en mode PostgreSQL pour éviter les dépendances externes
- * tout en validant que la configuration est cohérente.
+ * This test works with H2 in PostgreSQL mode to avoid external dependencies
+ * while validating that the configuration is consistent.
  */
 @SpringBootTest
 @ActiveProfiles("test")
 class DatabaseStartupValidationTest {
 
     /**
-     * Test que l'application démarre correctement avec la configuration de base de données.
+     * Test that the application starts correctly with the database configuration.
      * 
-     * Ce test simple valide que :
-     * 1. Le contexte Spring Boot se charge sans erreur
-     * 2. Les configurations de base de données sont cohérentes
-     * 3. Les entités JPA sont correctement mappées
-     * 4. Aucune erreur de démarrage n'apparaît
+     * This simple test validates that:
+     * 1. The Spring Boot context loads without error
+     * 2. The database configurations are consistent
+     * 3. JPA entities are correctly mapped
+     * 4. No startup errors occur
      */
     @Test
     void testApplicationContextLoads() {
-        // Le simple fait que ce test s'exécute et se termine avec succès
-        // prouve que l'application peut démarrer correctement.
-        // Cela valide :
-        // - Configuration Spring Boot
-        // - Configuration DataSource (même si c'est H2 pour les tests)
-        // - Configuration JPA/Hibernate
-        // - Mapping des entités
-        // - Configuration des repositories
+        // The mere fact that this test runs and completes successfully
+        // proves that the application can start correctly.
+        // This validates:
+        // - Spring Boot configuration
+        // - DataSource configuration (even if it's H2 for tests)
+        // - JPA/Hibernate configuration
+        // - Entity mapping
+        // - Repository configuration
         
         assertTrue(true, "Application context should load successfully");
     }
     
     /**
-     * Test de validation de sanité pour s'assurer que le profil de test est actif
+     * Sanity validation test to ensure that the test profile is active
      */
     @Test 
     void testTestProfileIsActive() {
-        // Ce test s'assure que nous sommes bien en mode test
-        // et que les configurations de test sont appliquées
+        // This test ensures that we are indeed in test mode
+        // and that the test configurations are applied
         String activeProfile = System.getProperty("spring.profiles.active", "test");
         assertTrue(activeProfile.contains("test"), 
             "Test profile should be active during tests");

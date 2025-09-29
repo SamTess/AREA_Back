@@ -12,11 +12,13 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests d'intégration simplifiés pour valider que l'application démarre correctement.
- * Ces tests sont conçus pour être légers et éviter les problèmes de schéma complexes.
+ * Simplified integration tests to validate that the application starts correctly.
+ * These tests are designed to be lightweight and avoid complex schema issues.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -30,60 +32,60 @@ class ApplicationStartupIntegrationTest {
     private UserRepository userRepository;
 
     /**
-     * Test que l'application démarre correctement avec la configuration de base de données
+     * Test that the application starts correctly with the database configuration
      */
     @Test
     void testApplicationStartupWithDatabaseConfiguration() {
-        // Le simple fait que ce test s'exécute prouve que :
-        // 1. L'application démarre sans erreur
-        // 2. La configuration DataSource fonctionne
-        // 3. Les entités JPA sont correctement mappées
+        // The mere fact that this test runs proves that:
+        // 1. The application starts without error
+        // 2. The DataSource configuration works
+        // 3. The JPA entities are correctly mapped
         assertNotNull(dataSource, "DataSource should be configured");
         assertNotNull(userRepository, "UserRepository should be available");
-        
-        // Test simple sans interaction avec la base
+
+        // Simple test without interacting with the database
         assertTrue(true, "Application started successfully");
     }
 
     /**
-     * Test que les entités sont correctement configurées
+     * Test that the entities are correctly configured
      */
     @Test
     void testEntityConfigurationIsValid() {
-        // Test que les repositories existent et sont correctement configurés
+        // Test that the repositories exist and are correctly configured
         assertNotNull(userRepository, "UserRepository should be available");
-        
-        // Test simple sans interaction avec la base pour éviter les problèmes de schéma
+
+        // Simple test without interacting with the database to avoid schema issues
         String repositoryClassName = userRepository.getClass().getName();
-        assertTrue(repositoryClassName.contains("Repository") || repositoryClassName.contains("Proxy"), 
+        assertTrue(repositoryClassName.contains("Repository") || repositoryClassName.contains("Proxy"),
             "UserRepository should be a repository proxy, but was: " + repositoryClassName);
     }
 
     /**
-     * Test que la configuration JPA est correcte
+     * Test that the JPA configuration is correct
      */
     @Test
     void testJPAConfiguration() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             String databaseProductName = metaData.getDatabaseProductName();
-            
-            // En mode test, c'est H2 configuré en mode PostgreSQL
+
+            // In test mode, it's H2 configured in PostgreSQL mode
             assertEquals("H2", databaseProductName,
                 "Database should be H2 in test mode, but was: " + databaseProductName);
         }
     }
 
     /**
-     * Test que les configurations sont cohérentes
+     * Test that the configurations are consistent
      */
     @Test
     void testConfigurationConsistency() {
-        // Vérifier que les beans essentiels sont configurés
+        // Check that essential beans are configured
         assertNotNull(dataSource, "DataSource should be configured");
         assertNotNull(userRepository, "UserRepository should be available");
-        
-        // Test que nous sommes en mode test
+
+        // Test that we are in test mode
         assertTrue(true, "Configuration consistency validated");
     }
 }

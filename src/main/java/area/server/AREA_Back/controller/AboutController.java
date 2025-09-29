@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/")
-@Tag(name = "About", description = "Information sur les services et actions disponibles")
+@Tag(name = "About", description = "Information about available services and actions")
 public class AboutController {
 
     @Autowired
@@ -30,11 +30,10 @@ public class AboutController {
     private ActionDefinitionRepository actionDefinitionRepository;
 
     @GetMapping("/about.json")
-    @Operation(summary = "Informations sur les services disponibles",
-               description = "Retourne la liste des services, actions et réactions disponibles dans l'API")
+    @Operation(summary = "Information about available services",
+               description = "Returns the list of services, actions and reactions available in the API")
     public ResponseEntity<Map<String, Object>> getAbout() {
         Map<String, Object> about = new HashMap<>();
-
         about.put("client", Map.of("host", "localhost:8080"));
         about.put("server", Map.of("current_time", LocalDateTime.now().toString()));
         about.put("services", buildServicesInfo());

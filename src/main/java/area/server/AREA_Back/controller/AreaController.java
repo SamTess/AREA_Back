@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/areas")
-@Tag(name = "Areas", description = "API de gestion des areas (automatisations)")
+@Tag(name = "Areas", description = "API for managing areas (automations)")
 public class AreaController {
 
     @Autowired

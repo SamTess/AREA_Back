@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/action-instances")
-@Tag(name = "Action Instances", description = "API de gestion des instances d'actions")
+@Tag(name = "Action Instances", description = "API for managing action instances")
 public class ActionInstanceController {
 
     @Autowired
@@ -46,7 +46,7 @@ public class ActionInstanceController {
     private ServiceAccountRepository serviceAccountRepository;
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Récupérer les instances d'actions par utilisateur")
+    @Operation(summary = "Get action instances by user")
     public ResponseEntity<List<ActionInstanceResponse>> getActionInstancesByUser(@PathVariable UUID userId) {
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
@@ -61,7 +61,7 @@ public class ActionInstanceController {
     }
 
     @GetMapping("/area/{areaId}")
-    @Operation(summary = "Récupérer les instances d'actions par area")
+    @Operation(summary = "Get action instances by area")
     public ResponseEntity<List<ActionInstanceResponse>> getActionInstancesByArea(@PathVariable UUID areaId) {
         Optional<Area> area = areaRepository.findById(areaId);
         if (!area.isPresent()) {
@@ -76,7 +76,7 @@ public class ActionInstanceController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer une instance d'action par ID")
+    @Operation(summary = "Get an action instance by ID")
     public ResponseEntity<ActionInstanceResponse> getActionInstanceById(@PathVariable UUID id) {
         Optional<ActionInstance> actionInstance = actionInstanceRepository.findById(id);
         if (actionInstance.isPresent()) {
@@ -86,7 +86,7 @@ public class ActionInstanceController {
     }
 
     @PostMapping
-    @Operation(summary = "Créer une nouvelle instance d'action")
+    @Operation(summary = "Create a new action instance")
     public ResponseEntity<ActionInstanceResponse> createActionInstance(
             @Valid @RequestBody CreateActionInstanceRequest request) {
 
@@ -126,7 +126,7 @@ public class ActionInstanceController {
     }
 
     @PatchMapping("/{id}/toggle")
-    @Operation(summary = "Activer/désactiver une instance d'action")
+    @Operation(summary = "Toggle (enable/disable) an action instance")
     public ResponseEntity<ActionInstanceResponse> toggleActionInstance(@PathVariable UUID id) {
         Optional<ActionInstance> optionalActionInstance = actionInstanceRepository.findById(id);
         if (!optionalActionInstance.isPresent()) {
@@ -141,7 +141,7 @@ public class ActionInstanceController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer une instance d'action")
+    @Operation(summary = "Delete an action instance")
     public ResponseEntity<Void> deleteActionInstance(@PathVariable UUID id) {
         if (!actionInstanceRepository.existsById(id)) {
             return ResponseEntity.notFound().build();

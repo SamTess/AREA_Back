@@ -23,26 +23,26 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/action-definitions")
-@Tag(name = "Action Definitions", description = "API de gestion des définitions d'actions")
+@Tag(name = "Action Definitions", description = "API for managing action definitions")
 public class ActionDefinitionController {
 
     @Autowired
     private ActionDefinitionRepository actionDefinitionRepository;
 
     @GetMapping
-    @Operation(summary = "Récupérer toutes les définitions d'actions",
-               description = "Récupère une liste paginée de toutes les définitions d'actions")
+    @Operation(summary = "Get all action definitions",
+               description = "Retrieves a paginated list of all action definitions")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Liste des définitions d'actions récupérée avec succès")
     })
     public ResponseEntity<Page<ActionDefinitionResponse>> getAllActionDefinitions(
-            @Parameter(description = "Numéro de page (commence à 0)")
+            @Parameter(description = "Page number (starts at 0)")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Taille de la page")
+            @Parameter(description = "Page size")
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Champ de tri")
+            @Parameter(description = "Sort field")
             @RequestParam(defaultValue = "name") String sortBy,
-            @Parameter(description = "Direction du tri (asc ou desc)")
+            @Parameter(description = "Sort direction (asc or desc)")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
         Sort sort = sortDir.equalsIgnoreCase("desc")
@@ -56,7 +56,7 @@ public class ActionDefinitionController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer une définition d'action par ID")
+    @Operation(summary = "Get an action definition by ID")
     public ResponseEntity<ActionDefinitionResponse> getActionDefinitionById(@PathVariable UUID id) {
         Optional<ActionDefinition> actionDefinition = actionDefinitionRepository.findById(id);
         if (actionDefinition.isPresent()) {
@@ -66,7 +66,7 @@ public class ActionDefinitionController {
     }
 
     @GetMapping("/service/{serviceKey}")
-    @Operation(summary = "Récupérer les définitions d'actions par clé de service")
+    @Operation(summary = "Get action definitions by service key")
     public ResponseEntity<List<ActionDefinitionResponse>> getActionDefinitionsByServiceKey(
             @PathVariable String serviceKey) {
         List<ActionDefinition> actionDefinitions = actionDefinitionRepository.findByServiceKey(serviceKey);
@@ -77,7 +77,7 @@ public class ActionDefinitionController {
     }
 
     @GetMapping("/actions")
-    @Operation(summary = "Récupérer les actions capables d'émettre des événements")
+    @Operation(summary = "Get actions capable of emitting events")
     public ResponseEntity<List<ActionDefinitionResponse>> getEventCapableActions() {
         List<ActionDefinition> actionDefinitions = actionDefinitionRepository.findEventCapableActions();
         List<ActionDefinitionResponse> responses = actionDefinitions.stream()
@@ -87,7 +87,7 @@ public class ActionDefinitionController {
     }
 
     @GetMapping("/reactions")
-    @Operation(summary = "Récupérer les actions exécutables (réactions)")
+    @Operation(summary = "Get executable actions (reactions)")
     public ResponseEntity<List<ActionDefinitionResponse>> getExecutableActions() {
         List<ActionDefinition> actionDefinitions = actionDefinitionRepository.findExecutableActions();
         List<ActionDefinitionResponse> responses = actionDefinitions.stream()

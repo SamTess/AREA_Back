@@ -26,26 +26,26 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/services")
-@Tag(name = "Services", description = "API de gestion des services")
+@Tag(name = "Services", description = "API for managing services")
 public class ServiceController {
 
     @Autowired
     private ServiceRepository serviceRepository;
 
     @GetMapping
-    @Operation(summary = "Récupérer tous les services",
-               description = "Récupère une liste paginée de tous les services")
+    @Operation(summary = "Get all services",
+               description = "Retrieves a paginated list of all services")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Liste des services récupérée avec succès")
+        @ApiResponse(responseCode = "200", description = "List of services retrieved successfully")
     })
     public ResponseEntity<Page<ServiceResponse>> getAllServices(
-            @Parameter(description = "Numéro de page (commence à 0)")
+            @Parameter(description = "Page number (starts at 0)")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Taille de la page")
+            @Parameter(description = "Page size")
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Champ de tri")
+            @Parameter(description = "Sort field")
             @RequestParam(defaultValue = "id") String sortBy,
-            @Parameter(description = "Direction du tri (asc ou desc)")
+            @Parameter(description = "Sort direction (asc or desc)")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
         Sort sort = sortDir.equalsIgnoreCase("desc")

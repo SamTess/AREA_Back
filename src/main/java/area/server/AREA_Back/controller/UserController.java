@@ -27,7 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "Users", description = "API de gestion des utilisateurs")
+@Tag(name = "Users", description = "API for managing users")
 public class UserController {
 
     @Autowired
@@ -37,19 +37,19 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
 
     @GetMapping
-    @Operation(summary = "Récupérer tous les utilisateurs",
-               description = "Récupère une liste paginée de tous les utilisateurs")
+    @Operation(summary = "Get all users",
+               description = "Retrieves a paginated list of all users")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès")
+        @ApiResponse(responseCode = "200", description = "List of users retrieved successfully")
     })
     public ResponseEntity<Page<UserResponse>> getAllUsers(
-            @Parameter(description = "Numéro de page (commence à 0)")
+            @Parameter(description = "Page number (starts at 0)")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Taille de la page")
+            @Parameter(description = "Page size")
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Champ de tri")
+            @Parameter(description = "Sort field")
             @RequestParam(defaultValue = "id") String sortBy,
-            @Parameter(description = "Direction du tri (asc ou desc)")
+            @Parameter(description = "Sort direction (asc or desc)")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
         Sort sort = sortDir.equalsIgnoreCase("desc")
@@ -63,14 +63,14 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer un utilisateur par ID",
-               description = "Récupère les détails d'un utilisateur spécifique")
+    @Operation(summary = "Get a user by ID",
+               description = "Retrieves details of a specific user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Utilisateur trouvé"),
-        @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+        @ApiResponse(responseCode = "200", description = "User found"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserResponse> getUserById(
-            @Parameter(description = "ID de l'utilisateur")
+            @Parameter(description = "User ID")
             @PathVariable UUID id) {
         Optional<User> user = userRepository.findById(id);
         if (user.isPresent()) {
@@ -80,10 +80,10 @@ public class UserController {
     }
 
     @GetMapping("/enabled")
-    @Operation(summary = "Récupérer les utilisateurs activés",
-               description = "Récupère la liste de tous les utilisateurs activés")
+    @Operation(summary = "Get enabled users",
+               description = "Retrieves the list of all enabled users")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Liste des utilisateurs activés récupérée avec succès")
+        @ApiResponse(responseCode = "200", description = "List of enabled users retrieved successfully")
     })
     public ResponseEntity<List<UserResponse>> getEnabledUsers() {
         List<User> enabledUsers = userRepository.findAllEnabledUsers();
@@ -94,11 +94,11 @@ public class UserController {
     }
 
     @PostMapping
-    @Operation(summary = "Créer un nouvel utilisateur",
-               description = "Crée un nouvel utilisateur avec les informations fournies")
+    @Operation(summary = "Create a new user",
+               description = "Creates a new user with the provided information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès"),
-        @ApiResponse(responseCode = "409", description = "Utilisateur existe déjà (email)")
+        @ApiResponse(responseCode = "201", description = "User created successfully"),
+        @ApiResponse(responseCode = "409", description = "User already exists (email)")
     })
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -119,14 +119,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Mettre à jour un utilisateur",
-               description = "Met à jour les informations d'un utilisateur existant")
+    @Operation(summary = "Update a user",
+               description = "Updates an existing user's information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour avec succès"),
-        @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+        @ApiResponse(responseCode = "200", description = "User updated successfully"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserResponse> updateUser(
-            @Parameter(description = "ID de l'utilisateur")
+            @Parameter(description = "User ID")
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
 
@@ -158,14 +158,14 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer un utilisateur",
-               description = "Supprime un utilisateur existant")
+    @Operation(summary = "Delete a user",
+               description = "Deletes an existing user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Utilisateur supprimé avec succès"),
-        @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+        @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<Void> deleteUser(
-            @Parameter(description = "ID de l'utilisateur")
+            @Parameter(description = "User ID")
             @PathVariable UUID id) {
         if (!userRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -176,13 +176,13 @@ public class UserController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Rechercher un utilisateur",
-               description = "Recherche un utilisateur par email")
+    @Operation(summary = "Search for a user",
+               description = "Searches for a user by email")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Recherche effectuée avec succès")
+        @ApiResponse(responseCode = "200", description = "Search completed successfully")
     })
     public ResponseEntity<List<UserResponse>> searchUsers(
-            @Parameter(description = "Email à rechercher")
+            @Parameter(description = "Email to search for")
             @RequestParam String email) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()) {

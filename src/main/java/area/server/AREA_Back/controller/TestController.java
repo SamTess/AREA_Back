@@ -12,23 +12,23 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/test")
-@Tag(name = "Test", description = "Contrôleur de test pour vérifier le bon fonctionnement de l'API")
+@Tag(name = "Test", description = "Test controller to verify the API is working")
 public class TestController {
 
     @GetMapping("/health")
-    @Operation(summary = "Test de santé", description = "Endpoint simple pour tester que l'API fonctionne")
-    @ApiResponse(responseCode = "200", description = "API fonctionnelle")
+    @Operation(summary = "Health check", description = "Simple endpoint to verify the API is up and running")
+    @ApiResponse(responseCode = "200", description = "API is functional")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(
             "status", "UP",
-            "message", "L'API AREA fonctionne correctement",
+            "message", "The AREA API is working correctly",
             "timestamp", java.time.Instant.now().toString()
         ));
     }
 
     @GetMapping("/swagger-test")
-    @Operation(summary = "Test Swagger", description = "Endpoint pour vérifier que Swagger UI fonctionne")
-    @ApiResponse(responseCode = "200", description = "Swagger UI opérationnel")
+    @Operation(summary = "Swagger test", description = "Endpoint to verify that Swagger UI is working")
+    @ApiResponse(responseCode = "200", description = "Swagger UI operational")
     public ResponseEntity<Map<String, String>> swaggerTest() {
         return ResponseEntity.ok(Map.of(
             "swagger", "OK",

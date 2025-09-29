@@ -5,7 +5,6 @@ import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
 import area.server.AREA_Back.service.ServiceCacheService;
-import area.server.AREA_Back.service.ServiceCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -83,7 +82,8 @@ public class ServiceController {
 
     @GetMapping("/catalog")
     @Operation(summary = "Get services catalog", 
-               description = "Retrieves all services from cache with fallback to database. Optimized for public catalog display.")
+               description = "Retrieves all services from cache with fallback to database. "
+                           + "Optimized for public catalog display.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Services catalog retrieved successfully"),
         @ApiResponse(responseCode = "500", description = "Internal server error")

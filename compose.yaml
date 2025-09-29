@@ -1,13 +1,20 @@
 services:
   postgres:
     image: 'postgres:15'
+    env_file: .env
     environment:
-      - 'POSTGRES_DB={DATABASE_NAME}'
-      - 'POSTGRES_PASSWORD={DATABASE_PASSWORD}'
-      - 'POSTGRES_USER={DATABASE_USERNAME}'
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_USER=${DATABASE_USERNAME}
     ports:
       - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
   redis:
     image: 'redis:latest'
     ports:
       - '6379:6379'
+
+volumes:
+  postgres_data:

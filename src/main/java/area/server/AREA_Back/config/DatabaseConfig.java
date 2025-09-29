@@ -20,7 +20,7 @@ import javax.sql.DataSource;
  * to avoid conflicts with test configurations.
  */
 @Configuration
-@Profile("!test & !repository-test & !integration-test & !service-test & !default")
+@Profile("!test & !repository-test & !integration-test & !service-test & !unit-test & !redis-test & !default")
 public class DatabaseConfig {
 
     @Value("${spring.datasource.url}")

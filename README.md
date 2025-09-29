@@ -229,6 +229,7 @@ Detailed documentation is available in the `docs/` directory:
 - [Unit Testing Guide](docs/unit-testing-guide.md)
 - [Checkstyle Guide](docs/checkstyle-guide.md)
 - [Data Migration Guide](docs/data-migration-guide.md)
+- [Services Cache Implementation](docs/services-cache-implementation.md)
 
 ## Dependencies
 

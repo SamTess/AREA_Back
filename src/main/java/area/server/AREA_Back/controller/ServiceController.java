@@ -4,6 +4,8 @@ import area.server.AREA_Back.dto.CreateServiceRequest;
 import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.service.ServiceCacheService;
+import area.server.AREA_Back.service.ServiceCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,6 +33,9 @@ public class ServiceController {
 
     @Autowired
     private ServiceRepository serviceRepository;
+
+    @Autowired
+    private ServiceCacheService serviceCacheService;
 
     @GetMapping
     @Operation(summary = "Get all services",
@@ -76,6 +81,45 @@ public class ServiceController {
         return ResponseEntity.ok(serviceResponses);
     }
 
+    @GetMapping("/catalog")
+    @Operation(summary = "Get services catalog", 
+               description = "Retrieves all services from cache with fallback to database. Optimized for public catalog display.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Services catalog retrieved successfully"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<ServiceResponse>> getServicesCatalog() {
+        try {
+            List<ServiceResponse> services = serviceCacheService.getAllServicesCached();
+            return ResponseEntity.ok(services);
+        } catch (Exception e) {
+            // Fallback to direct database access if cache fails
+            List<ServiceResponse> services = serviceCacheService.getAllServicesUncached();
+            return ResponseEntity.ok(services);
+        }
+    }
+
+    @GetMapping("/catalog/enabled")
+    @Operation(summary = "Get enabled services catalog", 
+               description = "Retrieves only enabled services from cache with fallback to database")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Enabled services catalog retrieved successfully"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<ServiceResponse>> getEnabledServicesCatalog() {
+        try {
+            List<ServiceResponse> services = serviceCacheService.getEnabledServicesCached();
+            return ResponseEntity.ok(services);
+        } catch (Exception e) {
+            // Fallback to direct database access if cache fails
+            List<Service> services = serviceRepository.findAllEnabledServices();
+            List<ServiceResponse> serviceResponses = services.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(serviceResponses);
+        }
+    }
+
     @PostMapping
     public ResponseEntity<ServiceResponse> createService(@Valid @RequestBody CreateServiceRequest request) {
         if (serviceRepository.existsByKey(request.getKey())) {
@@ -92,6 +136,10 @@ public class ServiceController {
         service.setIsActive(true);
 
         Service savedService = serviceRepository.save(service);
+        
+        // Invalidate cache after service creation
+        serviceCacheService.invalidateServicesCache();
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedService));
     }
 
@@ -114,6 +162,10 @@ public class ServiceController {
         service.setIconDarkUrl(request.getIconDarkUrl());
 
         Service updatedService = serviceRepository.save(service);
+        
+        // Invalidate cache after service update
+        serviceCacheService.invalidateServicesCache();
+        
         return ResponseEntity.ok(convertToResponse(updatedService));
     }
 
@@ -124,6 +176,10 @@ public class ServiceController {
         }
 
         serviceRepository.deleteById(id);
+        
+        // Invalidate cache after service deletion
+        serviceCacheService.invalidateServicesCache();
+        
         return ResponseEntity.noContent().build();
     }
 

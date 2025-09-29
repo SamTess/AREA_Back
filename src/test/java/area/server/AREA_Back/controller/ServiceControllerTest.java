@@ -3,6 +3,7 @@ package area.server.AREA_Back.controller;
 import area.server.AREA_Back.dto.CreateServiceRequest;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.service.ServiceCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ServiceController.class)
+@ActiveProfiles("unit-test")
 @WithMockUser
 class ServiceControllerTest {
 
@@ -45,6 +48,9 @@ class ServiceControllerTest {
 
     @MockitoBean
     private ServiceRepository serviceRepository;
+
+    @MockitoBean
+    private ServiceCacheService serviceCacheService;
 
     @Autowired
     private ObjectMapper objectMapper;

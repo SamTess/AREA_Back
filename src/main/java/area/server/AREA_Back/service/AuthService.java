@@ -44,12 +44,10 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
         log.info("Attempting to register user with email: {}", request.getEmail());
 
-        // Check if email already exists
         if (userLocalIdentityRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
 
-        // Create user
         User user = new User();
         user.setEmail(request.getEmail());
         user.setAvatarUrl(request.getAvatarUrl());
@@ -60,7 +58,6 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         log.debug("Created user with ID: {}", savedUser.getId());
 
-        // Create local identity
         UserLocalIdentity localIdentity = new UserLocalIdentity();
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
@@ -73,18 +70,14 @@ public class AuthService {
         userLocalIdentityRepository.save(localIdentity);
         log.debug("Created local identity for user: {}", savedUser.getId());
 
-        // Generate tokens and set cookies
         String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getEmail());
         String refreshToken = jwtService.generateRefreshToken(savedUser.getId(), savedUser.getEmail());
 
-        // Store tokens in Redis
         redisTokenService.storeAccessToken(accessToken, savedUser.getId());
         redisTokenService.storeRefreshToken(savedUser.getId(), refreshToken);
 
-        // Set httpOnly cookies
         setTokenCookies(response, accessToken, refreshToken);
 
-        // Update last login
         savedUser.setLastLoginAt(LocalDateTime.now());
         userRepository.save(savedUser);
 
@@ -228,6 +221,10 @@ public class AuthService {
         return userId != null;
     }
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
         if (accessToken == null) {

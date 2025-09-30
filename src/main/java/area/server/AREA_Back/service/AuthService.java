@@ -62,7 +62,7 @@ public class AuthService {
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        localIdentity.setIsEmailVerified(false); // FIXME: Implement email verification
+        localIdentity.setIsEmailVerified(false); // TODO: Implement email verification
         localIdentity.setFailedLoginAttempts(0);
         localIdentity.setCreatedAt(LocalDateTime.now());
         localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -221,10 +221,6 @@ public class AuthService {
         return userId != null;
     }
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
         if (accessToken == null) {

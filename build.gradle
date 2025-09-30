@@ -8,14 +8,6 @@ plugins {
 	id 'jacoco'
 }
 
-flyway {
-    url = dbUrl
-    user = dbUser
-    password = dbPassword
-    schemas = ['area','public']
-    locations = ['classpath:db/migration']
-}
-
 group = 'area.server'
 version = '0.0.1-SNAPSHOT'
 description = 'Backend for Area Application'

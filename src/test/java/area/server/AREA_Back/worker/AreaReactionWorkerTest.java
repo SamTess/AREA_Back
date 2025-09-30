@@ -14,16 +14,28 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.connection.stream.*;
+import org.springframework.data.redis.connection.stream.MapRecord;
+import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StreamOperations;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AreaReactionWorkerTest {
@@ -71,7 +83,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessExecution_Success() {
+    void testProcessExecutionSuccess() {
         // Given
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
 
@@ -85,7 +97,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessExecution_WithException() {
+    void testProcessExecutionWithException() {
         // Given
         RuntimeException exception = new RuntimeException("Test exception");
         when(reactionExecutor.executeReaction(testExecution)).thenThrow(exception);
@@ -107,7 +119,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessExecution_WithUpdateException() {
+    void testProcessExecutionWithUpdateException() {
         // Given
         RuntimeException executionException = new RuntimeException("Execution error");
         RuntimeException updateException = new RuntimeException("Update error");
@@ -123,7 +135,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testCleanupTimedOutExecutions_WithTimedOutExecutions() {
+    void testCleanupTimedOutExecutionsWithTimedOutExecutions() {
         // Given
         List<Execution> timedOutExecutions = Arrays.asList(testExecution);
 
@@ -146,7 +158,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testCleanupTimedOutExecutions_NoTimedOutExecutions() {
+    void testCleanupTimedOutExecutionsNoTimedOutExecutions() {
         // Given
         when(executionService.getTimedOutExecutions(any(LocalDateTime.class))).thenReturn(Collections.emptyList());
 
@@ -159,7 +171,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testCleanupTimedOutExecutions_WithException() {
+    void testCleanupTimedOutExecutionsWithException() {
         // Given
         when(executionService.getTimedOutExecutions(any(LocalDateTime.class)))
             .thenThrow(new RuntimeException("Database error"));
@@ -171,7 +183,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessEventRecord_Success() {
+    void testProcessEventRecordSuccess() {
         // Given
         String executionId = testExecution.getId().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
@@ -199,7 +211,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessEventRecord_ExecutionNotFound() {
+    void testProcessEventRecordExecutionNotFound() {
         // Given
         String executionId = UUID.randomUUID().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
@@ -225,7 +237,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessEventRecord_NoExecutionId() {
+    void testProcessEventRecordNoExecutionId() {
         // Given
         Map<Object, Object> recordValues = Map.of("otherField", "value");
         MapRecord<String, Object, Object> record = MapRecord.create(
@@ -248,7 +260,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessRetryExecutions_WithRetryExecutions() {
+    void testProcessRetryExecutionsWithRetryExecutions() {
         // Given
         List<Execution> retryExecutions = Arrays.asList(testExecution);
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class))).thenReturn(retryExecutions);
@@ -265,7 +277,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessRetryExecutions_NoRetryExecutions() {
+    void testProcessRetryExecutionsNoRetryExecutions() {
         // Given
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class)))
             .thenReturn(Collections.emptyList());
@@ -280,7 +292,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessRetryExecutions_WithException() {
+    void testProcessRetryExecutionsWithException() {
         // Given
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class)))
             .thenThrow(new RuntimeException("Database error"));
@@ -292,7 +304,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessQueuedExecutions_WithQueuedExecutions() {
+    void testProcessQueuedExecutionsWithQueuedExecutions() {
         // Given
         List<Execution> queuedExecutions = Arrays.asList(testExecution);
         when(executionService.getQueuedExecutions()).thenReturn(queuedExecutions);
@@ -309,7 +321,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessQueuedExecutions_NoQueuedExecutions() {
+    void testProcessQueuedExecutionsNoQueuedExecutions() {
         // Given
         when(executionService.getQueuedExecutions()).thenReturn(Collections.emptyList());
 
@@ -323,7 +335,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessQueuedExecutions_WithException() {
+    void testProcessQueuedExecutionsWithException() {
         // Given
         when(executionService.getQueuedExecutions()).thenThrow(new RuntimeException("Database error"));
 
@@ -392,7 +404,7 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testLogStatistics_WithException() {
+    void testLogStatisticsWithException() {
         // Given
         when(executionService.getExecutionStatistics()).thenThrow(new RuntimeException("Stats error"));
 

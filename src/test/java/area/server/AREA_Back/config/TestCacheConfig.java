@@ -8,10 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
-/**
- * Configuration de cache pour les tests unitaires.
- * Utilise un cache en mémoire simple au lieu de Redis.
- */
 @Configuration
 @EnableCaching
 @Profile("unit-test")
@@ -21,7 +17,7 @@ public class TestCacheConfig {
     @Primary
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager(
-            "services", 
+            "services",
             "services-catalog",
             "actionDefinitions",
             "tokens",

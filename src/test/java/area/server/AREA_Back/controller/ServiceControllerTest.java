@@ -98,7 +98,7 @@ class ServiceControllerTest {
         service2.setIsActive(false);
 
         Page<Service> servicePage = new PageImpl<>(Arrays.asList(service1, service2));
-        
+
         when(serviceRepository.findAll(any(PageRequest.class))).thenReturn(servicePage);
 
         mockMvc.perform(get("/api/services")
@@ -218,7 +218,7 @@ class ServiceControllerTest {
     @Test
     void testUpdateService() throws Exception {
         when(serviceRepository.findById(testService.getId())).thenReturn(Optional.of(testService));
-        
+
         Service updatedService = new Service();
         updatedService.setId(testService.getId());
         updatedService.setKey("updated-service");
@@ -226,7 +226,7 @@ class ServiceControllerTest {
         updatedService.setAuth(Service.AuthType.NONE);
         updatedService.setDocsUrl("https://updateddocs.example.com");
         updatedService.setIsActive(testService.getIsActive());
-        
+
         when(serviceRepository.save(any(Service.class))).thenReturn(updatedService);
 
         CreateServiceRequest updateRequest = new CreateServiceRequest();

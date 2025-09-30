@@ -14,10 +14,6 @@ import org.springframework.test.context.TestPropertySource;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Tests de configuration pour le cache Redis
- * Temporairement désactivés car nécessitent une configuration Redis complexe
- */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     classes = {RedisConfig.class}

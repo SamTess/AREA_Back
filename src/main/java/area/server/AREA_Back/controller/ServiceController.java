@@ -135,7 +135,6 @@ public class ServiceController {
 
         Service savedService = serviceRepository.save(service);
 
-        // Invalidate cache after service creation
         serviceCacheService.invalidateServicesCache();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedService));

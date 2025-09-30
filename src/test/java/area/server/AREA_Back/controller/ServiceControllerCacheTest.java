@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Tests d'intégration pour les nouveaux endpoints de cache du ServiceController
  */
-@WebMvcTest(ServiceController.class) 
+@WebMvcTest(ServiceController.class)
 @WithMockUser
 class ServiceControllerCacheTest {
 

@@ -18,7 +18,7 @@ public class RedisStreamProperties {
 
     private String streamName = "areas:events";
     private String consumerGroup = "area-processors";
-    private String consumerName; // Will be set via @PostConstruct if null
+    private String consumerName;
     private int batchSize = DEFAULT_BATCH_SIZE;
     private int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
     private int pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
@@ -36,7 +36,6 @@ public class RedisStreamProperties {
             String uuid = UUID.randomUUID().toString().substring(0, UUID_SUBSTRING_LENGTH);
             return hostname + "-" + uuid;
         } catch (UnknownHostException e) {
-            // Fallback if hostname can't be determined
             String uuid = UUID.randomUUID().toString().substring(0, UUID_SUBSTRING_LENGTH);
             return "area-processor-" + uuid;
         }

@@ -1,7 +1,6 @@
 package area.server.AREA_Back.config;
 
 import area.server.AREA_Back.TestcontainersConfiguration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,17 +13,13 @@ import org.springframework.test.context.TestPropertySource;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.NONE,
-    classes = {RedisConfig.class}
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("redis-test")
 @Import(TestcontainersConfiguration.class)
 @TestPropertySource(properties = {
     "spring.cache.type=redis",
     "spring.main.allow-bean-definition-overriding=true"
 })
-@Disabled("Redis tests nécessitent une configuration environnement complète")
 class RedisConfigTest {
 
     @Autowired(required = false)

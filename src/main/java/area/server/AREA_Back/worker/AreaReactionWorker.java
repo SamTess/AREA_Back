@@ -33,12 +33,12 @@ public class AreaReactionWorker {
     private final RedisEventService redisEventService;
     private final ExecutionService executionService;
     private final ReactionExecutor reactionExecutor;
-    private final String consumerName = "worker-" + UUID.randomUUID().toString().substring(0, 8);
+    private final RedisConfig redisConfig;
     private volatile boolean running = true;
 
     @PostConstruct
     public void initialize() {
-        log.info("Initializing AREA Reaction Worker: {}", consumerName);
+        log.info("Initializing AREA Reaction Worker: {}", redisConfig.getAreasConsumerName());
         redisEventService.initializeStream();
         log.info("AREA Reaction Worker initialized successfully");
     }
@@ -52,8 +52,8 @@ public class AreaReactionWorker {
         try {
             @SuppressWarnings("unchecked")
             var records = redisTemplate.opsForStream().read(
-                Consumer.from(RedisConfig.AREAS_CONSUMER_GROUP, consumerName),
-                (StreamOffset<String>) StreamOffset.create(RedisConfig.AREAS_EVENTS_STREAM, ReadOffset.lastConsumed())
+                Consumer.from(redisConfig.getAreasConsumerGroup(), redisConfig.getAreasConsumerName()),
+                (StreamOffset<String>) StreamOffset.create(redisConfig.getAreasEventsStream(), ReadOffset.lastConsumed())
             );
             if (records != null && !records.isEmpty()) {
                 log.debug("Processing {} events from Redis stream", records.size());
@@ -171,8 +171,8 @@ public class AreaReactionWorker {
                 }
             }
             redisTemplate.opsForStream().acknowledge(
-                RedisConfig.AREAS_EVENTS_STREAM,
-                RedisConfig.AREAS_CONSUMER_GROUP,
+                redisConfig.getAreasEventsStream(),
+                redisConfig.getAreasConsumerGroup(),
                 record.getId()
             );
 
@@ -215,13 +215,13 @@ public class AreaReactionWorker {
     }
 
     public void shutdown() {
-        log.info("Shutting down AREA Reaction Worker: {}", consumerName);
+        log.info("Shutting down AREA Reaction Worker: {}", redisConfig.getAreasConsumerName());
         running = false;
     }
 
     public Map<String, Object> getWorkerStatus() {
         return Map.of(
-            "consumerName", consumerName,
+            "consumerName", redisConfig.getAreasConsumerName(),
             "running", running,
             "streamInfo", redisEventService.getStreamInfo()
         );

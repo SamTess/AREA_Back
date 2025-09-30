@@ -46,28 +46,28 @@ class WorkerIntegrationTest {
 
     @Autowired
     private ExecutionService executionService;
-    
+
     @Autowired
     private RedisEventService redisEventService;
-    
+
     @Autowired
     private AreaReactionWorker areaReactionWorker;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private ServiceRepository serviceRepository;
-    
+
     @Autowired
     private ActionDefinitionRepository actionDefinitionRepository;
-    
+
     @Autowired
     private AreaRepository areaRepository;
-    
+
     @Autowired
     private ActionInstanceRepository actionInstanceRepository;
-    
+
     @Autowired
     private ExecutionRepository executionRepository;
 
@@ -147,7 +147,7 @@ class WorkerIntegrationTest {
             testArea.getId(),
             Map.of("eventData", "test")
         );
-        
+
         String eventId = redisEventService.publishAreaEvent(eventMessage);
         assertNotNull(eventId);
 
@@ -157,7 +157,7 @@ class WorkerIntegrationTest {
         // Then: Check that execution was processed
         var processedExecution = executionRepository.findById(execution.getId());
         assertTrue(processedExecution.isPresent());
-        
+
         // The execution should have been processed by the worker
         // Note: In a real scenario, the worker would have updated the status
         // For this test, we verify the infrastructure is working
@@ -166,19 +166,33 @@ class WorkerIntegrationTest {
 
     @Test
     void testExecutionServiceStatistics() {
-        // Given: Create multiple executions with different statuses
+        // Given: Create some test executions
         Execution execution1 = executionService.createExecution(
-            testActionInstance, null, Map.of("data", "test1"), UUID.randomUUID());
+            testActionInstance,
+            null,
+            Map.of("inputData", "test1"),
+            UUID.randomUUID()
+        );
         
         Execution execution2 = executionService.createExecution(
-            testActionInstance, null, Map.of("data", "test2"), UUID.randomUUID());
+            testActionInstance,
+            null,
+            Map.of("inputData", "test2"),
+            UUID.randomUUID()
+        );
+
+        // Verify executions were created
+        assertNotNull(execution1);
+        assertNotNull(execution2);
+        assertEquals(ExecutionStatus.QUEUED, execution1.getStatus());
+        assertEquals(ExecutionStatus.QUEUED, execution2.getStatus());
 
         // When: Get statistics
         Map<String, Long> stats = executionService.getExecutionStatistics();
 
         // Then: Verify statistics
         assertNotNull(stats);
-        assertTrue(stats.get("queued") >= 2);
+        assertTrue(stats.get("queued") >= 2, "Expected at least 2 queued executions, but got: " + stats.get("queued"));
         assertTrue(stats.containsKey("running"));
         assertTrue(stats.containsKey("ok"));
         assertTrue(stats.containsKey("failed"));
@@ -210,7 +224,7 @@ class WorkerIntegrationTest {
         assertTrue(status.containsKey("consumerName"));
         assertTrue(status.containsKey("running"));
         assertTrue(status.containsKey("streamInfo"));
-        
+
         // Worker should be running
         assertTrue((Boolean) status.get("running"));
     }
@@ -243,7 +257,7 @@ class WorkerIntegrationTest {
         // Given: Create multiple executions
         Execution execution1 = executionService.createExecution(
             testActionInstance, null, Map.of("data", "test1"), UUID.randomUUID());
-        
+
         Execution execution2 = executionService.createExecution(
             testActionInstance, null, Map.of("data", "test2"), UUID.randomUUID());
 

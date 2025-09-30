@@ -19,16 +19,17 @@ import java.util.UUID;
 public class RedisEventService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisConfig redisConfig;
 
     public String publishAreaEvent(AreaEventMessage message) {
         try {
             ObjectRecord<String, AreaEventMessage> record = StreamRecords
                     .newRecord()
-                    .in(RedisConfig.AREAS_EVENTS_STREAM)
+                    .in(redisConfig.getAreasEventsStream())
                     .ofObject(message);
             var recordId = redisTemplate.opsForStream().add(record);
             log.info("Published event to stream {}: executionId={}, actionInstanceId={}, eventType={}",
-                    RedisConfig.AREAS_EVENTS_STREAM,
+                    redisConfig.getAreasEventsStream(),
                     message.getExecutionId(),
                     message.getActionInstanceId(),
                     message.getEventType());
@@ -57,26 +58,26 @@ public class RedisEventService {
     public void initializeStream() {
         try {
             try {
-                redisTemplate.opsForStream().info(RedisConfig.AREAS_EVENTS_STREAM);
+                redisTemplate.opsForStream().info(redisConfig.getAreasEventsStream());
             } catch (Exception e) {
-                log.info("Creating Redis stream: {}", RedisConfig.AREAS_EVENTS_STREAM);
+                log.info("Creating Redis stream: {}", redisConfig.getAreasEventsStream());
                 var dummyRecord = StreamRecords.string(Map.of("init", "true"))
-                        .withStreamKey(RedisConfig.AREAS_EVENTS_STREAM);
+                        .withStreamKey(redisConfig.getAreasEventsStream());
                 var recordId = redisTemplate.opsForStream().add(dummyRecord);
-                redisTemplate.opsForStream().delete(RedisConfig.AREAS_EVENTS_STREAM, recordId);
+                redisTemplate.opsForStream().delete(redisConfig.getAreasEventsStream(), recordId);
             }
             try {
                 redisTemplate.opsForStream().createGroup(
-                        RedisConfig.AREAS_EVENTS_STREAM,
+                        redisConfig.getAreasEventsStream(),
                         ReadOffset.from("0"),
-                        RedisConfig.AREAS_CONSUMER_GROUP);
+                        redisConfig.getAreasConsumerGroup());
                 log.info("Created consumer group: {} for stream: {}",
-                        RedisConfig.AREAS_CONSUMER_GROUP,
-                        RedisConfig.AREAS_EVENTS_STREAM);
+                        redisConfig.getAreasConsumerGroup(),
+                        redisConfig.getAreasEventsStream());
             } catch (Exception e) {
                 log.debug("Consumer group {} already exists for stream {}",
-                         RedisConfig.AREAS_CONSUMER_GROUP,
-                         RedisConfig.AREAS_EVENTS_STREAM);
+                         redisConfig.getAreasConsumerGroup(),
+                         redisConfig.getAreasEventsStream());
             }
 
         } catch (Exception e) {
@@ -86,18 +87,18 @@ public class RedisEventService {
 
     public Map<String, Object> getStreamInfo() {
         try {
-            var info = redisTemplate.opsForStream().info(RedisConfig.AREAS_EVENTS_STREAM);
+            var info = redisTemplate.opsForStream().info(redisConfig.getAreasEventsStream());
             String streamInfoValue = info.toString();
             return Map.of(
-                "streamKey", RedisConfig.AREAS_EVENTS_STREAM,
-                "consumerGroup", RedisConfig.AREAS_CONSUMER_GROUP,
+                "streamKey", redisConfig.getAreasEventsStream(),
+                "consumerGroup", redisConfig.getAreasConsumerGroup(),
                 "streamInfo", streamInfoValue
             );
         } catch (Exception e) {
             log.warn("Failed to get stream info: {}", e.getMessage());
             return Map.of(
-                "streamKey", RedisConfig.AREAS_EVENTS_STREAM,
-                "consumerGroup", RedisConfig.AREAS_CONSUMER_GROUP,
+                "streamKey", redisConfig.getAreasEventsStream(),
+                "consumerGroup", redisConfig.getAreasConsumerGroup(),
                 "error", e.getMessage()
             );
         }

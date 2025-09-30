@@ -36,8 +36,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.test.context.ActiveProfiles;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ActiveProfiles("unit-test")
 class AreaReactionWorkerTest {
 
     @Mock
@@ -53,6 +58,9 @@ class AreaReactionWorkerTest {
     private ReactionExecutor reactionExecutor;
 
     @Mock
+    private RedisConfig redisConfig;
+
+    @Mock
     private StreamOperations<String, Object, Object> streamOperations;
 
     @InjectMocks
@@ -64,6 +72,11 @@ class AreaReactionWorkerTest {
 
     @BeforeEach
     void setUp() {
+        // Setup RedisConfig mock
+        when(redisConfig.getAreasEventsStream()).thenReturn("areas:events");
+        when(redisConfig.getAreasConsumerGroup()).thenReturn("area-processors");
+        when(redisConfig.getAreasConsumerName()).thenReturn("test-consumer");
+
         // Setup test data
         actionInstance = new ActionInstance();
         actionInstance.setId(UUID.randomUUID());
@@ -188,7 +201,7 @@ class AreaReactionWorkerTest {
         String executionId = testExecution.getId().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
         MapRecord<String, Object, Object> record = MapRecord.create(
-            RedisConfig.AREAS_EVENTS_STREAM,
+            redisConfig.getAreasEventsStream(),
             recordValues
         ).withId(RecordId.of("1234567890123-0"));
 
@@ -204,8 +217,8 @@ class AreaReactionWorkerTest {
         verify(executionService).markExecutionAsStarted(testExecution.getId());
         verify(reactionExecutor).executeReaction(testExecution);
         verify(streamOperations).acknowledge(
-            RedisConfig.AREAS_EVENTS_STREAM,
-            RedisConfig.AREAS_CONSUMER_GROUP,
+            redisConfig.getAreasEventsStream(),
+            redisConfig.getAreasConsumerGroup(),
             record.getId()
         );
     }
@@ -216,7 +229,7 @@ class AreaReactionWorkerTest {
         String executionId = UUID.randomUUID().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
         MapRecord<String, Object, Object> record = MapRecord.create(
-            RedisConfig.AREAS_EVENTS_STREAM,
+            redisConfig.getAreasEventsStream(),
             recordValues
         ).withId(RecordId.of("1234567890123-0"));
 
@@ -230,8 +243,8 @@ class AreaReactionWorkerTest {
         verify(executionService).getQueuedExecutions();
         verify(executionService, never()).markExecutionAsStarted(any(UUID.class));
         verify(streamOperations).acknowledge(
-            RedisConfig.AREAS_EVENTS_STREAM,
-            RedisConfig.AREAS_CONSUMER_GROUP,
+            redisConfig.getAreasEventsStream(),
+            redisConfig.getAreasConsumerGroup(),
             record.getId()
         );
     }
@@ -241,7 +254,7 @@ class AreaReactionWorkerTest {
         // Given
         Map<Object, Object> recordValues = Map.of("otherField", "value");
         MapRecord<String, Object, Object> record = MapRecord.create(
-            RedisConfig.AREAS_EVENTS_STREAM,
+            redisConfig.getAreasEventsStream(),
             recordValues
         ).withId(RecordId.of("1234567890123-0"));
 
@@ -253,8 +266,8 @@ class AreaReactionWorkerTest {
         // Then
         verify(executionService, never()).getQueuedExecutions();
         verify(streamOperations).acknowledge(
-            RedisConfig.AREAS_EVENTS_STREAM,
-            RedisConfig.AREAS_CONSUMER_GROUP,
+            redisConfig.getAreasEventsStream(),
+            redisConfig.getAreasConsumerGroup(),
             record.getId()
         );
     }
@@ -372,7 +385,7 @@ class AreaReactionWorkerTest {
         assertTrue((Boolean) status.get("running")); // Should be true by default
         assertEquals(streamInfo, status.get("streamInfo"));
         assertNotNull(status.get("consumerName"));
-        assertTrue(status.get("consumerName").toString().startsWith("worker-"));
+        assertEquals("test-consumer", status.get("consumerName")); // Updated to match mock
     }
 
     @Test

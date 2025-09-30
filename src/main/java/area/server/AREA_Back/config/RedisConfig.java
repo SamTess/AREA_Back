@@ -1,5 +1,6 @@
 package area.server.AREA_Back.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -24,19 +25,27 @@ import java.util.Map;
 @EnableRedisRepositories
 @Profile("!unit-test")
 @Slf4j
+@RequiredArgsConstructor
 public class RedisConfig {
 
-    public static final String AREAS_EVENTS_STREAM = "areas:events";
-    public static final String AREAS_CONSUMER_GROUP = "area-processors";
-    public static final String AREAS_CONSUMER_NAME = "area-processor-1";
+    private final RedisStreamProperties streamProperties;
 
     private static final int DEFAULT_TTL_MINUTES = 30;
     private static final int TOKEN_TTL_MINUTES = 15;
     private static final int SESSION_TTL_MINUTES = 20;
     private static final int SERVICES_CATALOG_TTL_HOURS = 1;
-    private static final int STREAM_BATCH_SIZE = 10;
-    private static final int STREAM_THREAD_POOL_SIZE = 4;
-    private static final int STREAM_POLL_TIMEOUT_MS = 100;
+
+    public String getAreasEventsStream() {
+        return streamProperties.getStreamName();
+    }
+
+    public String getAreasConsumerGroup() {
+        return streamProperties.getConsumerGroup();
+    }
+
+    public String getAreasConsumerName() {
+        return streamProperties.getConsumerName();
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
@@ -89,11 +98,13 @@ public class RedisConfig {
     @Bean
     public StreamMessageListenerContainer<String, ?> streamMessageListenerContainer(
             RedisConnectionFactory connectionFactory) {
+        log.info("Configuring Redis Stream Listener with consumer name: {}", streamProperties.getConsumerName());
+
         StreamMessageListenerContainerOptions<String, ?> options = StreamMessageListenerContainerOptions
                 .builder()
-                .batchSize(STREAM_BATCH_SIZE)
-                .executor(java.util.concurrent.Executors.newFixedThreadPool(STREAM_THREAD_POOL_SIZE))
-                .pollTimeout(Duration.ofMillis(STREAM_POLL_TIMEOUT_MS))
+                .batchSize(streamProperties.getBatchSize())
+                .executor(java.util.concurrent.Executors.newFixedThreadPool(streamProperties.getThreadPoolSize()))
+                .pollTimeout(Duration.ofMillis(streamProperties.getPollTimeoutMs()))
                 .build();
 
         return StreamMessageListenerContainer.create(connectionFactory, options);

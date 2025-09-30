@@ -53,7 +53,8 @@ public class AreaReactionWorker {
             @SuppressWarnings("unchecked")
             var records = redisTemplate.opsForStream().read(
                 Consumer.from(redisConfig.getAreasConsumerGroup(), redisConfig.getAreasConsumerName()),
-                (StreamOffset<String>) StreamOffset.create(redisConfig.getAreasEventsStream(), ReadOffset.lastConsumed())
+                (StreamOffset<String>) StreamOffset.create(
+                    redisConfig.getAreasEventsStream(), ReadOffset.lastConsumed())
             );
             if (records != null && !records.isEmpty()) {
                 log.debug("Processing {} events from Redis stream", records.size());

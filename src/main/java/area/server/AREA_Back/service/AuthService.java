@@ -40,9 +40,6 @@ public class AuthService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int ACCOUNT_LOCK_DURATION_MINUTES = 30;
 
-    /**
-     * Register a new user
-     */
     @Transactional
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
         log.info("Attempting to register user with email: {}", request.getEmail());
@@ -99,14 +96,10 @@ public class AuthService {
         );
     }
 
-    /**
-     * Login user with email and password
-     */
     @Transactional
     public AuthResponse login(LoginRequest request, HttpServletResponse response) {
         log.info("Attempting to login user with email: {}", request.getEmail());
 
-        // Find user by email
         Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
         if (localIdentityOpt.isEmpty()) {
             log.warn("Login attempt with non-existent email: {}", request.getEmail());
@@ -116,26 +109,21 @@ public class AuthService {
         UserLocalIdentity localIdentity = localIdentityOpt.get();
         User user = localIdentity.getUser();
 
-        // Check if account is locked
         if (localIdentity.isAccountLocked()) {
             log.warn("Login attempt on locked account: {}", request.getEmail());
             throw new RuntimeException("Account is temporarily locked due to failed login attempts");
         }
 
-        // Check if user is active
         if (!user.getIsActive()) {
             log.warn("Login attempt on inactive account: {}", request.getEmail());
             throw new RuntimeException("Account is inactive");
         }
 
-        // Verify password
         if (!passwordEncoder.matches(request.getPassword(), localIdentity.getPasswordHash())) {
             log.warn("Failed login attempt for email: {}", request.getEmail());
 
-            // Increment failed attempts
             userLocalIdentityRepository.incrementFailedLoginAttempts(request.getEmail());
 
-            // Lock account if too many failures
             if (localIdentity.getFailedLoginAttempts() + 1 >= MAX_FAILED_ATTEMPTS) {
                 LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(ACCOUNT_LOCK_DURATION_MINUTES);
                 userLocalIdentityRepository.lockAccount(request.getEmail(), lockUntil);
@@ -145,21 +133,16 @@ public class AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // Reset failed login attempts on successful login
         userLocalIdentityRepository.resetFailedLoginAttempts(request.getEmail());
 
-        // Generate tokens
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
 
-        // Store tokens in Redis
         redisTokenService.storeAccessToken(accessToken, user.getId());
         redisTokenService.storeRefreshToken(user.getId(), refreshToken);
 
-        // Set httpOnly cookies
         setTokenCookies(response, accessToken, refreshToken);
 
-        // Update last login
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
@@ -171,9 +154,6 @@ public class AuthService {
         );
     }
 
-    /**
-     * Get current authenticated user
-     */
     public UserResponse getCurrentUser(HttpServletRequest request) {
         UUID userId = getUserIdFromRequest(request);
         if (userId == null) {
@@ -186,26 +166,18 @@ public class AuthService {
         return mapToUserResponse(user);
     }
 
-    /**
-     * Logout user - clear cookies and delete tokens from Redis
-     */
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         UUID userId = getUserIdFromRequest(request);
         String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
 
         if (userId != null && accessToken != null) {
-            // Delete tokens from Redis
             redisTokenService.deleteAllTokensForUser(userId, accessToken);
             log.info("Logged out user: {}", userId);
         }
 
-        // Clear cookies
         clearTokenCookies(response);
     }
 
-    /**
-     * Refresh access token using refresh token
-     */
     @Transactional
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = getTokenFromCookie(request, REFRESH_TOKEN_COOKIE);
@@ -213,7 +185,6 @@ public class AuthService {
             throw new RuntimeException("Refresh token not found");
         }
 
-        // Validate refresh token with JWT service
         UUID userId;
         try {
             userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
@@ -225,12 +196,10 @@ public class AuthService {
             throw new RuntimeException("Invalid refresh token");
         }
 
-        // Validate refresh token in Redis
         if (!redisTokenService.isRefreshTokenValid(userId, refreshToken)) {
             throw new RuntimeException("Refresh token not found or expired");
         }
 
-        // Get user
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -238,15 +207,12 @@ public class AuthService {
             throw new RuntimeException("User account is inactive");
         }
 
-        // Generate new tokens
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
 
-        // Store new tokens in Redis and remove old ones
         redisTokenService.storeAccessToken(newAccessToken, user.getId());
         redisTokenService.rotateRefreshToken(user.getId(), newRefreshToken);
 
-        // Set new cookies
         setTokenCookies(response, newAccessToken, newRefreshToken);
 
         log.info("Refreshed tokens for user: {}", user.getEmail());
@@ -257,15 +223,10 @@ public class AuthService {
         );
     }
 
-    /**
-     * Validate if user is authenticated based on request cookies
-     */
     public boolean isAuthenticated(HttpServletRequest request) {
         UUID userId = getUserIdFromRequest(request);
         return userId != null;
     }
-
-    // Private helper methods
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
@@ -273,12 +234,10 @@ public class AuthService {
             return null;
         }
 
-        // Validate token in Redis first
         if (!redisTokenService.isAccessTokenValid(accessToken)) {
             return null;
         }
 
-        // Then validate JWT structure and extract user ID
         try {
             UUID userId = jwtService.extractUserIdFromAccessToken(accessToken);
             if (jwtService.isAccessTokenValid(accessToken, userId)) {
@@ -304,25 +263,22 @@ public class AuthService {
     }
 
     private void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        // Access token cookie
         Cookie accessCookie = new Cookie(ACCESS_TOKEN_COOKIE, accessToken);
         accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false); // Set to true in production with HTTPS
+        accessCookie.setSecure(false);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(ACCESS_TOKEN_COOKIE_MAX_AGE);
         response.addCookie(accessCookie);
 
-        // Refresh token cookie
         Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false); // Set to true in production with HTTPS
+        refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(REFRESH_TOKEN_COOKIE_MAX_AGE);
         response.addCookie(refreshCookie);
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
-        // Clear access token cookie
         Cookie accessCookie = new Cookie(ACCESS_TOKEN_COOKIE, "");
         accessCookie.setHttpOnly(true);
         accessCookie.setSecure(false);
@@ -330,7 +286,6 @@ public class AuthService {
         accessCookie.setMaxAge(0);
         response.addCookie(accessCookie);
 
-        // Clear refresh token cookie
         Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE, "");
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);

@@ -35,9 +35,6 @@ public class JwtService {
     @Value("${REFRESH_TOKEN_EXPIRES_IN:7d}")
     private String refreshTokenExpiresIn;
 
-    /**
-     * Generate access token for user
-     */
     public String generateAccessToken(UUID userId, String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
@@ -45,9 +42,6 @@ public class JwtService {
         return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
     }
 
-    /**
-     * Generate refresh token for user
-     */
     public String generateRefreshToken(UUID userId, String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
@@ -55,43 +49,28 @@ public class JwtService {
         return generateToken(claims, userId.toString(), getRefreshTokenExpiration(), getRefreshTokenSigningKey());
     }
 
-    /**
-     * Extract user ID from access token
-     */
     public UUID extractUserIdFromAccessToken(String token) {
         Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
         String userId = claims.getSubject();
         return UUID.fromString(userId);
     }
 
-    /**
-     * Extract user ID from refresh token
-     */
     public UUID extractUserIdFromRefreshToken(String token) {
         Claims claims = extractAllClaims(token, getRefreshTokenSigningKey());
         String userId = claims.getSubject();
         return UUID.fromString(userId);
     }
 
-    /**
-     * Extract email from access token
-     */
     public String extractEmailFromAccessToken(String token) {
         Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
         return claims.get("email", String.class);
     }
 
-    /**
-     * Extract email from refresh token
-     */
     public String extractEmailFromRefreshToken(String token) {
         Claims claims = extractAllClaims(token, getRefreshTokenSigningKey());
         return claims.get("email", String.class);
     }
 
-    /**
-     * Validate access token
-     */
     public boolean isAccessTokenValid(String token, UUID userId) {
         try {
             final UUID tokenUserId = extractUserIdFromAccessToken(token);
@@ -102,9 +81,6 @@ public class JwtService {
         }
     }
 
-    /**
-     * Validate refresh token
-     */
     public boolean isRefreshTokenValid(String token, UUID userId) {
         try {
             final UUID tokenUserId = extractUserIdFromRefreshToken(token);
@@ -115,38 +91,22 @@ public class JwtService {
         }
     }
 
-    /**
-     * Check if access token is expired
-     */
     public boolean isAccessTokenExpired(String token) {
         return isTokenExpired(token, getAccessTokenSigningKey());
     }
 
-    /**
-     * Check if refresh token is expired
-     */
     public boolean isRefreshTokenExpired(String token) {
         return isTokenExpired(token, getRefreshTokenSigningKey());
     }
 
-    /**
-     * Get access token expiration time in milliseconds
-     */
     public long getAccessTokenExpirationMs() {
         return parseDuration(accessTokenExpiresIn).toMillis();
     }
 
-    /**
-     * Get refresh token expiration time in milliseconds
-     */
     public long getRefreshTokenExpirationMs() {
         return parseDuration(refreshTokenExpiresIn).toMillis();
     }
 
-    /**
-     * Generate a secure base64-encoded secret key suitable for JWT HMAC-SHA algorithms
-     * This method generates a 256-bit (32 bytes) key as required by the JWT specification
-     */
     public static String generateSecureKey() {
         SecretKey key = Jwts.SIG.HS256.key().build();
         return java.util.Base64.getEncoder().encodeToString(key.getEncoded());
@@ -178,7 +138,7 @@ public class JwtService {
             Claims claims = extractAllClaims(token, signingKey);
             return claims.getExpiration().before(new Date());
         } catch (Exception e) {
-            return true; // Consider expired if we can't parse the token
+            return true;
         }
     }
 
@@ -190,7 +150,6 @@ public class JwtService {
 
         try {
             byte[] keyBytes = Decoders.BASE64.decode(accessTokenSecret);
-            // Check if the key is long enough for HS256
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
                 log.warn("Access token secret is too short ({} bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
@@ -211,7 +170,6 @@ public class JwtService {
 
         try {
             byte[] keyBytes = Decoders.BASE64.decode(refreshTokenSecret);
-            // Check if the key is long enough for HS256
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
                 log.warn("Refresh token secret is too short ({} bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
@@ -234,9 +192,6 @@ public class JwtService {
         return Date.from(Instant.now().plus(duration));
     }
 
-    /**
-     * Parse duration string (e.g., "15m", "7d", "1h")
-     */
     private Duration parseDuration(String durationStr) {
         if (durationStr == null || durationStr.isEmpty()) {
             throw new IllegalArgumentException("Duration string cannot be null or empty");

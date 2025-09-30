@@ -8,7 +8,7 @@ DROP VIEW IF EXISTS about_actions;
 DROP VIEW IF EXISTS about_reactions;
 
 -- Now we can alter the column type
-ALTER TABLE a_action_definitions 
+ALTER TABLE a_action_definitions
     ALTER COLUMN description SET DATA TYPE varchar(255);
 
 -- Recreate the views with the same definitions

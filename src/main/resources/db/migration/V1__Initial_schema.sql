@@ -1,18 +1,18 @@
 -- ============================================
--- AREA - Schéma unifié (Actions + Areas)
+-- AREA - Unified schema (Actions + Areas)
 -- PostgreSQL 13+
--- =======================================-- (Optionnel) Partage/collab=
--- Extensions utiles
+-- =======================================-- (Optional) Sharing/collab=
+-- Useful extensions
 -- =========================
 CREATE EXTENSION IF NOT EXISTS pgcrypto;      -- gen_random_uuid(), digest()
-CREATE EXTENSION IF NOT EXISTS citext;        -- emails insensibles à la casse (optionnel)
+CREATE EXTENSION IF NOT EXISTS citext;        -- case-insensitive emails (optional)
 
--- Schéma dédié (optionnel)
+-- Dedicated schema (optional)
 CREATE SCHEMA IF NOT EXISTS area;
 SET search_path TO area, public;
 
 -- =========================
--- Types énumérés
+-- Enumerated types
 -- =========================
 DO $$
 BEGIN
@@ -34,7 +34,7 @@ BEGIN
 END$$;
 
 -- =========================
--- Fonctions / triggers communs
+-- Common functions / triggers
 -- =========================
 CREATE OR REPLACE FUNCTION area.set_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -49,12 +49,12 @@ RETURNS text LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 -- =========================
--- Utilisateurs & Identité
+-- Users & Identity
 -- =========================
 CREATE TABLE IF NOT EXISTS a_users (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email            citext UNIQUE NOT NULL,
-  password_hash    text,                           -- nullable si compte uniquement OAuth
+  password_hash    text,                           -- nullable if account is OAuth-only
   is_active        boolean NOT NULL DEFAULT true,
   is_admin         boolean NOT NULL DEFAULT false,
   created_at       timestamptz NOT NULL DEFAULT now(),
@@ -66,12 +66,12 @@ CREATE TABLE IF NOT EXISTS a_users (
 CREATE TABLE IF NOT EXISTS a_user_oauth_identities (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE,
-  provider         text NOT NULL,                  -- ex: google, github
+  provider         text NOT NULL,                  -- e.g.: google, github
   provider_user_id text NOT NULL,
   access_token_enc text,
   refresh_token_enc text,
   expires_at       timestamptz,
-  scopes           jsonb,                          -- lisible
+  scopes           jsonb,                          -- human-readable
   token_meta       jsonb,
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
@@ -80,24 +80,24 @@ CREATE TABLE IF NOT EXISTS a_user_oauth_identities (
 CREATE TRIGGER trg_uoi_updated_at BEFORE UPDATE ON a_user_oauth_identities
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
 
--- Table pour les identités locales (connexion email/mot de passe)
+-- Table for local identities (email/password login)
 CREATE TABLE IF NOT EXISTS a_user_local_identities (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE,
-  email            citext UNIQUE NOT NULL,         -- email de connexion (peut différer de users.email)
-  password_hash    text NOT NULL,                  -- hash bcrypt du mot de passe
-  salt             text,                           -- sel additionnel si nécessaire
+  email            citext UNIQUE NOT NULL,         -- login email (may differ from users.email)
+  password_hash    text NOT NULL,                  -- bcrypt hash of the password
+  salt             text,                           -- additional salt if needed
   is_email_verified boolean NOT NULL DEFAULT false,
-  email_verification_token text,                   -- token pour vérification email
-  email_verification_expires_at timestamptz,      -- expiration du token
-  password_reset_token text,                       -- token pour reset mot de passe
-  password_reset_expires_at timestamptz,          -- expiration du token reset
+  email_verification_token text,                   -- token for email verification
+  email_verification_expires_at timestamptz,      -- token expiration
+  password_reset_token text,                       -- token for password reset
+  password_reset_expires_at timestamptz,          -- password reset token expiration
   failed_login_attempts integer NOT NULL DEFAULT 0,
-  locked_until     timestamptz,                    -- verrouillage temporaire après échecs
-  last_password_change_at timestamptz,            -- dernière modification du mot de passe
+  locked_until     timestamptz,                    -- temporary lockout after failures
+  last_password_change_at timestamptz,            -- last password change timestamp
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id)                                 -- un seul compte local par utilisateur
+  UNIQUE (user_id)                                 -- single local account per user
 );
 CREATE INDEX IF NOT EXISTS idx_user_local_identities_email ON a_user_local_identities(email);
 CREATE INDEX IF NOT EXISTS idx_user_local_identities_verification ON a_user_local_identities(email_verification_token) WHERE email_verification_token IS NOT NULL;
@@ -106,11 +106,11 @@ CREATE TRIGGER trg_uli_updated_at BEFORE UPDATE ON a_user_local_identities
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
 
 -- =========================
--- Catalogue des services
+-- Services catalog
 -- =========================
 CREATE TABLE IF NOT EXISTS a_services (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  key              text UNIQUE NOT NULL,           -- ex: "gmail", "github"
+  key              text UNIQUE NOT NULL,           -- e.g.: "gmail", "github"
   name             text NOT NULL,
   auth             auth_type NOT NULL DEFAULT 'oauth2',
   docs_url         text,
@@ -123,17 +123,17 @@ CREATE TABLE IF NOT EXISTS a_services (
 CREATE TRIGGER trg_services_updated_at BEFORE UPDATE ON a_services
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
 
--- Comptes reliés à un service (tokens, secrets)
+-- Accounts linked to a service (tokens, secrets)
 CREATE TABLE IF NOT EXISTS a_service_accounts (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id            uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE,
   service_id         uuid NOT NULL REFERENCES a_services(id) ON DELETE CASCADE,
-  remote_account_id  text,                          -- id côté service (optionnel)
+  remote_account_id  text,                          -- service-side account id (optional)
   access_token_enc   text,
   refresh_token_enc  text,
   expires_at         timestamptz,
   scopes             jsonb,
-  webhook_secret_enc text,                          -- pour vérif de signature
+  webhook_secret_enc text,                          -- for signature verification
   token_version      integer NOT NULL DEFAULT 1,
   last_refresh_at    timestamptz,
   revoked_at         timestamptz,
@@ -147,11 +147,11 @@ CREATE TRIGGER trg_service_accounts_updated_at BEFORE UPDATE ON a_service_accoun
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
 
 -- =========================
--- AREAS (groupes/graphes)
+-- AREAS (groups/graphs)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_areas (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE, -- propriétaire
+  user_id     uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE, -- owner
   name        text NOT NULL,
   description text,
   enabled     boolean NOT NULL DEFAULT true,
@@ -161,36 +161,36 @@ CREATE TABLE IF NOT EXISTS a_areas (
 CREATE INDEX IF NOT EXISTS idx_areas_user ON a_areas(user_id, enabled);
 CREATE TRIGGER trg_areas_updated_at BEFORE UPDATE ON a_areas
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
-COMMENT ON TABLE a_areas IS 'Groupe/graph d’actions et de liens créé par un utilisateur.';
+COMMENT ON TABLE a_areas IS 'Group/graph of actions and links created by a user.';
 
--- (Optionnel) Partage/collab
+-- (Optional) Sharing/collaboration
 CREATE TABLE IF NOT EXISTS a_area_collaborators (
   area_id   uuid NOT NULL REFERENCES a_areas(id) ON DELETE CASCADE,
   user_id   uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE,
-  role      text NOT NULL DEFAULT 'editor', -- viewer|editor (à appliquer côté app)
+  role      text NOT NULL DEFAULT 'editor', -- viewer|editor (to be enforced by app)
   added_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (area_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_area_collab_user ON a_area_collaborators(user_id);
-COMMENT ON TABLE a_area_collaborators IS 'Partage des areas (collab).';
+COMMENT ON TABLE a_area_collaborators IS 'Area sharing (collaboration).';
 
 -- =========================
--- Définitions d'actions (techniques)
+-- Action definitions (technical)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_action_definitions (
   id                             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id                     uuid NOT NULL REFERENCES a_services(id) ON DELETE CASCADE,
-  key                            text NOT NULL,  -- ex: "gmail.new_email" ou "gmail.send_email"
+  key                            text NOT NULL,  -- e.g.: "gmail.new_email" or "gmail.send_email"
   name                           text NOT NULL,
   description                    text,
   input_schema                   jsonb NOT NULL DEFAULT '{}'::jsonb,
   output_schema                  jsonb NOT NULL DEFAULT '{}'::jsonb,
   docs_url                       text,
-  is_event_capable               boolean NOT NULL DEFAULT false,  -- ex "trigger"
-  is_executable                  boolean NOT NULL DEFAULT false,  -- ex "exécutable"
+  is_event_capable               boolean NOT NULL DEFAULT false,  -- e.g. "trigger"
+  is_executable                  boolean NOT NULL DEFAULT false,  -- e.g. "executable"
   version                        integer NOT NULL DEFAULT 1,
-  default_poll_interval_seconds  integer,                         -- si POLL
-  throttle_policy                jsonb,                           -- ex: {"per_minute":60}
+  default_poll_interval_seconds  integer,                         -- if POLL
+  throttle_policy                jsonb,                           -- e.g.: {"per_minute":60}
   created_at                     timestamptz NOT NULL DEFAULT now(),
   updated_at                     timestamptz NOT NULL DEFAULT now(),
   UNIQUE (service_id, key, version)
@@ -199,10 +199,10 @@ CREATE INDEX IF NOT EXISTS idx_action_def_by_service ON a_action_definitions(ser
 CREATE INDEX IF NOT EXISTS idx_action_def_capabilities ON a_action_definitions(is_event_capable, is_executable);
 CREATE TRIGGER trg_action_def_updated_at BEFORE UPDATE ON a_action_definitions
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
-COMMENT ON TABLE a_action_definitions IS 'Définitions techniques d’actions d’un service (schémas I/O, capacités).';
+COMMENT ON TABLE a_action_definitions IS 'Technical definitions of service actions (I/O schemas, capabilities).';
 
 -- =========================
--- Instances d'action (côté utilisateur)
+-- Action instances (user side)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_action_instances (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS a_action_instances (
   service_account_id   uuid REFERENCES a_service_accounts(id) ON DELETE SET NULL,
   name                 text NOT NULL,
   enabled              boolean NOT NULL DEFAULT true,
-  params               jsonb NOT NULL DEFAULT '{}'::jsonb,  -- conforme à input_schema
+  params               jsonb NOT NULL DEFAULT '{}'::jsonb,  -- conforms to input_schema
   created_at           timestamptz NOT NULL DEFAULT now(),
   updated_at           timestamptz NOT NULL DEFAULT now()
 );
@@ -221,24 +221,24 @@ CREATE INDEX IF NOT EXISTS idx_action_instances_area ON a_action_instances(area_
 CREATE INDEX IF NOT EXISTS idx_action_instances_def ON a_action_instances(action_def_id);
 CREATE TRIGGER trg_action_instances_updated_at BEFORE UPDATE ON a_action_instances
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
-COMMENT ON TABLE a_action_instances IS 'Instances d''actions configurées par un utilisateur (params, compte, area).';
+COMMENT ON TABLE a_action_instances IS 'Action instances configured by a user (params, account, area).';
 
 -- =========================
--- Méthodes d'activation
+-- Activation methods
 -- =========================
 CREATE TABLE IF NOT EXISTS a_activation_modes (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   action_instance_id   uuid NOT NULL REFERENCES a_action_instances(id) ON DELETE CASCADE,
   type                 activation_mode_type NOT NULL,
-  config               jsonb NOT NULL DEFAULT '{}'::jsonb,  -- voir exemples ci-dessous
+  config               jsonb NOT NULL DEFAULT '{}'::jsonb,  -- see examples below
   enabled              boolean NOT NULL DEFAULT true,
   dedup                dedup_strategy NOT NULL DEFAULT 'none',
-  max_concurrency      integer,                              -- null = illimité (géré côté worker)
-  rate_limit           jsonb,                                -- ex: {"per_minute": 60}
+  max_concurrency      integer,                              -- null = unlimited (managed by worker)
+  rate_limit           jsonb,                                -- e.g.: {"per_minute": 60}
   created_at           timestamptz NOT NULL DEFAULT now(),
   updated_at           timestamptz NOT NULL DEFAULT now()
 );
--- Exemples de config:
+-- Example configs:
 -- CRON:   {"cron":"*/5 * * * *","timezone":"Europe/Paris"}
 -- WEBHOOK:{"path":"/webhooks/gh/abcd","secret":"***","verify":"sha256"}
 -- POLL:   {"interval_seconds":60}
@@ -249,17 +249,17 @@ CREATE INDEX IF NOT EXISTS idx_activation_modes_ai ON a_activation_modes(action_
 CREATE INDEX IF NOT EXISTS idx_activation_modes_type ON a_activation_modes(type, enabled);
 CREATE TRIGGER trg_activation_modes_updated_at BEFORE UPDATE ON a_activation_modes
   FOR EACH ROW EXECUTE FUNCTION area.set_updated_at();
-COMMENT ON TABLE a_activation_modes IS 'Méthodes d''activation d''une action (CRON/WEBHOOK/POLL/MANUAL/CHAIN).';
+COMMENT ON TABLE a_activation_modes IS 'Activation methods for an action (CRON/WEBHOOK/POLL/MANUAL/CHAIN).';
 
 -- =========================
--- Chaînage entre actions (arêtes du graphe)
+-- Chaining between actions (graph edges)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_action_links (
   source_action_instance_id uuid NOT NULL REFERENCES a_action_instances(id) ON DELETE CASCADE,
   target_action_instance_id uuid NOT NULL REFERENCES a_action_instances(id) ON DELETE CASCADE,
   area_id                   uuid NOT NULL REFERENCES a_areas(id) ON DELETE CASCADE,
   mapping                   jsonb NOT NULL DEFAULT '{}'::jsonb, -- transform source.output -> target.input
-  condition                 jsonb,                               -- garde/filtres (JMESPath/expr)
+  condition                 jsonb,                               -- guards/filters (JMESPath/expr)
   "order"                   integer NOT NULL DEFAULT 0,
   created_at                timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (source_action_instance_id, target_action_instance_id)
@@ -267,9 +267,9 @@ CREATE TABLE IF NOT EXISTS a_action_links (
 CREATE INDEX IF NOT EXISTS idx_action_links_source ON a_action_links(source_action_instance_id, "order");
 CREATE INDEX IF NOT EXISTS idx_action_links_target ON a_action_links(target_action_instance_id);
 CREATE INDEX IF NOT EXISTS idx_action_links_area   ON a_action_links(area_id, "order");
-COMMENT ON TABLE a_action_links IS 'Arêtes du graphe: chaînage source -> cible avec mapping/condition, scoping par area.';
+COMMENT ON TABLE a_action_links IS 'Graph edges: chain source -> target with mapping/condition, scoped by area.';
 
--- Trigger : forcer la cohérence d’area (source/target dans le même area que action_links.area_id)
+-- Trigger: enforce area consistency (source/target must be in the same area as action_links.area_id)
 CREATE OR REPLACE FUNCTION area.enforce_link_area_match()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -280,7 +280,7 @@ BEGIN
   SELECT area_id INTO dst_area FROM a_action_instances WHERE id = NEW.target_action_instance_id;
 
   IF src_area IS NULL OR dst_area IS NULL THEN
-    RAISE EXCEPTION 'action_links: source/target area_id introuvable';
+    RAISE EXCEPTION 'action_links: source/target area_id not found';
   END IF;
 
   IF src_area <> dst_area THEN
@@ -299,19 +299,19 @@ CREATE TRIGGER trg_action_links_area
   BEFORE INSERT OR UPDATE ON a_action_links
   FOR EACH ROW EXECUTE FUNCTION area.enforce_link_area_match();
 
--- Interdire self-loop
+-- Prevent self-loop
 ALTER TABLE a_action_links
   ADD CONSTRAINT chk_action_links_no_self
   CHECK (source_action_instance_id <> target_action_instance_id);
 
 -- =========================
--- Exécutions (jobs)
+-- Executions (jobs)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_executions (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   action_instance_id   uuid NOT NULL REFERENCES a_action_instances(id) ON DELETE CASCADE,
   activation_mode_id   uuid REFERENCES a_activation_modes(id) ON DELETE SET NULL,
-  area_id              uuid REFERENCES a_areas(id) ON DELETE SET NULL,  -- dénormalisé (auto via trigger)
+  area_id              uuid REFERENCES a_areas(id) ON DELETE SET NULL,  -- denormalized (auto via trigger)
   status               execution_status NOT NULL DEFAULT 'QUEUED',
   attempt              integer NOT NULL DEFAULT 0,
   queued_at            timestamptz NOT NULL DEFAULT now(),
@@ -320,16 +320,16 @@ CREATE TABLE IF NOT EXISTS a_executions (
   input_payload        jsonb,
   output_payload       jsonb,
   error                jsonb,
-  correlation_id       uuid,                          -- pour regrouper une cascade
-  dedup_key            text                           -- unique si fourni (≠ NULL)
+  correlation_id       uuid,                          -- to group a cascade
+  dedup_key            text                           -- unique if provided (≠ NULL)
 );
--- Index & dédup
+-- Index & dedup
 CREATE INDEX IF NOT EXISTS idx_exec_ai_status ON a_executions(action_instance_id, status, queued_at);
 CREATE INDEX IF NOT EXISTS idx_exec_corr ON a_executions(correlation_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_exec_dedup_notnull ON a_executions(dedup_key) WHERE dedup_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_executions_area_status ON a_executions(area_id, status, queued_at);
 
--- Trigger : setter automatiquement executions.area_id depuis l’action
+-- Trigger: automatically set executions.area_id from the action
 CREATE OR REPLACE FUNCTION area.set_execution_area()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -345,23 +345,23 @@ CREATE TRIGGER trg_executions_set_area
   BEFORE INSERT ON a_executions
   FOR EACH ROW EXECUTE FUNCTION area.set_execution_area();
 
-COMMENT ON TABLE a_executions IS 'Journal d’exécutions (jobs) avec statut, retries, I/O, dédup et area.';
+COMMENT ON TABLE a_executions IS 'Executions log (jobs) with status, retries, I/O, dedup and area.';
 
 -- =========================
--- Événements émis (optionnel, bus interne)
+-- Emitted events (optional, internal bus)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_events (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   action_instance_id   uuid NOT NULL REFERENCES a_action_instances(id) ON DELETE CASCADE,
   payload              jsonb NOT NULL,
   emitted_at           timestamptz NOT NULL DEFAULT now(),
-  source_event_id      text                                -- id externe (pour dédup)
+  source_event_id      text                                -- external id (for dedup)
 );
 CREATE INDEX IF NOT EXISTS idx_events_ai_time ON a_events(action_instance_id, emitted_at DESC);
-COMMENT ON TABLE a_events IS 'Événements émis par des actions (bus interne / historique).';
+COMMENT ON TABLE a_events IS 'Events emitted by actions (internal bus / history).';
 
 -- =========================
--- Dead letters (échecs finaux)
+-- Dead letters (final failures)
 -- =========================
 CREATE TABLE IF NOT EXISTS a_dead_letters (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -377,7 +377,7 @@ CREATE TABLE IF NOT EXISTS a_dead_letters (
 CREATE TABLE IF NOT EXISTS a_audit_logs (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid REFERENCES a_users(id) ON DELETE SET NULL,
-  action       text NOT NULL,                 -- ex: "AREA_CREATED", "TOKEN_REFRESHED"
+  action       text NOT NULL,                 -- e.g.: "AREA_CREATED", "TOKEN_REFRESHED"
   entity_type  text,
   entity_id    uuid,
   metadata     jsonb,
@@ -391,16 +391,16 @@ CREATE TABLE IF NOT EXISTS a_user_notifications (
   user_id      uuid NOT NULL REFERENCES a_users(id) ON DELETE CASCADE,
   channel      text NOT NULL,                 -- "email", "push", "inapp", ...
   payload      jsonb NOT NULL,
-  status       text NOT NULL DEFAULT 'queued',-- libre: queued|sent|failed
+  status       text NOT NULL DEFAULT 'queued',-- free-form: queued|sent|failed
   created_at   timestamptz NOT NULL DEFAULT now(),
   sent_at      timestamptz
 );
 CREATE INDEX IF NOT EXISTS idx_notif_user_status ON a_user_notifications(user_id, status);
 
 -- =========================
--- Vues de compatibilité "about.json"
+-- Compatibility views "about.json"
 -- =========================
--- Liste des actions "capables d'émettre" (historiquement "actions")
+-- List of event-capable actions (historically "actions")
 CREATE OR REPLACE VIEW about_actions AS
 SELECT
   s.key                   AS service_key,
@@ -417,7 +417,7 @@ JOIN a_services s ON s.id = ad.service_id
 WHERE ad.is_event_capable = true
 ORDER BY s.key, ad.key, ad.version DESC;
 
--- Liste des actions "exécutables" (historiquement "reactions")
+-- List of executable actions (historically "reactions")
 CREATE OR REPLACE VIEW about_reactions AS
 SELECT
   s.key                   AS service_key,
@@ -435,7 +435,7 @@ WHERE ad.is_executable = true
 ORDER BY s.key, ad.key, ad.version DESC;
 
 -- =========================
--- Commentaires supplémentaires
+-- Additional comments
 -- =========================
-COMMENT ON COLUMN a_services.key IS 'Identifiant stable du service (slug)';
+COMMENT ON COLUMN a_services.key IS 'Stable identifier of the service (slug)';
 COMMENT ON COLUMN a_activation_modes.config IS 'CRON:{cron,timezone} | WEBHOOK:{path,secret,verify} | POLL:{interval_seconds} | MANUAL:{} | CHAIN:{source_action_instance_id,filter,condition}';

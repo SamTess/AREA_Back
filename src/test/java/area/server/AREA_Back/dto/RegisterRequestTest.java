@@ -89,7 +89,8 @@ class RegisterRequestTest {
         registerRequest.setPassword("short");
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Password must be at least 8 characters")));
+        assertTrue(violations.stream().anyMatch(
+                v -> v.getMessage().contains("Password must be at least 8 characters")));
     }
 
     @Test

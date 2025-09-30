@@ -27,8 +27,10 @@ class JwtServiceTest {
         jwtService = new JwtService();
 
         // Set test values using reflection (since @Value is not available in unit tests)
-        ReflectionTestUtils.setField(jwtService, "accessTokenSecret", "dGVzdC1hY2Nlc3Mtc2VjcmV0LWZvci1qd3QtdGVzdGluZy0xMjM0NTY3ODkw");
-        ReflectionTestUtils.setField(jwtService, "refreshTokenSecret", "dGVzdC1yZWZyZXNoLXNlY3JldC1mb3Itand0LXRlc3RpbmctMTIzNDU2Nzg5MA==");
+        ReflectionTestUtils.setField(jwtService, "accessTokenSecret",
+                "dGVzdC1hY2Nlc3Mtc2VjcmV0LWZvci1qd3QtdGVzdGluZy0xMjM0NTY3ODkw");
+        ReflectionTestUtils.setField(jwtService, "refreshTokenSecret",
+                "dGVzdC1yZWZyZXNoLXNlY3JldC1mb3Itand0LXRlc3RpbmctMTIzNDU2Nzg5MA==");
         ReflectionTestUtils.setField(jwtService, "accessTokenExpiresIn", "15m");
         ReflectionTestUtils.setField(jwtService, "refreshTokenExpiresIn", "7d");
 

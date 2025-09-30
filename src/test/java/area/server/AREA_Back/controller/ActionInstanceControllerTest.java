@@ -320,7 +320,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_ShouldReturnBadRequest_WhenServiceAccountNotFound() throws Exception {
+    void createActionInstanceShouldReturnBadRequestWhenServiceAccountNotFound() throws Exception {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);
@@ -345,7 +345,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void toggleActionInstance_ShouldToggleEnabled_WhenExists() throws Exception {
+    void toggleActionInstanceShouldToggleEnabledWhenExists() throws Exception {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.of(testActionInstance));
         when(actionInstanceRepository.save(any(ActionInstance.class))).thenReturn(testActionInstance);
@@ -361,7 +361,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void toggleActionInstance_ShouldReturnNotFound_WhenDoesNotExist() throws Exception {
+    void toggleActionInstanceShouldReturnNotFoundWhenDoesNotExist() throws Exception {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.empty());
 
@@ -374,7 +374,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void deleteActionInstance_ShouldReturnNoContent_WhenExists() throws Exception {
+    void deleteActionInstanceShouldReturnNoContentWhenExists() throws Exception {
         // Given
         when(actionInstanceRepository.existsById(testActionInstanceId)).thenReturn(true);
 
@@ -387,7 +387,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void deleteActionInstance_ShouldReturnNotFound_WhenDoesNotExist() throws Exception {
+    void deleteActionInstanceShouldReturnNotFoundWhenDoesNotExist() throws Exception {
         // Given
         when(actionInstanceRepository.existsById(testActionInstanceId)).thenReturn(false);
 
@@ -402,7 +402,7 @@ class ActionInstanceControllerTest {
     // Direct method tests for better coverage
 
     @Test
-    void getActionInstancesByUser_DirectCall_ShouldReturnOk_WhenUserExists() {
+    void getActionInstancesByUserDirectCallShouldReturnOkWhenUserExists() {
         // Given
         when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
         when(actionInstanceRepository.findByUser(testUser)).thenReturn(Arrays.asList(testActionInstance));
@@ -418,7 +418,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstancesByArea_DirectCall_ShouldReturnOk_WhenAreaExists() {
+    void getActionInstancesByAreaDirectCallShouldReturnOkWhenAreaExists() {
         // Given
         when(areaRepository.findById(testAreaId)).thenReturn(Optional.of(testArea));
         when(actionInstanceRepository.findByArea(testArea)).thenReturn(Arrays.asList(testActionInstance));
@@ -434,7 +434,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstanceById_DirectCall_ShouldReturnOk_WhenExists() {
+    void getActionInstanceByIdDirectCallShouldReturnOkWhenExists() {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.of(testActionInstance));
 
@@ -449,7 +449,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_DirectCall_ShouldReturnCreated_WhenValid() {
+    void createActionInstanceDirectCallShouldReturnCreatedWhenValid() {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);
@@ -471,7 +471,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void toggleActionInstance_DirectCall_ShouldReturnOk_WhenExists() {
+    void toggleActionInstanceDirectCallShouldReturnOkWhenExists() {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.of(testActionInstance));
         when(actionInstanceRepository.save(any(ActionInstance.class))).thenReturn(testActionInstance);
@@ -487,7 +487,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void deleteActionInstance_DirectCall_ShouldReturnNoContent_WhenExists() {
+    void deleteActionInstanceDirectCallShouldReturnNoContentWhenExists() {
         // Given
         when(actionInstanceRepository.existsById(testActionInstanceId)).thenReturn(true);
 

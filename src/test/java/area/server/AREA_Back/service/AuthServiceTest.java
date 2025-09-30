@@ -103,9 +103,9 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ShouldCreateUserAndReturnAuthResponse_WhenValidRequest() {
+    void registerShouldCreateUserAndReturnAuthResponseWhenValidRequest() {
         // Given
-        RegisterRequest request = new RegisterRequest(testEmail, testPassword, "avatar.jpg");
+        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, "avatar.jpg");
 
         when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -114,7 +114,7 @@ class AuthServiceTest {
         when(jwtService.generateRefreshToken(testUserId, testEmail)).thenReturn(testRefreshToken);
 
         // When
-        AuthResponse authResponse = authService.register(request, response);
+        AuthResponse authResponse = authService.register(registerRequest, response);
 
         // Then
         assertNotNull(authResponse);
@@ -145,14 +145,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenEmailAlreadyExists() {
+    void registerShouldThrowExceptionWhenEmailAlreadyExists() {
         // Given
-        RegisterRequest request = new RegisterRequest(testEmail, testPassword, null);
+        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, null);
         when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(true);
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.register(request, response));
+            () -> authService.register(registerRequest, response));
         assertEquals("Email already registered", exception.getMessage());
 
         verify(userRepository, never()).save(any());
@@ -160,9 +160,9 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_ShouldReturnAuthResponse_WhenValidCredentials() {
+    void loginShouldReturnAuthResponseWhenValidCredentials() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, testPassword);
+        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
         when(passwordEncoder.matches(testPassword, "hashedPassword")).thenReturn(true);
@@ -170,7 +170,7 @@ class AuthServiceTest {
         when(jwtService.generateRefreshToken(testUserId, testEmail)).thenReturn(testRefreshToken);
 
         // When
-        AuthResponse authResponse = authService.login(request, response);
+        AuthResponse authResponse = authService.login(loginRequest, response);
 
         // Then
         assertNotNull(authResponse);
@@ -198,14 +198,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_ShouldThrowException_WhenEmailNotFound() {
+    void loginShouldThrowExceptionWhenEmailNotFound() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, testPassword);
+        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.empty());
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(request, response));
+            () -> authService.login(loginRequest, response));
         assertEquals("Invalid credentials", exception.getMessage());
 
         verify(passwordEncoder, never()).matches(any(), any());
@@ -213,48 +213,48 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_ShouldThrowException_WhenAccountIsLocked() {
+    void loginShouldThrowExceptionWhenAccountIsLocked() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, testPassword);
+        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
         testLocalIdentity.setLockedUntil(LocalDateTime.now().plusMinutes(10));
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(request, response));
+            () -> authService.login(loginRequest, response));
         assertEquals("Account is temporarily locked due to failed login attempts", exception.getMessage());
 
         verify(passwordEncoder, never()).matches(any(), any());
     }
 
     @Test
-    void login_ShouldThrowException_WhenUserIsInactive() {
+    void loginShouldThrowExceptionWhenUserIsInactive() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, testPassword);
+        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
         testUser.setIsActive(false);
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(request, response));
+            () -> authService.login(loginRequest, response));
         assertEquals("Account is inactive", exception.getMessage());
 
         verify(passwordEncoder, never()).matches(any(), any());
     }
 
     @Test
-    void login_ShouldIncrementFailedAttempts_WhenWrongPassword() {
+    void loginShouldIncrementFailedAttemptsWhenWrongPassword() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, "wrongPassword");
+        LoginRequest loginRequest = new LoginRequest(testEmail, "wrongPassword");
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(request, response));
+            () -> authService.login(loginRequest, response));
         assertEquals("Invalid credentials", exception.getMessage());
 
         verify(userLocalIdentityRepository).incrementFailedLoginAttempts(testEmail);
@@ -262,9 +262,9 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_ShouldLockAccount_WhenTooManyFailedAttempts() {
+    void loginShouldLockAccountWhenTooManyFailedAttempts() {
         // Given
-        LoginRequest request = new LoginRequest(testEmail, "wrongPassword");
+        LoginRequest loginRequest = new LoginRequest(testEmail, "wrongPassword");
         testLocalIdentity.setFailedLoginAttempts(4); // 5th attempt will lock
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
@@ -272,7 +272,7 @@ class AuthServiceTest {
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(request, response));
+            () -> authService.login(loginRequest, response));
         assertEquals("Invalid credentials", exception.getMessage());
 
         verify(userLocalIdentityRepository).incrementFailedLoginAttempts(testEmail);
@@ -280,7 +280,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void getCurrentUser_ShouldReturnUserResponse_WhenAuthenticated() {
+    void getCurrentUserShouldReturnUserResponseWhenAuthenticated() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -299,7 +299,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void getCurrentUser_ShouldThrowException_WhenNotAuthenticated() {
+    void getCurrentUserShouldThrowExceptionWhenNotAuthenticated() {
         // Given
         when(request.getCookies()).thenReturn(null);
 
@@ -310,7 +310,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void getCurrentUser_ShouldThrowException_WhenUserNotFound() {
+    void getCurrentUserShouldThrowExceptionWhenUserNotFound() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -326,7 +326,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void logout_ShouldClearTokensAndCookies_WhenAuthenticated() {
+    void logoutShouldClearTokensAndCookiesWhenAuthenticated() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -343,7 +343,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void logout_ShouldStillClearCookies_WhenNotAuthenticated() {
+    void logoutShouldStillClearCookiesWhenNotAuthenticated() {
         // Given
         when(request.getCookies()).thenReturn(null);
 
@@ -356,7 +356,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldGenerateNewTokens_WhenValidRefreshToken() {
+    void refreshTokenShouldGenerateNewTokensWhenValidRefreshToken() {
         // Given
         Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -381,7 +381,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldThrowException_WhenNoRefreshToken() {
+    void refreshTokenShouldThrowExceptionWhenNoRefreshToken() {
         // Given
         when(request.getCookies()).thenReturn(null);
 
@@ -392,7 +392,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldThrowException_WhenInvalidRefreshToken() {
+    void refreshTokenShouldThrowExceptionWhenInvalidRefreshToken() {
         // Given
         Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -406,7 +406,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldThrowException_WhenTokenNotInRedis() {
+    void refreshTokenShouldThrowExceptionWhenTokenNotInRedis() {
         // Given
         Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -421,7 +421,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldThrowException_WhenUserInactive() {
+    void refreshTokenShouldThrowExceptionWhenUserInactive() {
         // Given
         Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
         testUser.setIsActive(false);
@@ -439,7 +439,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldThrowException_WhenUserNotFound() {
+    void refreshTokenShouldThrowExceptionWhenUserNotFound() {
         // Given
         Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -455,7 +455,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void isAuthenticated_ShouldReturnTrue_WhenValidToken() {
+    void isAuthenticatedShouldReturnTrueWhenValidToken() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -471,7 +471,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void isAuthenticated_ShouldReturnFalse_WhenNoToken() {
+    void isAuthenticatedShouldReturnFalseWhenNoToken() {
         // Given
         when(request.getCookies()).thenReturn(null);
 
@@ -483,7 +483,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void isAuthenticated_ShouldReturnFalse_WhenTokenNotInRedis() {
+    void isAuthenticatedShouldReturnFalseWhenTokenNotInRedis() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -497,7 +497,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void isAuthenticated_ShouldReturnFalse_WhenJwtInvalid() {
+    void isAuthenticatedShouldReturnFalseWhenJwtInvalid() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);
@@ -513,7 +513,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void isAuthenticated_ShouldReturnFalse_WhenJwtExtractionFails() {
+    void isAuthenticatedShouldReturnFalseWhenJwtExtractionFails() {
         // Given
         Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
         when(request.getCookies()).thenReturn(cookies);

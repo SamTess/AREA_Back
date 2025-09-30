@@ -89,7 +89,7 @@ class AuthControllerTest {
     class RegisterTests {
 
         @Test
-        void register_ShouldReturnCreated_WhenRegistrationSuccessful() throws Exception {
+        void registerShouldReturnCreatedWhenRegistrationSuccessful() throws Exception {
             // Given
             RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -110,7 +110,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void register_ShouldReturnConflict_WhenEmailAlreadyExists() throws Exception {
+        void registerShouldReturnConflictWhenEmailAlreadyExists() throws Exception {
             // Given
             RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -129,7 +129,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void register_ShouldReturnInternalServerError_WhenUnexpectedExceptionOccurs() {
+        void registerShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() {
             // Given
             RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -146,7 +146,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void register_ShouldReturnConflict_WhenServiceThrowsRuntimeException() {
+        void registerShouldReturnConflictWhenServiceThrowsRuntimeException() {
             // Given
             RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -163,7 +163,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void register_UsingDirectControllerCall_ShouldReturnCreated_WhenSuccessful() {
+        void registerUsingDirectControllerCallShouldReturnCreatedWhenSuccessful() {
             // Given
             RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -181,7 +181,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void register_UsingDirectControllerCall_ShouldReturnConflict_WhenEmailExists() {
+        void registerUsingDirectControllerCallShouldReturnConflictWhenEmailExists() {
             // Given
             RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
@@ -202,7 +202,7 @@ class AuthControllerTest {
     class LoginTests {
 
         @Test
-        void login_ShouldReturnOk_WhenCredentialsValid() throws Exception {
+        void loginShouldReturnOkWhenCredentialsValid() throws Exception {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -223,7 +223,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void login_ShouldReturnUnauthorized_WhenCredentialsInvalid() throws Exception {
+        void loginShouldReturnUnauthorizedWhenCredentialsInvalid() throws Exception {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "wrongpassword");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -242,7 +242,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void login_ShouldReturnLocked_WhenAccountLocked() throws Exception {
+        void loginShouldReturnLockedWhenAccountLocked() throws Exception {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -261,7 +261,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void login_UsingDirectControllerCall_ShouldReturnOk_WhenSuccessful() {
+        void loginUsingDirectControllerCallShouldReturnOkWhenSuccessful() {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -278,7 +278,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void login_UsingDirectControllerCall_ShouldReturnLocked_WhenAccountLocked() {
+        void loginUsingDirectControllerCallShouldReturnLockedWhenAccountLocked() {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -295,7 +295,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void login_ShouldReturnInternalServerError_WhenUnexpectedExceptionOccurs() throws Exception {
+        void loginShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() throws Exception {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
@@ -318,7 +318,7 @@ class AuthControllerTest {
     class GetCurrentUserTests {
 
         @Test
-        void getCurrentUser_ShouldReturnUser_WhenAuthenticated() {
+        void getCurrentUserShouldReturnUserWhenAuthenticated() {
             // Given
             when(authService.getCurrentUser(httpServletRequest))
                 .thenReturn(testUserResponse);
@@ -335,7 +335,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void getCurrentUser_ShouldReturnUnauthorized_WhenNotAuthenticated() {
+        void getCurrentUserShouldReturnUnauthorizedWhenNotAuthenticated() {
             // Given
             when(authService.getCurrentUser(httpServletRequest))
                 .thenThrow(new RuntimeException("User not authenticated"));
@@ -352,7 +352,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void getCurrentUser_ShouldReturnInternalServerError_WhenUnexpectedError() {
+        void getCurrentUserShouldReturnInternalServerErrorWhenUnexpectedError() {
             // Given
             when(authService.getCurrentUser(httpServletRequest))
                 .thenThrow(new RuntimeException("Database connection failed"));
@@ -373,12 +373,13 @@ class AuthControllerTest {
     class LogoutTests {
 
         @Test
-        void logout_ShouldReturnOk_WhenSuccessful() {
+        void logoutShouldReturnOkWhenSuccessful() {
             // Given
             doNothing().when(authService).logout(httpServletRequest, httpServletResponse);
 
             // When
-            ResponseEntity<Map<String, String>> response = authController.logout(httpServletRequest, httpServletResponse);
+            ResponseEntity<Map<String, String>> response = authController.logout(
+                    httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -388,13 +389,14 @@ class AuthControllerTest {
         }
 
         @Test
-        void logout_ShouldReturnOk_WhenExceptionOccurs() {
+        void logoutShouldReturnOkWhenExceptionOccurs() {
             // Given
             doThrow(new RuntimeException("Token cleanup failed"))
                 .when(authService).logout(httpServletRequest, httpServletResponse);
 
             // When
-            ResponseEntity<Map<String, String>> response = authController.logout(httpServletRequest, httpServletResponse);
+            ResponseEntity<Map<String, String>> response = authController.logout(
+                    httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -407,14 +409,15 @@ class AuthControllerTest {
     class RefreshTokenTests {
 
         @Test
-        void refreshToken_ShouldReturnOk_WhenTokenValid() {
+        void refreshTokenShouldReturnOkWhenTokenValid() {
             // Given
             TokenRefreshRequest request = new TokenRefreshRequest();
             when(authService.refreshToken(httpServletRequest, httpServletResponse))
                 .thenReturn(testAuthResponse);
 
             // When
-            ResponseEntity<AuthResponse> response = authController.refreshToken(request, httpServletRequest, httpServletResponse);
+            ResponseEntity<AuthResponse> response = authController.refreshToken(
+                    request, httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -425,14 +428,15 @@ class AuthControllerTest {
         }
 
         @Test
-        void refreshToken_ShouldReturnUnauthorized_WhenTokenInvalid() {
+        void refreshTokenShouldReturnUnauthorizedWhenTokenInvalid() {
             // Given
             TokenRefreshRequest request = new TokenRefreshRequest();
             when(authService.refreshToken(httpServletRequest, httpServletResponse))
                 .thenThrow(new RuntimeException("Invalid refresh token"));
 
             // When
-            ResponseEntity<AuthResponse> response = authController.refreshToken(request, httpServletRequest, httpServletResponse);
+            ResponseEntity<AuthResponse> response = authController.refreshToken(
+                    request, httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -442,14 +446,15 @@ class AuthControllerTest {
         }
 
         @Test
-        void refreshToken_ShouldReturnInternalServerError_WhenUnexpectedError() {
+        void refreshTokenShouldReturnInternalServerErrorWhenUnexpectedError() {
             // Given
             TokenRefreshRequest request = new TokenRefreshRequest();
             when(authService.refreshToken(httpServletRequest, httpServletResponse))
                 .thenThrow(new RuntimeException("Service unavailable"));
 
             // When
-            ResponseEntity<AuthResponse> response = authController.refreshToken(request, httpServletRequest, httpServletResponse);
+            ResponseEntity<AuthResponse> response = authController.refreshToken(
+                    request, httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -459,13 +464,14 @@ class AuthControllerTest {
         }
 
         @Test
-        void refreshToken_ShouldWork_WhenRequestIsNull() {
+        void refreshTokenShouldWorkWhenRequestIsNull() {
             // Given
             when(authService.refreshToken(httpServletRequest, httpServletResponse))
                 .thenReturn(testAuthResponse);
 
             // When
-            ResponseEntity<AuthResponse> response = authController.refreshToken(null, httpServletRequest, httpServletResponse);
+            ResponseEntity<AuthResponse> response = authController.refreshToken(
+                    null, httpServletRequest, httpServletResponse);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -478,7 +484,7 @@ class AuthControllerTest {
     class GetAuthStatusTests {
 
         @Test
-        void getAuthStatus_ShouldReturnAuthenticated_WhenUserIsAuthenticated() {
+        void getAuthStatusShouldReturnAuthenticatedWhenUserIsAuthenticated() {
             // Given
             when(authService.isAuthenticated(httpServletRequest)).thenReturn(true);
 
@@ -495,7 +501,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void getAuthStatus_ShouldReturnNotAuthenticated_WhenUserIsNotAuthenticated() {
+        void getAuthStatusShouldReturnNotAuthenticatedWhenUserIsNotAuthenticated() {
             // Given
             when(authService.isAuthenticated(httpServletRequest)).thenReturn(false);
 
@@ -511,7 +517,7 @@ class AuthControllerTest {
         }
 
         @Test
-        void getAuthStatus_ShouldReturnFalse_WhenExceptionOccurs() {
+        void getAuthStatusShouldReturnFalseWhenExceptionOccurs() {
             // Given
             when(authService.isAuthenticated(httpServletRequest))
                 .thenThrow(new RuntimeException("Service error"));
@@ -532,7 +538,7 @@ class AuthControllerTest {
     class ExceptionHandlerTests {
 
         @Test
-        void handleRuntimeException_ShouldReturnBadRequest() {
+        void handleRuntimeExceptionShouldReturnBadRequest() {
             // Given
             RuntimeException exception = new RuntimeException("Test runtime exception");
 
@@ -546,11 +552,12 @@ class AuthControllerTest {
         }
 
         @Test
-        void handleValidationException_ShouldReturnBadRequest() {
+        void handleValidationExceptionShouldReturnBadRequest() {
             // Given
             BindingResult bindingResult = mock(BindingResult.class);
             FieldError fieldError1 = new FieldError("registerRequest", "email", "Email is required");
-            FieldError fieldError2 = new FieldError("registerRequest", "password", "Password must be at least 8 characters");
+            FieldError fieldError2 = new FieldError("registerRequest", "password", 
+                    "Password must be at least 8 characters");
             when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError1, fieldError2));
 
             MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);

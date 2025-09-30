@@ -71,7 +71,7 @@ class UserLocalIdentityRepositoryTest {
     }
 
     @Test
-    void testFindByEmail_NotFound() {
+    void testFindByEmailNotFound() {
         Optional<UserLocalIdentity> foundIdentity = userLocalIdentityRepository.findByEmail("nonexistent@example.com");
 
         assertFalse(foundIdentity.isPresent());
@@ -87,7 +87,7 @@ class UserLocalIdentityRepositoryTest {
     }
 
     @Test
-    void testFindByUser_NotFound() {
+    void testFindByUserNotFound() {
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
         anotherUser.setPasswordHash("hashedPassword123");
@@ -111,7 +111,7 @@ class UserLocalIdentityRepositoryTest {
     }
 
     @Test
-    void testFindByUserId_NotFound() {
+    void testFindByUserIdNotFound() {
         Optional<UserLocalIdentity> foundIdentity = userLocalIdentityRepository.findByUserId(UUID.randomUUID());
 
         assertFalse(foundIdentity.isPresent());
@@ -139,7 +139,7 @@ class UserLocalIdentityRepositoryTest {
     }
 
     @Test
-    void testFindByEmailVerificationToken_NotFound() {
+    void testFindByEmailVerificationTokenNotFound() {
         Optional<UserLocalIdentity> foundIdentity = userLocalIdentityRepository
             .findByEmailVerificationToken("nonexistent");
 
@@ -162,7 +162,7 @@ class UserLocalIdentityRepositoryTest {
     }
 
     @Test
-    void testFindByPasswordResetToken_NotFound() {
+    void testFindByPasswordResetTokenNotFound() {
         Optional<UserLocalIdentity> foundIdentity = userLocalIdentityRepository
             .findByPasswordResetToken("nonexistent");
 

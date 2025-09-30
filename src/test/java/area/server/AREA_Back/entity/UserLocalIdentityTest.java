@@ -90,74 +90,74 @@ class UserLocalIdentityTest {
     }
 
     @Test
-    void testIsAccountLocked_WhenNotLocked() {
+    void testIsAccountLockedWhenNotLocked() {
         userLocalIdentity.setLockedUntil(null);
         assertFalse(userLocalIdentity.isAccountLocked());
     }
 
     @Test
-    void testIsAccountLocked_WhenLockExpired() {
+    void testIsAccountLockedWhenLockExpired() {
         userLocalIdentity.setLockedUntil(LocalDateTime.now().minusMinutes(5));
         assertFalse(userLocalIdentity.isAccountLocked());
     }
 
     @Test
-    void testIsAccountLocked_WhenCurrentlyLocked() {
+    void testIsAccountLockedWhenCurrentlyLocked() {
         userLocalIdentity.setLockedUntil(LocalDateTime.now().plusMinutes(30));
         assertTrue(userLocalIdentity.isAccountLocked());
     }
 
     @Test
-    void testIsEmailVerificationTokenValid_WhenTokenIsNull() {
+    void testIsEmailVerificationTokenValidWhenTokenIsNull() {
         userLocalIdentity.setEmailVerificationToken(null);
         userLocalIdentity.setEmailVerificationExpiresAt(LocalDateTime.now().plusHours(1));
         assertFalse(userLocalIdentity.isEmailVerificationTokenValid());
     }
 
     @Test
-    void testIsEmailVerificationTokenValid_WhenExpirationIsNull() {
+    void testIsEmailVerificationTokenValidWhenExpirationIsNull() {
         userLocalIdentity.setEmailVerificationToken("token123");
         userLocalIdentity.setEmailVerificationExpiresAt(null);
         assertFalse(userLocalIdentity.isEmailVerificationTokenValid());
     }
 
     @Test
-    void testIsEmailVerificationTokenValid_WhenTokenExpired() {
+    void testIsEmailVerificationTokenValidWhenTokenExpired() {
         userLocalIdentity.setEmailVerificationToken("token123");
         userLocalIdentity.setEmailVerificationExpiresAt(LocalDateTime.now().minusHours(1));
         assertFalse(userLocalIdentity.isEmailVerificationTokenValid());
     }
 
     @Test
-    void testIsEmailVerificationTokenValid_WhenTokenValid() {
+    void testIsEmailVerificationTokenValidWhenTokenValid() {
         userLocalIdentity.setEmailVerificationToken("token123");
         userLocalIdentity.setEmailVerificationExpiresAt(LocalDateTime.now().plusHours(1));
         assertTrue(userLocalIdentity.isEmailVerificationTokenValid());
     }
 
     @Test
-    void testIsPasswordResetTokenValid_WhenTokenIsNull() {
+    void testIsPasswordResetTokenValidWhenTokenIsNull() {
         userLocalIdentity.setPasswordResetToken(null);
         userLocalIdentity.setPasswordResetExpiresAt(LocalDateTime.now().plusHours(1));
         assertFalse(userLocalIdentity.isPasswordResetTokenValid());
     }
 
     @Test
-    void testIsPasswordResetTokenValid_WhenExpirationIsNull() {
+    void testIsPasswordResetTokenValidWhenExpirationIsNull() {
         userLocalIdentity.setPasswordResetToken("resetToken123");
         userLocalIdentity.setPasswordResetExpiresAt(null);
         assertFalse(userLocalIdentity.isPasswordResetTokenValid());
     }
 
     @Test
-    void testIsPasswordResetTokenValid_WhenTokenExpired() {
+    void testIsPasswordResetTokenValidWhenTokenExpired() {
         userLocalIdentity.setPasswordResetToken("resetToken123");
         userLocalIdentity.setPasswordResetExpiresAt(LocalDateTime.now().minusHours(1));
         assertFalse(userLocalIdentity.isPasswordResetTokenValid());
     }
 
     @Test
-    void testIsPasswordResetTokenValid_WhenTokenValid() {
+    void testIsPasswordResetTokenValidWhenTokenValid() {
         userLocalIdentity.setPasswordResetToken("resetToken123");
         userLocalIdentity.setPasswordResetExpiresAt(LocalDateTime.now().plusHours(1));
         assertTrue(userLocalIdentity.isPasswordResetTokenValid());

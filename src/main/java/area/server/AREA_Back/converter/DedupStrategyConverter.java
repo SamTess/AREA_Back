@@ -12,7 +12,7 @@ public class DedupStrategyConverter implements AttributeConverter<DedupStrategy,
         if (dedupStrategy == null) {
             return null;
         }
-        return dedupStrategy.toString(); // This will use our custom toString() method
+        return dedupStrategy.toString();
     }
 
     @Override
@@ -20,7 +20,7 @@ public class DedupStrategyConverter implements AttributeConverter<DedupStrategy,
         if (dbData == null) {
             return null;
         }
-        
+
         switch (dbData.toLowerCase()) {
             case "none":
                 return DedupStrategy.NONE;

@@ -12,7 +12,6 @@ public class AuthTypeConverter implements AttributeConverter<Service.AuthType, O
         if (authType == null) {
             return null;
         }
-        // Return the string representation for PostgreSQL enum casting
         return authType.toString();
     }
 
@@ -21,7 +20,7 @@ public class AuthTypeConverter implements AttributeConverter<Service.AuthType, O
         if (dbData == null) {
             return null;
         }
-        
+
         String value = dbData.toString();
         switch (value.toLowerCase()) {
             case "oauth2":

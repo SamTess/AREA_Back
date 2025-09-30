@@ -2,15 +2,15 @@ services:
   postgres:
     image: 'postgres:15'
     environment:
-      - 'POSTGRES_DB=${DATABASE_NAME:-area_db}'
-      - 'POSTGRES_PASSWORD=${DATABASE_PASSWORD:-area_password}'
-      - 'POSTGRES_USER=${DATABASE_USERNAME:-area_user}'
+      - 'POSTGRES_DB=${DATABASE_NAME}'
+      - 'POSTGRES_PASSWORD=${DATABASE_PASSWORD}'
+      - 'POSTGRES_USER=${DATABASE_USERNAME}'
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-area_user} -d ${DATABASE_NAME:-area_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
       interval: 30s
       timeout: 10s
       retries: 3

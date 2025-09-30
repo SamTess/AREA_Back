@@ -1,10 +1,19 @@
 plugins {
 	id 'java'
+	id 'org.flywaydb.flyway' version '9.19.0'
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 	id 'checkstyle'
 	id 'jacoco'
+}
+
+flyway {
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+    schemas = ['area','public']
+    locations = ['classpath:db/migration']
 }
 
 group = 'area.server'

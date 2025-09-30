@@ -3,6 +3,7 @@ package area.server.AREA_Back.controller;
 import area.server.AREA_Back.dto.CreateServiceRequest;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.service.ServiceCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ServiceController.class)
+@ActiveProfiles("unit-test")
 @WithMockUser
 class ServiceControllerTest {
 
@@ -45,6 +48,9 @@ class ServiceControllerTest {
 
     @MockitoBean
     private ServiceRepository serviceRepository;
+
+    @MockitoBean
+    private ServiceCacheService serviceCacheService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -92,7 +98,7 @@ class ServiceControllerTest {
         service2.setIsActive(false);
 
         Page<Service> servicePage = new PageImpl<>(Arrays.asList(service1, service2));
-        
+
         when(serviceRepository.findAll(any(PageRequest.class))).thenReturn(servicePage);
 
         mockMvc.perform(get("/api/services")
@@ -212,7 +218,7 @@ class ServiceControllerTest {
     @Test
     void testUpdateService() throws Exception {
         when(serviceRepository.findById(testService.getId())).thenReturn(Optional.of(testService));
-        
+
         Service updatedService = new Service();
         updatedService.setId(testService.getId());
         updatedService.setKey("updated-service");
@@ -220,7 +226,7 @@ class ServiceControllerTest {
         updatedService.setAuth(Service.AuthType.NONE);
         updatedService.setDocsUrl("https://updateddocs.example.com");
         updatedService.setIsActive(testService.getIsActive());
-        
+
         when(serviceRepository.save(any(Service.class))).thenReturn(updatedService);
 
         CreateServiceRequest updateRequest = new CreateServiceRequest();

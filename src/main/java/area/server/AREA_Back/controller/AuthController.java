@@ -126,7 +126,8 @@ public class AuthController {
         }
     }
 
-    @Operation(summary = "Refresh access token", description = "Generate new access and refresh tokens using the current refresh token")
+    @Operation(summary = "Refresh access token",
+               description = "Generate new access and refresh tokens using the current refresh token")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Tokens refreshed successfully"),
         @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")

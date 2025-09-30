@@ -24,8 +24,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ActionDefinitionControllerTest {
@@ -71,7 +75,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getAllActionDefinitions_ShouldReturnPagedResults() {
+    void getAllActionDefinitionsShouldReturnPagedResults() {
         // Arrange
         Pageable pageable = PageRequest.of(0, 20, Sort.by("name").ascending());
         List<ActionDefinition> actionDefinitions = Arrays.asList(testActionDefinition);
@@ -103,7 +107,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getAllActionDefinitions_WithDescendingSort_ShouldReturnSortedResults() {
+    void getAllActionDefinitionsWithDescendingSortShouldReturnSortedResults() {
         // Arrange
         Pageable pageable = PageRequest.of(0, 20, Sort.by("name").descending());
         List<ActionDefinition> actionDefinitions = Arrays.asList(testActionDefinition);
@@ -122,7 +126,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getActionDefinitionById_WithValidId_ShouldReturnActionDefinition() {
+    void getActionDefinitionByIdWithValidIdShouldReturnActionDefinition() {
         // Arrange
         when(actionDefinitionRepository.findById(testActionId)).thenReturn(Optional.of(testActionDefinition));
 
@@ -143,7 +147,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getActionDefinitionById_WithInvalidId_ShouldReturnNotFound() {
+    void getActionDefinitionByIdWithInvalidIdShouldReturnNotFound() {
         // Arrange
         UUID invalidId = UUID.randomUUID();
         when(actionDefinitionRepository.findById(invalidId)).thenReturn(Optional.empty());
@@ -159,7 +163,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getActionDefinitionsByServiceKey_ShouldReturnFilteredResults() {
+    void getActionDefinitionsByServiceKeyShouldReturnFilteredResults() {
         // Arrange
         String serviceKey = "test-service";
         List<ActionDefinition> actionDefinitions = Arrays.asList(testActionDefinition);
@@ -184,7 +188,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getEventCapableActions_ShouldReturnOnlyEventCapableActions() {
+    void getEventCapableActionsShouldReturnOnlyEventCapableActions() {
         // Arrange
         List<ActionDefinition> eventCapableActions = Arrays.asList(testActionDefinition);
 
@@ -207,7 +211,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getExecutableActions_ShouldReturnOnlyExecutableActions() {
+    void getExecutableActionsShouldReturnOnlyExecutableActions() {
         // Arrange
         ActionDefinition executableAction = new ActionDefinition();
         executableAction.setId(UUID.randomUUID());
@@ -239,7 +243,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getAllActionDefinitions_WithLargePageSize_ShouldHandleCorrectly() {
+    void getAllActionDefinitionsWithLargePageSizeShouldHandleCorrectly() {
         // Arrange
         Pageable pageable = PageRequest.of(0, 100, Sort.by("name").ascending());
         List<ActionDefinition> actionDefinitions = Arrays.asList(testActionDefinition);
@@ -258,7 +262,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void getAllActionDefinitions_WithHighPageNumber_ShouldReturnEmptyPage() {
+    void getAllActionDefinitionsWithHighPageNumberShouldReturnEmptyPage() {
         // Arrange
         Pageable pageable = PageRequest.of(10, 20, Sort.by("name").ascending());
         Page<ActionDefinition> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
@@ -279,7 +283,7 @@ class ActionDefinitionControllerTest {
     }
 
     @Test
-    void convertToResponse_ShouldMapAllFields() {
+    void convertToResponseShouldMapAllFields() {
         // This tests the private convertToResponse method indirectly through getAllActionDefinitions
 
         // Arrange

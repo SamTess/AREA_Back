@@ -20,6 +20,9 @@ import java.util.UUID;
 @Slf4j
 public class JwtService {
 
+    private static final int MIN_KEY_LENGTH_BYTES = 32;
+    private static final int BITS_PER_BYTE = 8;
+
     @Value("${JWT_ACCESS_SECRET:}")
     private String accessTokenSecret;
 
@@ -187,9 +190,10 @@ public class JwtService {
 
         try {
             byte[] keyBytes = Decoders.BASE64.decode(accessTokenSecret);
-            // Check if the key is long enough (32 bytes = 256 bits for HS256)
-            if (keyBytes.length < 32) {
-                log.warn("Access token secret is too short ({} bits), generating secure key", keyBytes.length * 8);
+            // Check if the key is long enough for HS256
+            if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
+                log.warn("Access token secret is too short ({} bits), generating secure key",
+                        keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
             return Keys.hmacShaKeyFor(keyBytes);
@@ -207,9 +211,10 @@ public class JwtService {
 
         try {
             byte[] keyBytes = Decoders.BASE64.decode(refreshTokenSecret);
-            // Check if the key is long enough (32 bytes = 256 bits for HS256)
-            if (keyBytes.length < 32) {
-                log.warn("Refresh token secret is too short ({} bits), generating secure key", keyBytes.length * 8);
+            // Check if the key is long enough for HS256
+            if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
+                log.warn("Refresh token secret is too short ({} bits), generating secure key",
+                        keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
             return Keys.hmacShaKeyFor(keyBytes);

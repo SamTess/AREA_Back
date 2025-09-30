@@ -37,6 +37,8 @@ public class AuthService {
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     private static final int ACCESS_TOKEN_COOKIE_MAX_AGE = 15 * 60;
     private static final int REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int ACCOUNT_LOCK_DURATION_MINUTES = 30;
 
     /**
      * Register a new user
@@ -66,7 +68,7 @@ public class AuthService {
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        localIdentity.setIsEmailVerified(false); // TODO: Implement email verification
+        localIdentity.setIsEmailVerified(false); // FIXME: Implement email verification
         localIdentity.setFailedLoginAttempts(0);
         localIdentity.setCreatedAt(LocalDateTime.now());
         localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -133,9 +135,9 @@ public class AuthService {
             // Increment failed attempts
             userLocalIdentityRepository.incrementFailedLoginAttempts(request.getEmail());
 
-            // Lock account if too many failures (5 attempts)
-            if (localIdentity.getFailedLoginAttempts() + 1 >= 5) {
-                LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(30); // 30 minutes lock
+            // Lock account if too many failures
+            if (localIdentity.getFailedLoginAttempts() + 1 >= MAX_FAILED_ATTEMPTS) {
+                LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(ACCOUNT_LOCK_DURATION_MINUTES);
                 userLocalIdentityRepository.lockAccount(request.getEmail(), lockUntil);
                 log.warn("Account locked due to failed attempts: {}", request.getEmail());
             }

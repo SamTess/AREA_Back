@@ -33,11 +33,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class ActionInstanceControllerTest {
@@ -126,7 +134,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstancesByUser_ShouldReturnActionInstances_WhenUserExists() throws Exception {
+    void getActionInstancesByUserShouldReturnActionInstancesWhenUserExists() throws Exception {
         // Given
         when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
         when(actionInstanceRepository.findByUser(testUser)).thenReturn(Arrays.asList(testActionInstance));
@@ -144,7 +152,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstancesByUser_ShouldReturnNotFound_WhenUserDoesNotExist() throws Exception {
+    void getActionInstancesByUserShouldReturnNotFoundWhenUserDoesNotExist() throws Exception {
         // Given
         when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
 
@@ -157,7 +165,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstancesByArea_ShouldReturnActionInstances_WhenAreaExists() throws Exception {
+    void getActionInstancesByAreaShouldReturnActionInstancesWhenAreaExists() throws Exception {
         // Given
         when(areaRepository.findById(testAreaId)).thenReturn(Optional.of(testArea));
         when(actionInstanceRepository.findByArea(testArea)).thenReturn(Arrays.asList(testActionInstance));
@@ -174,7 +182,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstancesByArea_ShouldReturnNotFound_WhenAreaDoesNotExist() throws Exception {
+    void getActionInstancesByAreaShouldReturnNotFoundWhenAreaDoesNotExist() throws Exception {
         // Given
         when(areaRepository.findById(testAreaId)).thenReturn(Optional.empty());
 
@@ -187,7 +195,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstanceById_ShouldReturnActionInstance_WhenExists() throws Exception {
+    void getActionInstanceByIdShouldReturnActionInstanceWhenExists() throws Exception {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.of(testActionInstance));
 
@@ -202,7 +210,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void getActionInstanceById_ShouldReturnNotFound_WhenDoesNotExist() throws Exception {
+    void getActionInstanceByIdShouldReturnNotFoundWhenDoesNotExist() throws Exception {
         // Given
         when(actionInstanceRepository.findById(testActionInstanceId)).thenReturn(Optional.empty());
 
@@ -214,7 +222,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_ShouldReturnCreated_WhenValidRequest() throws Exception {
+    void createActionInstanceShouldReturnCreatedWhenValidRequest() throws Exception {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);
@@ -243,7 +251,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_ShouldReturnCreated_WhenNoServiceAccount() throws Exception {
+    void createActionInstanceShouldReturnCreatedWhenNoServiceAccount() throws Exception {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);
@@ -269,7 +277,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_ShouldReturnBadRequest_WhenAreaNotFound() throws Exception {
+    void createActionInstanceShouldReturnBadRequestWhenAreaNotFound() throws Exception {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);
@@ -290,7 +298,7 @@ class ActionInstanceControllerTest {
     }
 
     @Test
-    void createActionInstance_ShouldReturnBadRequest_WhenActionDefinitionNotFound() throws Exception {
+    void createActionInstanceShouldReturnBadRequestWhenActionDefinitionNotFound() throws Exception {
         // Given
         CreateActionInstanceRequest request = new CreateActionInstanceRequest();
         request.setAreaId(testAreaId);

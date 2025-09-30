@@ -82,17 +82,17 @@ public class UserLocalIdentity {
      * Check if email verification token is valid (not expired)
      */
     public boolean isEmailVerificationTokenValid() {
-        return emailVerificationToken != null &&
-               emailVerificationExpiresAt != null &&
-               emailVerificationExpiresAt.isAfter(LocalDateTime.now());
+        return emailVerificationToken != null
+                && emailVerificationExpiresAt != null
+                && emailVerificationExpiresAt.isAfter(LocalDateTime.now());
     }
 
     /**
      * Check if password reset token is valid (not expired)
      */
     public boolean isPasswordResetTokenValid() {
-        return passwordResetToken != null &&
-               passwordResetExpiresAt != null &&
-               passwordResetExpiresAt.isAfter(LocalDateTime.now());
+        return passwordResetToken != null
+                && passwordResetExpiresAt != null
+                && passwordResetExpiresAt.isAfter(LocalDateTime.now());
     }
 }

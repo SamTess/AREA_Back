@@ -70,13 +70,16 @@ public interface UserLocalIdentityRepository extends JpaRepository<UserLocalIden
      * Clear email verification token
      */
     @Modifying
-    @Query("UPDATE UserLocalIdentity u SET u.emailVerificationToken = null, u.emailVerificationExpiresAt = null, u.isEmailVerified = true WHERE u.emailVerificationToken = :token")
+    @Query("UPDATE UserLocalIdentity u SET u.emailVerificationToken = null, "
+            + "u.emailVerificationExpiresAt = null, u.isEmailVerified = true "
+            + "WHERE u.emailVerificationToken = :token")
     void clearEmailVerificationToken(@Param("token") String token);
 
     /**
      * Clear password reset token
      */
     @Modifying
-    @Query("UPDATE UserLocalIdentity u SET u.passwordResetToken = null, u.passwordResetExpiresAt = null WHERE u.passwordResetToken = :token")
+    @Query("UPDATE UserLocalIdentity u SET u.passwordResetToken = null, "
+            + "u.passwordResetExpiresAt = null WHERE u.passwordResetToken = :token")
     void clearPasswordResetToken(@Param("token") String token);
 }

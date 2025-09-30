@@ -18,6 +18,7 @@ public class RedisTokenService {
 
     private static final String ACCESS_TOKEN_PREFIX = "access:";
     private static final String REFRESH_TOKEN_PREFIX = "refresh:";
+    private static final int TOKEN_LOG_PREFIX_LENGTH = 10;
 
     /**
      * Store access token in Redis with TTL
@@ -50,7 +51,9 @@ public class RedisTokenService {
         boolean isValid = userId != null;
 
         if (!isValid) {
-            log.debug("Access token not found in Redis: {}", accessToken.substring(0, Math.min(10, accessToken.length())) + "...");
+            String tokenPrefix = accessToken.substring(0,
+                    Math.min(TOKEN_LOG_PREFIX_LENGTH, accessToken.length())) + "...";
+            log.debug("Access token not found in Redis: {}", tokenPrefix);
         }
 
         return isValid;

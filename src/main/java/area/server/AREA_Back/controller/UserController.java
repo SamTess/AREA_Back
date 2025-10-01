@@ -1,6 +1,5 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.dto.CreateUserRequest;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

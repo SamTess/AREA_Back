@@ -1,19 +1,15 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.dto.UserResponse;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.OAuthProvider;
 import area.server.AREA_Back.service.OAuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,6 +1,5 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.controller.UserController;
 import area.server.AREA_Back.dto.CreateUserRequest;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.entity.User;

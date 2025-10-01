@@ -34,7 +34,6 @@ class UserRepositoryTest {
     void setUp() {
         testUser = new User();
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword123");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
@@ -49,7 +48,6 @@ class UserRepositoryTest {
         
         assertTrue(foundUser.isPresent());
         assertEquals("test@example.com", foundUser.get().getEmail());
-        assertEquals("hashedPassword123", foundUser.get().getPasswordHash());
     }
 
     @Test
@@ -73,7 +71,6 @@ class UserRepositoryTest {
         // Create another active user
         User activeUser = new User();
         activeUser.setEmail("active@example.com");
-        activeUser.setPasswordHash("hashedPassword456");
         activeUser.setIsActive(true);
         activeUser.setIsAdmin(false);
         entityManager.persistAndFlush(activeUser);
@@ -81,7 +78,6 @@ class UserRepositoryTest {
         // Create an inactive user
         User inactiveUser = new User();
         inactiveUser.setEmail("inactive@example.com");
-        inactiveUser.setPasswordHash("hashedPassword789");
         inactiveUser.setIsActive(false);
         inactiveUser.setIsAdmin(false);
         entityManager.persistAndFlush(inactiveUser);
@@ -99,7 +95,6 @@ class UserRepositoryTest {
     void testSaveUser() {
         User newUser = new User();
         newUser.setEmail("new@example.com");
-        newUser.setPasswordHash("newHashedPassword");
         newUser.setIsActive(true);
         newUser.setIsAdmin(false);
         newUser.setCreatedAt(LocalDateTime.now());
@@ -108,20 +103,17 @@ class UserRepositoryTest {
         
         assertNotNull(savedUser.getId());
         assertEquals("new@example.com", savedUser.getEmail());
-        assertEquals("newHashedPassword", savedUser.getPasswordHash());
         assertTrue(savedUser.getIsActive());
         assertFalse(savedUser.getIsAdmin());
     }
 
     @Test
     void testUpdateUser() {
-        testUser.setPasswordHash("updatedPassword");
         testUser.setIsAdmin(true);
         
         User updatedUser = userRepository.save(testUser);
         
         assertEquals(testUser.getId(), updatedUser.getId());
-        assertEquals("updatedPassword", updatedUser.getPasswordHash());
         assertTrue(updatedUser.getIsAdmin());
     }
 
@@ -148,7 +140,6 @@ class UserRepositoryTest {
     void testFindAll() {
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("anotherPassword");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);
@@ -174,7 +165,6 @@ class UserRepositoryTest {
         
         User anotherUser = new User();
         anotherUser.setEmail("count@example.com");
-        anotherUser.setPasswordHash("countPassword");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);

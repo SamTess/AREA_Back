@@ -1,9 +1,11 @@
 package area.server.AREA_Back.controller;
 
+import area.server.AREA_Back.controller.UserController;
 import area.server.AREA_Back.dto.CreateUserRequest;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,9 @@ class UserControllerTest {
     private UserRepository userRepository;
 
     @MockitoBean
+    private UserLocalIdentityRepository userLocalIdentityRepository;
+
+    @MockitoBean
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -61,7 +66,6 @@ class UserControllerTest {
         testUser = new User();
         testUser.setId(UUID.randomUUID());
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
@@ -122,7 +126,6 @@ class UserControllerTest {
         User newUser = new User();
         newUser.setId(UUID.randomUUID());
         newUser.setEmail(createUserRequest.getEmail());
-        newUser.setPasswordHash("encodedPassword");
         newUser.setIsActive(true);
         newUser.setIsAdmin(false);
         newUser.setCreatedAt(LocalDateTime.now());

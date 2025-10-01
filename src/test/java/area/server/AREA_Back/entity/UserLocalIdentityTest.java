@@ -168,7 +168,6 @@ class UserLocalIdentityTest {
         UUID testId = UUID.randomUUID();
         String testEmail = "newtest@example.com";
         String testPasswordHash = "$2a$10$newHashedPassword";
-        String testSalt = "saltValue";
         Boolean testEmailVerified = true;
         String testVerificationToken = "verificationToken123";
         LocalDateTime testVerificationExpiry = LocalDateTime.now().plusHours(24);
@@ -183,7 +182,6 @@ class UserLocalIdentityTest {
         userLocalIdentity.setId(testId);
         userLocalIdentity.setEmail(testEmail);
         userLocalIdentity.setPasswordHash(testPasswordHash);
-        userLocalIdentity.setSalt(testSalt);
         userLocalIdentity.setIsEmailVerified(testEmailVerified);
         userLocalIdentity.setEmailVerificationToken(testVerificationToken);
         userLocalIdentity.setEmailVerificationExpiresAt(testVerificationExpiry);
@@ -198,7 +196,6 @@ class UserLocalIdentityTest {
         assertEquals(testId, userLocalIdentity.getId());
         assertEquals(testEmail, userLocalIdentity.getEmail());
         assertEquals(testPasswordHash, userLocalIdentity.getPasswordHash());
-        assertEquals(testSalt, userLocalIdentity.getSalt());
         assertEquals(testEmailVerified, userLocalIdentity.getIsEmailVerified());
         assertEquals(testVerificationToken, userLocalIdentity.getEmailVerificationToken());
         assertEquals(testVerificationExpiry, userLocalIdentity.getEmailVerificationExpiresAt());
@@ -221,7 +218,6 @@ class UserLocalIdentityTest {
         UUID testId = UUID.randomUUID();
         String testEmail = "constructor@example.com";
         String testPasswordHash = "$2a$10$constructorHash";
-        String testSalt = "constructorSalt";
         Boolean testEmailVerified = true;
         String testVerificationToken = "constructorVerificationToken";
         LocalDateTime testVerificationExpiry = LocalDateTime.now().plusHours(24);
@@ -234,7 +230,7 @@ class UserLocalIdentityTest {
         LocalDateTime testUpdatedAt = LocalDateTime.now();
 
         UserLocalIdentity allArgsIdentity = new UserLocalIdentity(
-            testId, user, testEmail, testPasswordHash, testSalt, testEmailVerified,
+            testId, user, testEmail, testPasswordHash, testEmailVerified,
             testVerificationToken, testVerificationExpiry, testResetToken, testResetExpiry,
             testFailedAttempts, testLockedUntil, testLastPasswordChange, testCreatedAt, testUpdatedAt
         );
@@ -243,7 +239,6 @@ class UserLocalIdentityTest {
         assertEquals(user, allArgsIdentity.getUser());
         assertEquals(testEmail, allArgsIdentity.getEmail());
         assertEquals(testPasswordHash, allArgsIdentity.getPasswordHash());
-        assertEquals(testSalt, allArgsIdentity.getSalt());
         assertEquals(testEmailVerified, allArgsIdentity.getIsEmailVerified());
         assertEquals(testVerificationToken, allArgsIdentity.getEmailVerificationToken());
         assertEquals(testVerificationExpiry, allArgsIdentity.getEmailVerificationExpiresAt());

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: 'postgres:15'
-    env_file: .env
+    env_file: ../.env
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}

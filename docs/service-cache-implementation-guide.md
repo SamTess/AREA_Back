@@ -29,7 +29,7 @@ Complete implementation of a services catalog endpoint with Redis caching and au
 ```
 ServiceController
        ↓
-ServiceCacheService 
+ServiceCacheService
        ↓
 ServiceRepository
        ↓
@@ -79,7 +79,7 @@ REDIS_PORT=6379
 # Cache service
 ./gradlew test --tests="area.server.AREA_Back.service.ServiceCacheServiceTest"
 
-# Cache endpoints  
+# Cache endpoints
 ./gradlew test --tests="area.server.AREA_Back.controller.ServiceControllerCacheTest"
 
 # Redis configuration
@@ -148,7 +148,7 @@ If Redis is unavailable:
 # application-prod.properties
 spring.cache.redis.time-to-live=3600000  # 1 hour in ms
 
-# application-dev.properties  
+# application-dev.properties
 spring.cache.redis.time-to-live=300000   # 5 minutes in ms
 ```
 

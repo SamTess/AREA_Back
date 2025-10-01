@@ -1,5 +1,7 @@
 package area.server.AREA_Back.controller;
 
+import area.server.AREA_Back.dto.UserResponse;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;

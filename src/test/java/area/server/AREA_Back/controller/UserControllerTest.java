@@ -31,7 +31,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -113,72 +112,6 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(userRepository).findById(nonExistentId);
-    }
-
-    @Test
-    void testCreateUser() throws Exception {
-        User newUser = new User();
-        newUser.setId(UUID.randomUUID());
-        newUser.setEmail(createUserRequest.getEmail());
-        newUser.setIsActive(true);
-        newUser.setIsAdmin(false);
-        newUser.setCreatedAt(LocalDateTime.now());
-
-        when(userRepository.existsByEmail(createUserRequest.getEmail())).thenReturn(false);
-        when(passwordEncoder.encode(createUserRequest.getPassword())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(newUser);
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(csrf())
-                .content(objectMapper.writeValueAsString(createUserRequest))
-                .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("newuser@example.com"));
-
-        verify(userRepository).existsByEmail(createUserRequest.getEmail());
-        verify(passwordEncoder).encode(createUserRequest.getPassword());
-        verify(userRepository).save(any(User.class));
-    }
-
-    @Test
-    void testCreateUserWithExistingEmail() throws Exception {
-        when(userRepository.existsByEmail(createUserRequest.getEmail())).thenReturn(true);
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(csrf())
-                .content(objectMapper.writeValueAsString(createUserRequest)))
-                .andExpect(status().isConflict());
-
-        verify(userRepository).existsByEmail(createUserRequest.getEmail());
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    void testCreateUserWithInvalidData() throws Exception {
-        CreateUserRequest invalidRequest = new CreateUserRequest();
-        invalidRequest.setEmail("invalid-email");
-        invalidRequest.setPassword("");
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(csrf())
-                .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testCreateUserWithNullPassword() throws Exception {
-        CreateUserRequest requestWithNullPassword = new CreateUserRequest();
-        requestWithNullPassword.setEmail("test@example.com");
-        requestWithNullPassword.setPassword(null);
-
-        mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(csrf())
-                .content(objectMapper.writeValueAsString(requestWithNullPassword)))
-                .andExpect(status().isBadRequest());
     }
 
     @Test

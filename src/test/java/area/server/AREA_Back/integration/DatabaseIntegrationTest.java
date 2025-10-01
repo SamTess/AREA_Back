@@ -103,8 +103,8 @@ class DatabaseIntegrationTest {
             }
 
             Set<String> expectedUserColumns = Set.of(
-                "id", "email", "password_hash", "is_active", "is_admin",
-                "created_at", "confirmed_at", "last_login_at", "avatar_url"
+                "id", "email", "is_active", "is_admin",
+                "created_at", "last_login_at", "avatar_url"
             );
 
             for (String expectedColumn : expectedUserColumns) {

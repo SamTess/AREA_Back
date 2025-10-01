@@ -1,7 +1,7 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LoginRequest;
+import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.TokenRefreshRequest;
 import area.server.AREA_Back.dto.UserResponse;
@@ -77,7 +77,6 @@ class AuthControllerTest {
             "test@example.com",
             true,
             false,
-            LocalDateTime.now(),
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"
@@ -204,8 +203,8 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnOkWhenCredentialsValid() throws Exception {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "password123");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
             // When
@@ -219,14 +218,14 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.message").value("Success"))
                     .andExpect(jsonPath("$.user.email").value("test@example.com"));
 
-            verify(authService).login(any(LoginRequest.class), any(HttpServletResponse.class));
+            verify(authService).login(any(LocalLoginRequest.class), any(HttpServletResponse.class));
         }
 
         @Test
         void loginShouldReturnUnauthorizedWhenCredentialsInvalid() throws Exception {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "wrongpassword");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "wrongpassword");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Invalid credentials"));
 
             // When
@@ -244,8 +243,8 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnLockedWhenAccountLocked() throws Exception {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "password123");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Account locked due to failed attempts"));
 
             // When
@@ -263,8 +262,8 @@ class AuthControllerTest {
         @Test
         void loginUsingDirectControllerCallShouldReturnOkWhenSuccessful() {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "password123");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
             // When
@@ -280,8 +279,8 @@ class AuthControllerTest {
         @Test
         void loginUsingDirectControllerCallShouldReturnLockedWhenAccountLocked() {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "password123");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Account is locked"));
 
             // When
@@ -297,8 +296,8 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() throws Exception {
             // Given
-            LoginRequest request = new LoginRequest("test@example.com", "password123");
-            when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
             // When

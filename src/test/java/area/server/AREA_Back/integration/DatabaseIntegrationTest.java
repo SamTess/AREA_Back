@@ -140,7 +140,6 @@ class DatabaseIntegrationTest {
         // Create and save a user
         User user = new User();
         user.setEmail("integration.test@example.com");
-        user.setPasswordHash("hashed_password");
         user.setIsActive(true);
         user.setIsAdmin(false);
         user.setCreatedAt(LocalDateTime.now());
@@ -166,7 +165,6 @@ class DatabaseIntegrationTest {
         // Test unique constraint on email
         User user1 = new User();
         user1.setEmail("unique.test@example.com");
-        user1.setPasswordHash("password1");
         user1.setIsActive(true);
         user1.setIsAdmin(false);
         user1.setCreatedAt(LocalDateTime.now());
@@ -176,7 +174,6 @@ class DatabaseIntegrationTest {
         // Attempt to create a second user with the same email
         User user2 = new User();
         user2.setEmail("unique.test@example.com");
-        user2.setPasswordHash("password2");
         user2.setIsActive(true);
         user2.setIsAdmin(false);
         user2.setCreatedAt(LocalDateTime.now());

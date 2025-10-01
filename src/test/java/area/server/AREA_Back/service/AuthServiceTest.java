@@ -1,7 +1,7 @@
 package area.server.AREA_Back.service;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LoginRequest;
+import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
@@ -162,7 +162,7 @@ class AuthServiceTest {
     @Test
     void loginShouldReturnAuthResponseWhenValidCredentials() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
         when(passwordEncoder.matches(testPassword, "hashedPassword")).thenReturn(true);
@@ -200,7 +200,7 @@ class AuthServiceTest {
     @Test
     void loginShouldThrowExceptionWhenEmailNotFound() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.empty());
 
         // When & Then
@@ -215,7 +215,7 @@ class AuthServiceTest {
     @Test
     void loginShouldThrowExceptionWhenAccountIsLocked() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
         testLocalIdentity.setLockedUntil(LocalDateTime.now().plusMinutes(10));
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
@@ -231,7 +231,7 @@ class AuthServiceTest {
     @Test
     void loginShouldThrowExceptionWhenUserIsInactive() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, testPassword);
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
         testUser.setIsActive(false);
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
@@ -247,7 +247,7 @@ class AuthServiceTest {
     @Test
     void loginShouldIncrementFailedAttemptsWhenWrongPassword() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, "wrongPassword");
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, "wrongPassword");
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
@@ -264,7 +264,7 @@ class AuthServiceTest {
     @Test
     void loginShouldLockAccountWhenTooManyFailedAttempts() {
         // Given
-        LoginRequest loginRequest = new LoginRequest(testEmail, "wrongPassword");
+        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, "wrongPassword");
         testLocalIdentity.setFailedLoginAttempts(4); // 5th attempt will lock
 
         when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));

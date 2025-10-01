@@ -82,7 +82,6 @@ class WorkerIntegrationTest {
         // Create test user
         testUser = new User();
         testUser.setEmail("test-worker@example.com");
-        testUser.setPasswordHash("hashed");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser = userRepository.save(testUser);

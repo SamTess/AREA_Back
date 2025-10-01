@@ -61,11 +61,9 @@ class UserControllerTest {
         testUser = new User();
         testUser.setId(UUID.randomUUID());
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
-        testUser.setConfirmedAt(LocalDateTime.now());
         testUser.setLastLoginAt(LocalDateTime.now());
         testUser.setAvatarUrl("https://example.com/avatar.png");
 
@@ -122,7 +120,6 @@ class UserControllerTest {
         User newUser = new User();
         newUser.setId(UUID.randomUUID());
         newUser.setEmail(createUserRequest.getEmail());
-        newUser.setPasswordHash("encodedPassword");
         newUser.setIsActive(true);
         newUser.setIsAdmin(false);
         newUser.setCreatedAt(LocalDateTime.now());

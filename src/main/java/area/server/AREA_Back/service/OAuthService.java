@@ -37,9 +37,10 @@ public abstract class OAuthService {
         String clientSecret,
         JwtService jwtService) {
 
-        if (clientId == null || clientId.isEmpty() ||
-            clientSecret == null || clientSecret.isEmpty()) {
-            throw new IllegalStateException(providerKey + " OAuth2 client ID and secret must be set in environment variables.");
+        if (clientId == null || clientId.isEmpty()
+            || clientSecret == null || clientSecret.isEmpty()) {
+            throw new IllegalStateException(providerKey
+                + " OAuth2 client ID and secret must be set in environment variables.");
         }
 
         this.providerKey = providerKey;
@@ -52,12 +53,24 @@ public abstract class OAuthService {
 
     }
 
-    public String getProviderKey() { return providerKey; }
-    public String getProviderLabel() { return providerLabel; }
-    public String getProviderLogoUrl() { return providerLogoUrl; }
-    public String getUserAuthUrl() { return userAuthUrl; }
-    public String getClientId() { return clientId; }
-    public String getClientSecret() { return clientSecret; }
+    public String getProviderKey() {
+        return providerKey;
+    }
+    public String getProviderLabel() {
+        return providerLabel;
+    }
+    public String getProviderLogoUrl() {
+        return providerLogoUrl;
+    }
+    public String getUserAuthUrl() {
+        return userAuthUrl;
+    }
+    public String getClientId() {
+        return clientId;
+    }
+    public String getClientSecret() {
+        return clientSecret;
+    }
 
     public abstract AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response);
 

@@ -28,8 +28,12 @@ public class RetryManager {
         double minFactor = 1 - JITTER_FACTOR;
         double maxFactor = 1 + JITTER_FACTOR;
         double factor = 1 + jitter;
-        if (factor < minFactor) factor = minFactor;
-        if (factor > maxFactor) factor = maxFactor;
+        if (factor < minFactor) {
+            factor = minFactor;
+        }
+        if (factor > maxFactor) {
+            factor = maxFactor;
+        }
         long finalDelay = Math.max(1L, Math.round(delaySeconds * factor));
         log.debug("Calculated retry delay for attempt {}: {} seconds", attemptNumber, finalDelay);
         return LocalDateTime.now().plusSeconds(finalDelay);

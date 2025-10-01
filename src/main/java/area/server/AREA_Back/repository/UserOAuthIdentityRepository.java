@@ -66,36 +66,48 @@ public interface UserOAuthIdentityRepository extends JpaRepository<UserOAuthIden
      * Update access token for OAuth identity
      */
     @Modifying
-    @Query("UPDATE UserOAuthIdentity u SET u.accessTokenEnc = :accessToken, u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
-    void updateAccessToken(@Param("userId") UUID userId, @Param("provider") String provider, @Param("accessToken") String accessToken, @Param("updatedAt") LocalDateTime updatedAt);
+    @Query("UPDATE UserOAuthIdentity u SET u.accessTokenEnc = :accessToken, "
+        + "u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
+    void updateAccessToken(@Param("userId") UUID userId, @Param("provider") String provider,
+                          @Param("accessToken") String accessToken, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
      * Update refresh token for OAuth identity
      */
     @Modifying
-    @Query("UPDATE UserOAuthIdentity u SET u.refreshTokenEnc = :refreshToken, u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
-    void updateRefreshToken(@Param("userId") UUID userId, @Param("provider") String provider, @Param("refreshToken") String refreshToken, @Param("updatedAt") LocalDateTime updatedAt);
+    @Query("UPDATE UserOAuthIdentity u SET u.refreshTokenEnc = :refreshToken, "
+        + "u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
+    void updateRefreshToken(@Param("userId") UUID userId, @Param("provider") String provider,
+                           @Param("refreshToken") String refreshToken, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
      * Update both access and refresh tokens
      */
     @Modifying
-    @Query("UPDATE UserOAuthIdentity u SET u.accessTokenEnc = :accessToken, u.refreshTokenEnc = :refreshToken, u.expiresAt = :expiresAt, u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
-    void updateTokens(@Param("userId") UUID userId, @Param("provider") String provider, @Param("accessToken") String accessToken, @Param("refreshToken") String refreshToken, @Param("expiresAt") LocalDateTime expiresAt, @Param("updatedAt") LocalDateTime updatedAt);
+    @Query("UPDATE UserOAuthIdentity u SET u.accessTokenEnc = :accessToken, "
+        + "u.refreshTokenEnc = :refreshToken, u.expiresAt = :expiresAt, u.updatedAt = :updatedAt "
+        + "WHERE u.user.id = :userId AND u.provider = :provider")
+    void updateTokens(@Param("userId") UUID userId, @Param("provider") String provider,
+                     @Param("accessToken") String accessToken, @Param("refreshToken") String refreshToken,
+                     @Param("expiresAt") LocalDateTime expiresAt, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
      * Update token expiration
      */
     @Modifying
-    @Query("UPDATE UserOAuthIdentity u SET u.expiresAt = :expiresAt, u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
-    void updateTokenExpiration(@Param("userId") UUID userId, @Param("provider") String provider, @Param("expiresAt") LocalDateTime expiresAt, @Param("updatedAt") LocalDateTime updatedAt);
+    @Query("UPDATE UserOAuthIdentity u SET u.expiresAt = :expiresAt, u.updatedAt = :updatedAt "
+        + "WHERE u.user.id = :userId AND u.provider = :provider")
+    void updateTokenExpiration(@Param("userId") UUID userId, @Param("provider") String provider,
+                              @Param("expiresAt") LocalDateTime expiresAt, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
      * Update scopes for OAuth identity
      */
     @Modifying
-    @Query("UPDATE UserOAuthIdentity u SET u.scopes = :scopes, u.updatedAt = :updatedAt WHERE u.user.id = :userId AND u.provider = :provider")
-    void updateScopes(@Param("userId") UUID userId, @Param("provider") String provider, @Param("scopes") Map<String, Object> scopes, @Param("updatedAt") LocalDateTime updatedAt);
+    @Query("UPDATE UserOAuthIdentity u SET u.scopes = :scopes, u.updatedAt = :updatedAt "
+        + "WHERE u.user.id = :userId AND u.provider = :provider")
+    void updateScopes(@Param("userId") UUID userId, @Param("provider") String provider,
+                     @Param("scopes") Map<String, Object> scopes, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
      * Delete OAuth identity by user and provider

@@ -41,7 +41,7 @@ public class OAuthController {
     }
 
     @PostMapping("/{provider}/exchange")
-    public ResponseEntity<AuthResponse> exchangeToken(  @PathVariable("provider") String provider,
+    public ResponseEntity<AuthResponse> exchangeToken(@PathVariable("provider") String provider,
                                                         @RequestParam("code") String authorizationCode,
                                                         HttpServletResponse response) {
 
@@ -49,8 +49,9 @@ public class OAuthController {
             .filter(s -> s.getProviderKey().equalsIgnoreCase(provider))
             .findFirst();
 
-        if (svc.isEmpty())
+        if (svc.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
         try {
             OAuthLoginRequest request = new OAuthLoginRequest(authorizationCode);

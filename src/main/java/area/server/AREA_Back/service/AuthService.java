@@ -62,7 +62,7 @@ public class AuthService {
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        localIdentity.setIsEmailVerified(false); // TODO: Implement email verification
+        localIdentity.setIsEmailVerified(false); // TODO Implement email verification
         localIdentity.setFailedLoginAttempts(0);
         localIdentity.setCreatedAt(LocalDateTime.now());
         localIdentity.setUpdatedAt(LocalDateTime.now());

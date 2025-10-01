@@ -12,11 +12,11 @@ public final class OAuthProvider {
     private final String clientId;
 
     public OAuthProvider(
-        String providerKey,
-        String providerLabel,
-        String providerLogoUrl,
-        String userAuthUrl,
-        String clientId) {
+        final String providerKey,
+        final String providerLabel,
+        final String providerLogoUrl,
+        final String userAuthUrl,
+        final String clientId) {
 
         this.providerKey = providerKey;
         this.providerLabel = providerLabel;
@@ -25,14 +25,26 @@ public final class OAuthProvider {
         this.clientId = clientId;
     }
 
-    public String getProviderKey() { return providerKey; }
-    public String getProviderLabel() { return providerLabel; }
-    public String getProviderLogoUrl() { return providerLogoUrl; }
-    public String getUserAuthUrl() { return userAuthUrl; }
-    public String getClientId() { return clientId; }
+    public String getProviderKey() {
+        return providerKey;
+    }
+    public String getProviderLabel() {
+        return providerLabel;
+    }
+    public String getProviderLogoUrl() {
+        return providerLogoUrl;
+    }
+    public String getUserAuthUrl() {
+        return userAuthUrl;
+    }
+    public String getClientId() {
+        return clientId;
+    }
 
-    public static OAuthProvider fromService(OAuthService service) {
-        if (service == null) return null;
+    public static OAuthProvider fromService(final OAuthService service) {
+        if (service == null) {
+            return null;
+        }
         return new OAuthProvider(
             service.getProviderKey(),
             service.getProviderLabel(),
@@ -43,15 +55,19 @@ public final class OAuthProvider {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         OAuthProvider that = (OAuthProvider) o;
-        return Objects.equals(providerKey, that.providerKey) &&
-            Objects.equals(providerLabel, that.providerLabel) &&
-            Objects.equals(providerLogoUrl, that.providerLogoUrl) &&
-            Objects.equals(userAuthUrl, that.userAuthUrl) &&
-            Objects.equals(clientId, that.clientId);
+        return Objects.equals(providerKey, that.providerKey)
+            && Objects.equals(providerLabel, that.providerLabel)
+            && Objects.equals(providerLogoUrl, that.providerLogoUrl)
+            && Objects.equals(userAuthUrl, that.userAuthUrl)
+            && Objects.equals(clientId, that.clientId);
     }
 
     @Override

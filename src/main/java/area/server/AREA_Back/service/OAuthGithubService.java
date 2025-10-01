@@ -59,8 +59,25 @@ public class OAuthGithubService extends OAuthService {
     @Override
     public AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response) {
         //! 1: Exchange code for access token
-        String tokenUrl = "https://github.com/login/oauth/access_token";
+        String githubAccessToken = exchangeCodeForToken(request.getAuthorizationCode());
 
+        //! 2: Fetch user profile and email
+        UserProfileData profileData = fetchUserProfile(githubAccessToken);
+
+        //! 3: Validate email (now mandatory)
+        if (profileData.email == null || profileData.email.isEmpty()) {
+            throw new RuntimeException("GitHub account email is required for authentication");
+        }
+
+        //! 4: If registered, update; else create user and OAuth identity
+        UserOAuthIdentity oauth = handleUserAuthentication(profileData, githubAccessToken);
+
+        //! 5: Set cookies and return response
+        return generateAuthResponse(oauth, response);
+    }
+
+    private String exchangeCodeForToken(String authorizationCode) {
+        String tokenUrl = "https://github.com/login/oauth/access_token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -69,7 +86,7 @@ public class OAuthGithubService extends OAuthService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", this.clientId);
         body.add("client_secret", this.clientSecret);
-        body.add("code", request.getAuthorizationCode());
+        body.add("code", authorizationCode);
 
         HttpEntity<MultiValueMap<String, String>> githubRequest = new HttpEntity<>(body, headers);
 
@@ -77,7 +94,7 @@ public class OAuthGithubService extends OAuthService {
             tokenUrl,
             HttpMethod.POST,
             githubRequest,
-            new ParameterizedTypeReference<java.util.Map<String, Object>>(){}
+            new ParameterizedTypeReference<java.util.Map<String, Object>>() { }
         );
 
         if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
@@ -88,9 +105,22 @@ public class OAuthGithubService extends OAuthService {
         if (githubAccessTokenObj == null) {
             throw new RuntimeException("No access_token in GitHub response");
         }
-        String githubAccessToken = githubAccessTokenObj.toString();
+        return githubAccessTokenObj.toString();
+    }
 
-        //! 2: Fetch user profile
+    private static class UserProfileData {
+        String email;
+        String avatarUrl;
+        String userIdentifier;
+
+        UserProfileData(String email, String avatarUrl, String userIdentifier) {
+            this.email = email;
+            this.avatarUrl = avatarUrl;
+            this.userIdentifier = userIdentifier;
+        }
+    }
+
+    private UserProfileData fetchUserProfile(String githubAccessToken) {
         HttpHeaders authHeaders = new HttpHeaders();
         authHeaders.setBearerAuth(githubAccessToken);
         authHeaders.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
@@ -101,7 +131,7 @@ public class OAuthGithubService extends OAuthService {
             "https://api.github.com/user",
             HttpMethod.GET,
             authRequest,
-            new ParameterizedTypeReference<java.util.Map<String, Object>>(){}
+            new ParameterizedTypeReference<java.util.Map<String, Object>>() { }
         );
 
         if (!userResp.getStatusCode().is2xxSuccessful() || userResp.getBody() == null) {
@@ -116,6 +146,11 @@ public class OAuthGithubService extends OAuthService {
             throw new RuntimeException("GitHub user id is missing in profile response");
         }
 
+        String email = extractEmail(userBody, authRequest);
+        return new UserProfileData(email, avatarUrl, idObj.toString());
+    }
+
+    private String extractEmail(java.util.Map<String, Object> userBody, HttpEntity<Void> authRequest) {
         String email = null;
         Object emailObj = userBody.get("email");
         if (emailObj != null && !emailObj.toString().isEmpty()) {
@@ -126,40 +161,35 @@ public class OAuthGithubService extends OAuthService {
                     "https://api.github.com/user/emails",
                     HttpMethod.GET,
                     authRequest,
-                    new ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>(){}
+                    new ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() { }
                 );
-
 
                 if (emailsResp.getStatusCode().is2xxSuccessful() && emailsResp.getBody() != null) {
                     for (java.util.Map<String, Object> m : emailsResp.getBody()) {
                         Object primary = m.get("primary");
                         Object verified = m.get("verified");
                         Object emailVal = m.get("email");
-                            if (emailVal != null && Boolean.TRUE.equals(primary) && Boolean.TRUE.equals(verified)) {
-                                email = emailVal.toString();
-                                break;
-                            }
-                            if (email == null && emailVal != null) {
-                                email = emailVal.toString();
-                            }
+                        if (emailVal != null && Boolean.TRUE.equals(primary) && Boolean.TRUE.equals(verified)) {
+                            email = emailVal.toString();
+                            break;
+                        }
+                        if (email == null && emailVal != null) {
+                            email = emailVal.toString();
+                        }
                     }
-                } else {
                 }
             } catch (Exception e) {
+                // Failed to fetch emails, continue without email verification
             }
         }
+        return email;
+    }
 
-        //! 3: Validate email (now mandatory)
-        if (email == null || email.isEmpty()) {
-            throw new RuntimeException("GitHub account email is required for authentication");
-        }
-
-        String userIdentifier = idObj.toString();
-
-        //! 4: If registered, update; else create user and OAuth identity
+    private UserOAuthIdentity handleUserAuthentication(UserProfileData profileData, String githubAccessToken) {
         Optional<UserOAuthIdentity> oauthOpt;
         try {
-            oauthOpt = userOAuthIdentityRepository.findByProviderAndProviderUserId(this.providerKey, userIdentifier);
+            oauthOpt = userOAuthIdentityRepository.findByProviderAndProviderUserId(
+                this.providerKey, profileData.userIdentifier);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Database error during OAuth identity lookup: " + e.getMessage(), e);
@@ -174,14 +204,15 @@ public class OAuthGithubService extends OAuthService {
 
             User user = oauth.getUser();
             user.setLastLoginAt(java.time.LocalDateTime.now());
-            user.setEmail(email);
-            if (avatarUrl != null && !avatarUrl.isEmpty())
-                user.setAvatarUrl(avatarUrl);
+            user.setEmail(profileData.email);
+            if (profileData.avatarUrl != null && !profileData.avatarUrl.isEmpty()) {
+                user.setAvatarUrl(profileData.avatarUrl);
+            }
             this.userRepository.save(user);
         } else {
             Optional<User> userOpt = Optional.empty();
-            if (email != null && !email.isEmpty()) {
-                userOpt = userRepository.findByEmail(email);
+            if (profileData.email != null && !profileData.email.isEmpty()) {
+                userOpt = userRepository.findByEmail(profileData.email);
             }
 
             oauth = new UserOAuthIdentity();
@@ -190,25 +221,29 @@ public class OAuthGithubService extends OAuthService {
                 oauth.setUser(userOpt.get());
             } else {
                 User newUser = new User();
-                newUser.setEmail(email);
+                newUser.setEmail(profileData.email);
                 newUser.setIsActive(true);
                 newUser.setIsAdmin(false);
                 newUser.setCreatedAt(java.time.LocalDateTime.now());
-                if (avatarUrl != null && !avatarUrl.isEmpty())
-                    newUser.setAvatarUrl(avatarUrl);
+                if (profileData.avatarUrl != null && !profileData.avatarUrl.isEmpty()) {
+                    newUser.setAvatarUrl(profileData.avatarUrl);
+                }
                 User savedUser = this.userRepository.save(newUser);
                 oauth.setUser(savedUser);
             }
 
             oauth.setProvider(this.providerKey);
-            oauth.setProviderUserId(userIdentifier);
+            oauth.setProviderUserId(profileData.userIdentifier);
             oauth.setAccessTokenEnc(passwordEncoder.encode(githubAccessToken));
             oauth.setCreatedAt(java.time.LocalDateTime.now());
             oauth.setUpdatedAt(java.time.LocalDateTime.now());
             this.userOAuthIdentityRepository.save(oauth);
         }
 
-        //! 5: Set cookies and return response
+        return oauth;
+    }
+
+    private AuthResponse generateAuthResponse(UserOAuthIdentity oauth, HttpServletResponse response) {
         User user = oauth.getUser();
         UserResponse userResponse = new UserResponse();
 

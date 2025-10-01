@@ -218,25 +218,19 @@ jobs:
           retention-days: 1
 
   release:
-    name: Release to Staging
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to staging
-        run: echo "Deploy JAR to staging environment (e.g., via Docker, Kubernetes, or cloud service)"
-
-  docs:
-    name: Generate Documentation
+    name: Create Staging Release
     runs-on: ubuntu-latest
     needs: [setup, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -261,17 +255,154 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Generate Javadoc
-        run: ./gradlew javadoc
+      - name: Download dependencies
+        run: ./gradlew dependencies --no-daemon
 
-      - name: Generate AsciiDoc documentation
-        run: ./gradlew asciidoctor
+      - name: Build application
+        run: |
+          ./gradlew clean build -x test
+          echo "Build completed successfully"
 
-      - name: Upload documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: documentation
-          path: |
-            build/docs/
-            build/asciidoc/
-          retention-days: 7
+      - name: Generate staging release version
+        id: version
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          STAGING_VERSION="staging-${TIMESTAMP}-${SHORT_SHA}"
+          echo "version=${STAGING_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Generated staging version: ${STAGING_VERSION}"
+
+      - name: Create release archive
+        run: |
+          mkdir -p staging-release
+
+          # Copy JAR file
+          cp build/libs/*.jar staging-release/ 2>/dev/null || echo "No JAR files found"
+
+          # Copy configuration files
+          cp build.gradle staging-release/ 2>/dev/null || echo "No build.gradle found"
+          cp gradlew staging-release/ 2>/dev/null || echo "No gradlew found"
+          cp gradlew.bat staging-release/ 2>/dev/null || echo "No gradlew.bat found"
+          cp -r gradle staging-release/ 2>/dev/null || echo "No gradle directory found"
+
+          # Copy application properties if they exist
+          cp src/main/resources/application*.properties staging-release/ 2>/dev/null || echo "No application properties found"
+
+          # Copy Docker files if they exist
+          cp Dockerfile staging-release/ 2>/dev/null || echo "No Dockerfile found"
+          cp docker-compose*.yaml staging-release/ 2>/dev/null || echo "No docker-compose files found"
+
+          cat > staging-release/DEPLOYMENT.md << EOF
+          ## 🚀 Staging Release Deployment Guide
+
+          ### Release Information
+          - **Version:** ${{ steps.version.outputs.version }}
+          - **Branch:** ${{ github.ref_name }}
+          - **Commit:** ${{ github.sha }}
+          - **Build Date:** $(date)
+
+          ### 📋 Prerequisites
+          - Java 21 installed
+          - Gradle (or use included gradlew)
+          - Environment variables configured
+
+          ### 🏗️ Deployment Steps
+
+          1. **Extract the release archive:**
+             \`\`\`bash
+             tar -xzf staging-${{ steps.version.outputs.version }}.tar.gz
+             cd staging-release/
+             \`\`\`
+
+          2. **Configure environment:**
+             \`\`\`bash
+             # Copy and edit application properties for staging
+             cp application-staging.properties application.properties 2>/dev/null || echo "Configure your staging application.properties"
+             # Set up your staging environment variables
+             \`\`\`
+
+          3. **Start the application:**
+             \`\`\`bash
+             # Using Gradle wrapper
+             ./gradlew bootRun
+
+             # OR using Java directly
+             java -jar *.jar
+             \`\`\`
+
+          ### 🔧 Required Environment Variables
+          - Database connection variables (staging)
+          - JWT_SECRET and other security secrets (staging)
+          - Redis configuration (if applicable)
+          - External service configurations
+
+          ### ✅ Health Check
+          After deployment, verify the application is running:
+          - **Application:** http://your-staging-url:8080/
+          - **Actuator Health:** http://your-staging-url:8080/actuator/health
+          - **API endpoints:** Test your API endpoints
+
+          ### 📁 Files Included
+          - Spring Boot JAR file (*.jar)
+          - Build configuration (build.gradle, gradlew, gradle/)
+          - Application properties templates
+          - Docker configuration (if available)
+          - Deployment instructions (this file)
+
+          ### 🆘 Troubleshooting
+          - If the app doesn't start, check the console logs
+          - Verify all environment variables are set correctly
+          - Ensure Java 21 is being used
+          - Check database connectivity
+          - Validate Redis connection (if applicable)
+          EOF
+
+          # Create the release archive
+          tar -czf staging-${{ steps.version.outputs.version }}.tar.gz staging-release/
+          echo "Release archive created: staging-${{ steps.version.outputs.version }}.tar.gz"
+
+      - name: Create staging release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "Staging Release ${{ steps.version.outputs.version }}" \
+            --notes "## 🚀 Staging Release
+
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          **Timestamp:** ${{ steps.version.outputs.version }}
+
+          This is an automated staging release created from branch **${{ github.ref_name }}**.
+
+          ### 📝 Changes
+          - **Latest Commit:** ${{ github.event.head_commit.message }}
+          - **Author:** ${{ github.event.head_commit.author.name }}
+          - **SHA:** ${{ github.sha }}
+
+          ### 📦 What's Included
+          This release contains a complete staging deployment package with:
+          - ✅ Built Spring Boot JAR file
+          - ✅ Build configuration (Gradle wrapper, build.gradle)
+          - ✅ Application configuration templates
+          - ✅ Docker configuration (if available)
+          - ✅ Complete deployment instructions (DEPLOYMENT.md)
+
+          ### 🏗️ Deployment
+          1. Download \`staging-${{ steps.version.outputs.version }}.tar.gz\`
+          2. Extract and follow DEPLOYMENT.md instructions
+          3. Configure your staging environment variables
+          4. Run \`./gradlew bootRun\` or \`java -jar *.jar\` to launch the application
+
+          ### 🔍 Testing
+          - All unit tests passed ✅
+          - All integration tests passed ✅
+          - Build completed successfully ✅
+          - Checkstyle checks passed ✅
+
+          ### 📋 Files
+          - **Archive:** \`staging-${{ steps.version.outputs.version }}.tar.gz\`
+          - **Size:** $(du -sh staging-${{ steps.version.outputs.version }}.tar.gz | cut -f1)
+          - **Contents:** Complete staging deployment package" \
+            --prerelease \
+            staging-${{ steps.version.outputs.version }}.tar.gz

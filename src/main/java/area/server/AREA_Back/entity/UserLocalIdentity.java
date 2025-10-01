@@ -36,9 +36,6 @@ public class UserLocalIdentity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "salt")
-    private String salt;
-
     @Column(name = "is_email_verified", nullable = false)
     private Boolean isEmailVerified = false;
 

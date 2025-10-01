@@ -85,7 +85,9 @@ public class AuthService {
 
         return new AuthResponse(
             "User registered successfully",
-            mapToUserResponse(savedUser)
+            mapToUserResponse(savedUser),
+            accessToken,
+            refreshToken
         );
     }
 
@@ -143,7 +145,9 @@ public class AuthService {
 
         return new AuthResponse(
             "Login successful",
-            mapToUserResponse(user)
+            mapToUserResponse(user),
+            accessToken,
+            refreshToken
         );
     }
 
@@ -212,7 +216,9 @@ public class AuthService {
 
         return new AuthResponse(
             "Tokens refreshed successfully",
-            mapToUserResponse(user)
+            mapToUserResponse(user),
+            newAccessToken,
+            newRefreshToken
         );
     }
 

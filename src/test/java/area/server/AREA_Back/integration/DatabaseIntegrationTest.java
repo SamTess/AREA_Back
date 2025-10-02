@@ -103,7 +103,7 @@ class DatabaseIntegrationTest {
             }
 
             Set<String> expectedUserColumns = Set.of(
-                "id", "email", "password_hash", "is_active", "is_admin",
+                "id", "email", "is_active", "is_admin",
                 "created_at", "confirmed_at", "last_login_at", "avatar_url"
             );
 
@@ -139,8 +139,7 @@ class DatabaseIntegrationTest {
     void testEntityPersistenceWithFlywaySchema() {
         // Create and save a user
         User user = new User();
-        user.setEmail("integration.test@example.com");
-        user.setPasswordHash("hashed_password");
+        user.setEmail("test@example.com");
         user.setIsActive(true);
         user.setIsAdmin(false);
         user.setCreatedAt(LocalDateTime.now());
@@ -148,12 +147,12 @@ class DatabaseIntegrationTest {
         User savedUser = userRepository.save(user);
 
         assertNotNull(savedUser.getId(), "Saved user should have an ID");
-        assertEquals("integration.test@example.com", savedUser.getEmail());
+        assertEquals("test@example.com", savedUser.getEmail());
         assertTrue(savedUser.getIsActive());
         assertFalse(savedUser.getIsAdmin());
 
         // Check that the user can be retrieved
-        User foundUser = userRepository.findByEmail("integration.test@example.com").orElse(null);
+        User foundUser = userRepository.findByEmail("test@example.com").orElse(null);
         assertNotNull(foundUser, "User should be found by email");
         assertEquals(savedUser.getId(), foundUser.getId());
     }
@@ -166,7 +165,6 @@ class DatabaseIntegrationTest {
         // Test unique constraint on email
         User user1 = new User();
         user1.setEmail("unique.test@example.com");
-        user1.setPasswordHash("password1");
         user1.setIsActive(true);
         user1.setIsAdmin(false);
         user1.setCreatedAt(LocalDateTime.now());
@@ -176,7 +174,6 @@ class DatabaseIntegrationTest {
         // Attempt to create a second user with the same email
         User user2 = new User();
         user2.setEmail("unique.test@example.com");
-        user2.setPasswordHash("password2");
         user2.setIsActive(true);
         user2.setIsAdmin(false);
         user2.setCreatedAt(LocalDateTime.now());

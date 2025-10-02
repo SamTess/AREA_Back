@@ -62,7 +62,7 @@ public class AuthService {
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        localIdentity.setIsEmailVerified(false); // TODO: Implement email verification
+        localIdentity.setIsEmailVerified(false);
         localIdentity.setFailedLoginAttempts(0);
         localIdentity.setCreatedAt(LocalDateTime.now());
         localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -85,7 +85,9 @@ public class AuthService {
 
         return new AuthResponse(
             "User registered successfully",
-            mapToUserResponse(savedUser)
+            mapToUserResponse(savedUser),
+            accessToken,
+            refreshToken
         );
     }
 
@@ -143,7 +145,9 @@ public class AuthService {
 
         return new AuthResponse(
             "Login successful",
-            mapToUserResponse(user)
+            mapToUserResponse(user),
+            accessToken,
+            refreshToken
         );
     }
 
@@ -212,7 +216,9 @@ public class AuthService {
 
         return new AuthResponse(
             "Tokens refreshed successfully",
-            mapToUserResponse(user)
+            mapToUserResponse(user),
+            newAccessToken,
+            newRefreshToken
         );
     }
 

@@ -122,7 +122,7 @@ class RegisterRequestTest {
         String testPassword = "constructorPassword123";
         String testAvatarUrl = "https://example.com/constructor-avatar.jpg";
 
-        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, testAvatarUrl);
+        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, null, null, testAvatarUrl);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
@@ -138,9 +138,9 @@ class RegisterRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", "https://example.com/avatar.jpg");
-        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", "https://example.com/avatar.jpg");
-        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", "https://example.com/avatar.jpg");
+        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", null, null, "https://example.com/avatar.jpg");
+        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", null, null, "https://example.com/avatar.jpg");
+        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", null, null, "https://example.com/avatar.jpg");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());

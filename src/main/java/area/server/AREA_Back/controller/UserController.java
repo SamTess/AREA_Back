@@ -4,7 +4,9 @@ import area.server.AREA_Back.dto.CreateUserRequest;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
+import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +36,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserLocalIdentityRepository userLocalIdentityRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -107,14 +114,23 @@ public class UserController {
 
         User user = new User();
         user.setEmail(request.getEmail());
-        if (request.getPassword() != null) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
         user.setAvatarUrl(request.getAvatarUrl());
         user.setIsActive(true);
         user.setIsAdmin(false);
 
         User savedUser = userRepository.save(user);
+
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            UserLocalIdentity localIdentity = new UserLocalIdentity();
+            localIdentity.setUser(savedUser);
+            localIdentity.setEmail(request.getEmail());
+            localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            localIdentity.setIsEmailVerified(false);
+            localIdentity.setFailedLoginAttempts(0);
+            localIdentity.setCreatedAt(LocalDateTime.now());
+            localIdentity.setUpdatedAt(LocalDateTime.now());
+            userLocalIdentityRepository.save(localIdentity);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedUser));
     }
 
@@ -140,8 +156,26 @@ public class UserController {
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
         }
-        if (request.getPassword() != null) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByUserId(user.getId());
+            if (localIdentityOpt.isPresent()) {
+                UserLocalIdentity localIdentity = localIdentityOpt.get();
+                localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+                localIdentity.setUpdatedAt(LocalDateTime.now());
+                localIdentity.setLastPasswordChangeAt(LocalDateTime.now());
+                userLocalIdentityRepository.save(localIdentity);
+            } else {
+                UserLocalIdentity localIdentity = new UserLocalIdentity();
+                localIdentity.setUser(user);
+                localIdentity.setEmail(user.getEmail());
+                localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+                localIdentity.setIsEmailVerified(false);
+                localIdentity.setFailedLoginAttempts(0);
+                localIdentity.setCreatedAt(LocalDateTime.now());
+                localIdentity.setUpdatedAt(LocalDateTime.now());
+                localIdentity.setLastPasswordChangeAt(LocalDateTime.now());
+                userLocalIdentityRepository.save(localIdentity);
+            }
         }
         if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());

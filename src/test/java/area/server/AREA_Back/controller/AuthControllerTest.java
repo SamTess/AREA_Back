@@ -91,7 +91,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnCreatedWhenRegistrationSuccessful() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -112,7 +112,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenEmailAlreadyExists() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 
@@ -131,7 +131,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
@@ -148,7 +148,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenServiceThrowsRuntimeException() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Service error"));
 
@@ -165,7 +165,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnCreatedWhenSuccessful() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -183,7 +183,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnConflictWhenEmailExists() {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null, null, null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 

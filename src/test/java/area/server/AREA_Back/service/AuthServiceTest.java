@@ -105,7 +105,7 @@ class AuthServiceTest {
     @Test
     void registerShouldCreateUserAndReturnAuthResponseWhenValidRequest() {
         // Given
-        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, "avatar.jpg");
+        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, null, null, "avatar.jpg");
 
         when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -147,7 +147,7 @@ class AuthServiceTest {
     @Test
     void registerShouldThrowExceptionWhenEmailAlreadyExists() {
         // Given
-        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, null);
+        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, null, null, null);
         when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(true);
 
         // When & Then

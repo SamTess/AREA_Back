@@ -38,7 +38,6 @@ class AreaRepositoryTest {
         // Create a test user first
         testUser = new User();
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword123");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
@@ -155,7 +154,6 @@ class AreaRepositoryTest {
         // Create another user with areas
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("password");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);
@@ -271,7 +269,6 @@ class AreaRepositoryTest {
         // Create another user
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("anotherPassword");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);

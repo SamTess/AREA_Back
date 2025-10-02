@@ -29,7 +29,6 @@ class UserTest {
         user = new User();
         user.setId(UUID.randomUUID());
         user.setEmail("test@example.com");
-        user.setPasswordHash("hashedPassword123");
         user.setIsActive(true);
         user.setIsAdmin(false);
         user.setCreatedAt(LocalDateTime.now());
@@ -100,7 +99,6 @@ class UserTest {
     void testUserSettersAndGetters() {
         UUID id = UUID.randomUUID();
         String email = "newtest@example.com";
-        String passwordHash = "newHashedPassword";
         Boolean isActive = false;
         Boolean isAdmin = true;
         LocalDateTime createdAt = LocalDateTime.now();
@@ -110,7 +108,6 @@ class UserTest {
 
         user.setId(id);
         user.setEmail(email);
-        user.setPasswordHash(passwordHash);
         user.setIsActive(isActive);
         user.setIsAdmin(isAdmin);
         user.setCreatedAt(createdAt);
@@ -120,7 +117,6 @@ class UserTest {
 
         assertEquals(id, user.getId());
         assertEquals(email, user.getEmail());
-        assertEquals(passwordHash, user.getPasswordHash());
         assertEquals(isActive, user.getIsActive());
         assertEquals(isAdmin, user.getIsAdmin());
         assertEquals(createdAt, user.getCreatedAt());

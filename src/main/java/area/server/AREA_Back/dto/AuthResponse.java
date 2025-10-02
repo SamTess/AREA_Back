@@ -16,5 +16,7 @@ public class AuthResponse {
     public AuthResponse(String message, UserResponse user) {
         this.message = message;
         this.user = user;
+        this.token = null;
+        this.refreshToken = null;
     }
 }

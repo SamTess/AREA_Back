@@ -25,8 +25,8 @@ import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 
-@ConditionalOnProperty(prefix = "spring.security.oauth2.client.registration.github", name = "client-id")
-@ConditionalOnProperty(prefix = "spring.security.oauth2.client.registration.github", name = "client-secret")
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-id")
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-secret")
 @Service
 public class OAuthGithubService extends OAuthService {
 

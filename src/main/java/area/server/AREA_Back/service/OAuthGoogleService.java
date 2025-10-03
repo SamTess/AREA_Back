@@ -11,8 +11,8 @@ import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 
-@ConditionalOnProperty(prefix = "spring.security.oauth2.client.registration.google", name = "client-id")
-@ConditionalOnProperty(prefix = "spring.security.oauth2.client.registration.google", name = "client-secret")
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-id")
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-secret")
 @Service
 public class OAuthGoogleService extends OAuthService {
 

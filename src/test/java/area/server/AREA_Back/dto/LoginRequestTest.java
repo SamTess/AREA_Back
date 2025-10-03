@@ -17,28 +17,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LoginRequestTest {
 
     private Validator validator;
-    private LoginRequest loginRequest;
+    private LocalLoginRequest loginRequest;
 
     @BeforeEach
     void setUp() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
 
-        loginRequest = new LoginRequest();
+        loginRequest = new LocalLoginRequest();
         loginRequest.setEmail("test@example.com");
         loginRequest.setPassword("password123");
     }
 
     @Test
     void testValidLoginRequest() {
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertTrue(violations.isEmpty());
     }
 
     @Test
     void testLoginRequestWithInvalidEmail() {
         loginRequest.setEmail("invalid-email");
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email should be valid")));
     }
@@ -46,7 +46,7 @@ class LoginRequestTest {
     @Test
     void testLoginRequestWithNullEmail() {
         loginRequest.setEmail(null);
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email is required")));
     }
@@ -54,7 +54,7 @@ class LoginRequestTest {
     @Test
     void testLoginRequestWithBlankEmail() {
         loginRequest.setEmail("   ");
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email is required")));
     }
@@ -62,7 +62,7 @@ class LoginRequestTest {
     @Test
     void testLoginRequestWithNullPassword() {
         loginRequest.setPassword(null);
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Password is required")));
     }
@@ -70,7 +70,7 @@ class LoginRequestTest {
     @Test
     void testLoginRequestWithBlankPassword() {
         loginRequest.setPassword("   ");
-        Set<ConstraintViolation<LoginRequest>> violations = validator.validate(loginRequest);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Password is required")));
     }
@@ -90,14 +90,14 @@ class LoginRequestTest {
     @Test
     void testConstructors() {
         // Test no-args constructor
-        LoginRequest noArgsRequest = new LoginRequest();
+        LocalLoginRequest noArgsRequest = new LocalLoginRequest();
         assertNotNull(noArgsRequest);
 
         // Test all-args constructor
         String testEmail = "constructor@example.com";
         String testPassword = "constructorPassword123";
 
-        LoginRequest allArgsRequest = new LoginRequest(testEmail, testPassword);
+        LocalLoginRequest allArgsRequest = new LocalLoginRequest(testEmail, testPassword);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
@@ -112,9 +112,9 @@ class LoginRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        LoginRequest request1 = new LoginRequest("test@example.com", "password123");
-        LoginRequest request2 = new LoginRequest("test@example.com", "password123");
-        LoginRequest request3 = new LoginRequest("different@example.com", "password123");
+        LocalLoginRequest request1 = new LocalLoginRequest("test@example.com", "password123");
+        LocalLoginRequest request2 = new LocalLoginRequest("test@example.com", "password123");
+        LocalLoginRequest request3 = new LocalLoginRequest("different@example.com", "password123");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());

@@ -23,7 +23,6 @@ class UserResponseTest {
         userResponse.setIsActive(true);
         userResponse.setIsAdmin(false);
         userResponse.setCreatedAt(LocalDateTime.now());
-        userResponse.setConfirmedAt(LocalDateTime.now().plusHours(1));
         userResponse.setLastLoginAt(LocalDateTime.now().plusDays(1));
         userResponse.setAvatarUrl("https://example.com/avatar.jpg");
     }
@@ -35,7 +34,6 @@ class UserResponseTest {
         Boolean isActive = false;
         Boolean isAdmin = true;
         LocalDateTime createdAt = LocalDateTime.now();
-        LocalDateTime confirmedAt = LocalDateTime.now().plusHours(2);
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(2);
         String avatarUrl = "https://newexample.com/avatar.jpg";
 
@@ -44,7 +42,6 @@ class UserResponseTest {
         userResponse.setIsActive(isActive);
         userResponse.setIsAdmin(isAdmin);
         userResponse.setCreatedAt(createdAt);
-        userResponse.setConfirmedAt(confirmedAt);
         userResponse.setLastLoginAt(lastLoginAt);
         userResponse.setAvatarUrl(avatarUrl);
 
@@ -53,7 +50,6 @@ class UserResponseTest {
         assertEquals(isActive, userResponse.getIsActive());
         assertEquals(isAdmin, userResponse.getIsAdmin());
         assertEquals(createdAt, userResponse.getCreatedAt());
-        assertEquals(confirmedAt, userResponse.getConfirmedAt());
         assertEquals(lastLoginAt, userResponse.getLastLoginAt());
         assertEquals(avatarUrl, userResponse.getAvatarUrl());
     }
@@ -63,11 +59,11 @@ class UserResponseTest {
         UserResponse response1 = new UserResponse();
         response1.setId(UUID.randomUUID());
         response1.setEmail("test@example.com");
-        
+
         UserResponse response2 = new UserResponse();
         response2.setId(response1.getId());
         response2.setEmail("test@example.com");
-        
+
         assertEquals(response1, response2);
         assertEquals(response1.hashCode(), response2.hashCode());
     }
@@ -91,19 +87,17 @@ class UserResponseTest {
         Boolean isActive = true;
         Boolean isAdmin = false;
         LocalDateTime createdAt = LocalDateTime.now();
-        LocalDateTime confirmedAt = LocalDateTime.now().plusHours(1);
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(1);
         String avatarUrl = "https://constructor.com/avatar.jpg";
 
-        UserResponse response2 = new UserResponse(id, email, isActive, isAdmin, 
-                                                 createdAt, confirmedAt, lastLoginAt, avatarUrl);
-        
+        UserResponse response2 = new UserResponse(id, email, isActive, isAdmin,
+                                                 createdAt, lastLoginAt, avatarUrl);
+
         assertEquals(id, response2.getId());
         assertEquals(email, response2.getEmail());
         assertEquals(isActive, response2.getIsActive());
         assertEquals(isAdmin, response2.getIsAdmin());
         assertEquals(createdAt, response2.getCreatedAt());
-        assertEquals(confirmedAt, response2.getConfirmedAt());
         assertEquals(lastLoginAt, response2.getLastLoginAt());
         assertEquals(avatarUrl, response2.getAvatarUrl());
     }
@@ -113,13 +107,11 @@ class UserResponseTest {
         UserResponse response = new UserResponse();
         response.setId(UUID.randomUUID());
         response.setEmail("test@example.com");
-        response.setConfirmedAt(null);
         response.setLastLoginAt(null);
         response.setAvatarUrl(null);
 
         assertNotNull(response.getId());
         assertEquals("test@example.com", response.getEmail());
-        assertNull(response.getConfirmedAt());
         assertNull(response.getLastLoginAt());
         assertNull(response.getAvatarUrl());
     }

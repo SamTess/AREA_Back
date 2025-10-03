@@ -54,11 +54,9 @@ $$;
 CREATE TABLE IF NOT EXISTS a_users (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email            citext UNIQUE NOT NULL,
-  password_hash    text,                           -- nullable if account is OAuth-only
   is_active        boolean NOT NULL DEFAULT true,
   is_admin         boolean NOT NULL DEFAULT false,
   created_at       timestamptz NOT NULL DEFAULT now(),
-  confirmed_at     timestamptz,
   last_login_at    timestamptz,
   avatar_url       text
 );

@@ -38,7 +38,6 @@ class AreaRepositoryTest {
         // Create a test user first
         testUser = new User();
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword123");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
@@ -58,7 +57,7 @@ class AreaRepositoryTest {
     @Test
     void testFindByUserId() {
         List<Area> userAreas = areaRepository.findByUserId(testUser.getId());
-        
+
         assertEquals(1, userAreas.size());
         assertEquals("Test Area", userAreas.get(0).getName());
         assertEquals(testUser.getId(), userAreas.get(0).getUser().getId());
@@ -67,7 +66,7 @@ class AreaRepositoryTest {
     @Test
     void testFindByUserIdNotFound() {
         List<Area> userAreas = areaRepository.findByUserId(UUID.randomUUID());
-        
+
         assertTrue(userAreas.isEmpty());
     }
 
@@ -127,7 +126,7 @@ class AreaRepositoryTest {
         entityManager.persistAndFlush(disabledArea);
 
         List<Area> enabledAreas = areaRepository.findEnabledAreasByUser(testUser);
-        
+
         assertEquals(2, enabledAreas.size()); // testArea + enabledArea
         assertTrue(enabledAreas.stream().allMatch(Area::getEnabled));
         assertTrue(enabledAreas.stream().anyMatch(a -> a.getName().equals("Test Area")));
@@ -155,7 +154,6 @@ class AreaRepositoryTest {
         // Create another user with areas
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("password");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);
@@ -185,7 +183,7 @@ class AreaRepositoryTest {
         newArea.setCreatedAt(LocalDateTime.now());
 
         Area savedArea = areaRepository.save(newArea);
-        
+
         assertNotNull(savedArea.getId());
         assertEquals("New Area", savedArea.getName());
         assertEquals("New Description", savedArea.getDescription());
@@ -199,9 +197,9 @@ class AreaRepositoryTest {
         testArea.setDescription("Updated Description");
         testArea.setEnabled(false);
         testArea.setUpdatedAt(LocalDateTime.now());
-        
+
         Area updatedArea = areaRepository.save(testArea);
-        
+
         assertEquals(testArea.getId(), updatedArea.getId());
         assertEquals("Updated Test Area", updatedArea.getName());
         assertEquals("Updated Description", updatedArea.getDescription());
@@ -211,9 +209,9 @@ class AreaRepositoryTest {
     @Test
     void testDeleteArea() {
         UUID areaId = testArea.getId();
-        
+
         areaRepository.delete(testArea);
-        
+
         Optional<Area> deletedArea = areaRepository.findById(areaId);
         assertFalse(deletedArea.isPresent());
     }
@@ -221,7 +219,7 @@ class AreaRepositoryTest {
     @Test
     void testFindById() {
         Optional<Area> foundArea = areaRepository.findById(testArea.getId());
-        
+
         assertTrue(foundArea.isPresent());
         assertEquals(testArea.getId(), foundArea.get().getId());
         assertEquals("Test Area", foundArea.get().getName());
@@ -237,7 +235,7 @@ class AreaRepositoryTest {
         entityManager.persistAndFlush(anotherArea);
 
         List<Area> allAreas = areaRepository.findAll();
-        
+
         assertEquals(2, allAreas.size());
     }
 
@@ -245,7 +243,7 @@ class AreaRepositoryTest {
     void testExistsById() {
         boolean exists = areaRepository.existsById(testArea.getId());
         assertTrue(exists);
-        
+
         boolean notExists = areaRepository.existsById(UUID.randomUUID());
         assertFalse(notExists);
     }
@@ -254,14 +252,14 @@ class AreaRepositoryTest {
     void testCount() {
         long count = areaRepository.count();
         assertEquals(1, count);
-        
+
         Area anotherArea = new Area();
         anotherArea.setUser(testUser);
         anotherArea.setName("Count Area");
         anotherArea.setDescription("Count Description");
         anotherArea.setEnabled(true);
         entityManager.persistAndFlush(anotherArea);
-        
+
         long newCount = areaRepository.count();
         assertEquals(2, newCount);
     }
@@ -271,7 +269,6 @@ class AreaRepositoryTest {
         // Create another user
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("anotherPassword");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         entityManager.persistAndFlush(anotherUser);
@@ -309,7 +306,7 @@ class AreaRepositoryTest {
         areaWithNullDesc.setEnabled(true);
 
         Area savedArea = areaRepository.save(areaWithNullDesc);
-        
+
         assertNotNull(savedArea.getId());
         assertEquals("Area with null description", savedArea.getName());
         assertNull(savedArea.getDescription());

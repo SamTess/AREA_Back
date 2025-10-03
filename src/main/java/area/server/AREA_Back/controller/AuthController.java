@@ -1,7 +1,7 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LoginRequest;
+import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.TokenRefreshRequest;
 import area.server.AREA_Back.dto.UserResponse;
@@ -63,7 +63,7 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @Valid @RequestBody LoginRequest request,
+            @Valid @RequestBody LocalLoginRequest request,
             HttpServletResponse response) {
         try {
             log.info("Login request for email: {}", request.getEmail());

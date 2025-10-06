@@ -41,8 +41,6 @@ public class GitHubActionService {
                                                    Map<String, Object> actionParams,
                                                    UUID userId) {
         try {
-            log.info("Executing GitHub action: { } for user: { }", actionKey, userId);
-
             String githubToken = getGitHubToken(userId);
             if (githubToken == null) {
                 throw new RuntimeException("No GitHub token found for user: " + userId);
@@ -438,11 +436,10 @@ public class GitHubActionService {
         }
         try {
             String decryptedToken = tokenEncryptionService.decryptToken(encryptedToken);
-            log.debug("Token GitHub déchiffré avec succès pour l'utilisateur: { }", userId);
+            log.debug("GitHub token successfully decrypted for user: {}", userId);
             return decryptedToken;
         } catch (Exception e) {
-            log.error("Erreur lors du déchiffrement du token GitHub pour l'utilisateur { }: { }",
-                userId, e.getMessage());
+            log.error("Error decrypting GitHub token for user {}: {}", userId, e.getMessage());
             return null;
         }
     }

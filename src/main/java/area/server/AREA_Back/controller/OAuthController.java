@@ -86,14 +86,10 @@ public class OAuthController {
         try {
             OAuthLoginRequest request = new OAuthLoginRequest(authorizationCode);
             AuthResponse result = svc.get().authenticate(request, response);
-            System.out.println("Authentication successful for provider: " + provider);
             return ResponseEntity.ok(result);
         } catch (UnsupportedOperationException e) {
-            System.err.println("Unsupported operation: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
         } catch (Exception e) {
-            System.err.println("Authentication error for provider " + provider + ": " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

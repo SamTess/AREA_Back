@@ -3,15 +3,12 @@ package area.server.AREA_Back.util;
 import area.server.AREA_Back.service.CustomUserDetailsService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-
 import java.util.UUID;
 
 /**
  * Utility to easily retrieve authenticated user information
  * from any controller or service
  */
-@Component
 public final class AuthenticationUtils {
 
     /**

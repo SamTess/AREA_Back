@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 
 /**
- * Tests pour le service de chiffrement des tokens
+ * Tests for the token encryption service
  */
 class TokenEncryptionServiceTest {
 
@@ -13,20 +13,20 @@ class TokenEncryptionServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Initialiser avec une clé vide pour déclencher la génération automatique
+        // Initialize with an empty key to trigger automatic generation
         tokenEncryptionService = new TokenEncryptionService("");
     }
 
     @Test
     void testEncryptAndDecrypt() {
         String originalToken = "github_pat_11AAAA7ZQ0abc123def456ghi789jkl";
-        
-        // Chiffrer le token
+
+        // Encrypt the token
         String encryptedToken = tokenEncryptionService.encryptToken(originalToken);
         Assertions.assertNotNull(encryptedToken);
         Assertions.assertNotEquals(originalToken, encryptedToken);
-        
-        // Déchiffrer le token
+
+        // Decrypt the token
         String decryptedToken = tokenEncryptionService.decryptToken(encryptedToken);
         Assertions.assertEquals(originalToken, decryptedToken);
     }
@@ -34,14 +34,14 @@ class TokenEncryptionServiceTest {
     @Test
     void testEncryptionProducesUniqueResults() {
         String originalToken = "test_token_123";
-        
+
         String encrypted1 = tokenEncryptionService.encryptToken(originalToken);
         String encrypted2 = tokenEncryptionService.encryptToken(originalToken);
-        
-        // Les résultats doivent être différents (IV aléatoire)
+
+        // The results should be different (random IV)
         Assertions.assertNotEquals(encrypted1, encrypted2);
-        
-        // Mais les deux doivent déchiffrer vers le même token
+
+        // But both should decrypt to the same token
         Assertions.assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted1));
         Assertions.assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted2));
     }
@@ -51,11 +51,11 @@ class TokenEncryptionServiceTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken(null);
         });
-        
+
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken("");
         });
-        
+
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken("   ");
         });
@@ -66,11 +66,11 @@ class TokenEncryptionServiceTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.decryptToken(null);
         });
-        
+
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.decryptToken("");
         });
-        
+
         Assertions.assertThrows(RuntimeException.class, () -> {
             tokenEncryptionService.decryptToken("invalid_base64_string");
         });
@@ -80,8 +80,8 @@ class TokenEncryptionServiceTest {
     void testKeyGeneration() {
         String keyBase64 = TokenEncryptionService.generateNewKeyAsBase64();
         Assertions.assertNotNull(keyBase64);
-        
-        // Vérifier que la clé est bien en Base64 et fait 32 bytes (256 bits)
+
+        // Check that the key is Base64 and is 32 bytes (256 bits)
         byte[] keyBytes = java.util.Base64.getDecoder().decode(keyBase64);
         Assertions.assertEquals(32, keyBytes.length);
     }
@@ -90,11 +90,11 @@ class TokenEncryptionServiceTest {
     void testWithProvidedKey() {
         String providedKey = TokenEncryptionService.generateNewKeyAsBase64();
         TokenEncryptionService serviceWithKey = new TokenEncryptionService(providedKey);
-        
+
         String originalToken = "test_with_provided_key";
         String encrypted = serviceWithKey.encryptToken(originalToken);
         String decrypted = serviceWithKey.decryptToken(encrypted);
-        
+
         Assertions.assertEquals(originalToken, decrypted);
     }
 }

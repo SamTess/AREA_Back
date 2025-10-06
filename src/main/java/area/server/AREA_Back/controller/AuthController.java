@@ -41,11 +41,11 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         try {
-            log.info("Registration request for email: {}", request.getEmail());
+            log.info("Registration request for email: { }", request.getEmail());
             AuthResponse authResponse = authService.register(request, response);
             return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
         } catch (RuntimeException e) {
-            log.error("Registration failed for email: {}", request.getEmail(), e);
+            log.error("Registration failed for email: { }", request.getEmail(), e);
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new AuthResponse(e.getMessage(), null));
         } catch (Exception e) {
@@ -66,11 +66,11 @@ public class AuthController {
             @Valid @RequestBody LocalLoginRequest request,
             HttpServletResponse response) {
         try {
-            log.info("Login request for email: {}", request.getEmail());
+            log.info("Login request for email: { }", request.getEmail());
             AuthResponse authResponse = authService.login(request, response);
             return ResponseEntity.ok(authResponse);
         } catch (RuntimeException e) {
-            log.warn("Login failed for email: {}", request.getEmail(), e);
+            log.warn("Login failed for email: { }", request.getEmail(), e);
 
             HttpStatus status = HttpStatus.UNAUTHORIZED;
             if (e.getMessage().contains("locked")) {

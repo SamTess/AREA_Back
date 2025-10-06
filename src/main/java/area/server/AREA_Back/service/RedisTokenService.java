@@ -24,7 +24,7 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getAccessTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, userId.toString(), ttl);
-        log.debug("Stored access token for user: {}", userId);
+        log.debug("Stored access token for user: { }", userId);
     }
 
     public void storeRefreshToken(UUID userId, String refreshToken) {
@@ -32,7 +32,7 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getRefreshTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, refreshToken, ttl);
-        log.debug("Stored refresh token for user: {}", userId);
+        log.debug("Stored refresh token for user: { }", userId);
     }
 
     public boolean isAccessTokenValid(String accessToken) {
@@ -43,7 +43,7 @@ public class RedisTokenService {
         if (!isValid) {
             String tokenPrefix = accessToken.substring(0,
                     Math.min(TOKEN_LOG_PREFIX_LENGTH, accessToken.length())) + "...";
-            log.debug("Access token not found in Redis: {}", tokenPrefix);
+            log.debug("Access token not found in Redis: { }", tokenPrefix);
         }
 
         return isValid;
@@ -76,7 +76,7 @@ public class RedisTokenService {
         boolean isValid = storedToken != null && storedToken.equals(refreshToken);
 
         if (!isValid) {
-            log.debug("Refresh token validation failed for user: {}", userId);
+            log.debug("Refresh token validation failed for user: { }", userId);
         }
 
         return isValid;
@@ -85,25 +85,25 @@ public class RedisTokenService {
     public void deleteAccessToken(String accessToken) {
         String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         Boolean deleted = redisTemplate.delete(key);
-        log.debug("Deleted access token: {}", deleted);
+        log.debug("Deleted access token: { }", deleted);
     }
 
     public void deleteRefreshToken(UUID userId) {
         String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         Boolean deleted = redisTemplate.delete(key);
-        log.debug("Deleted refresh token for user {}: {}", userId, deleted);
+        log.debug("Deleted refresh token for user { }: { }", userId, deleted);
     }
 
     public void deleteAllTokensForUser(UUID userId, String accessToken) {
         deleteAccessToken(accessToken);
         deleteRefreshToken(userId);
-        log.debug("Deleted all tokens for user: {}", userId);
+        log.debug("Deleted all tokens for user: { }", userId);
     }
 
     public void rotateRefreshToken(UUID userId, String newRefreshToken) {
         deleteRefreshToken(userId);
         storeRefreshToken(userId, newRefreshToken);
-        log.debug("Rotated refresh token for user: {}", userId);
+        log.debug("Rotated refresh token for user: { }", userId);
     }
 
     public void cleanupExpiredTokens() {
@@ -129,7 +129,7 @@ public class RedisTokenService {
         String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         if (redisTemplate.hasKey(key)) {
             redisTemplate.expire(key, newTTL);
-            log.debug("Extended access token TTL to: {}", newTTL);
+            log.debug("Extended access token TTL to: { }", newTTL);
         }
     }
 }

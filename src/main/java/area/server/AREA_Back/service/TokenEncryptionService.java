@@ -25,6 +25,7 @@ public class TokenEncryptionService {
     private static final int GCM_IV_LENGTH = 12; // 96 bits
     private static final int GCM_TAG_LENGTH = 16; // 128 bits
     private static final int KEY_LENGTH = 256; // bits
+    private static final int BITS_PER_BYTE = 8;
 
     private final SecretKey secretKey;
     private final SecureRandom secureRandom;
@@ -41,12 +42,12 @@ public class TokenEncryptionService {
                 log.info("Using provided encryption key from configuration");
                 return new SecretKeySpec(keyBytes, ALGORITHM);
             } catch (Exception e) {
-                log.warn("Invalid encryption key in configuration, generating new one: {}", e.getMessage());
+                log.warn("Invalid encryption key in configuration, generating new one: { }", e.getMessage());
                 return generateKey();
             }
         } else {
             SecretKey newKey = generateKey();
-            log.warn("No encryption key provided, generated new key: {}",
+            log.warn("No encryption key provided, generated new key: { }",
                 Base64.getEncoder().encodeToString(newKey.getEncoded()));
             log.warn("For production, set app.encryption.key in your configuration");
             return newKey;
@@ -67,7 +68,7 @@ public class TokenEncryptionService {
             byte[] iv = new byte[GCM_IV_LENGTH];
             secureRandom.nextBytes(iv);
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
+            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * BITS_PER_BYTE, iv);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
             byte[] plainBytes = plainToken.getBytes(StandardCharsets.UTF_8);
             byte[] encryptedBytes = cipher.doFinal(plainBytes);
@@ -78,7 +79,7 @@ public class TokenEncryptionService {
             return Base64.getEncoder().encodeToString(encryptedWithIv);
 
         } catch (Exception e) {
-            log.error("Failed to encrypt token: {}", e.getMessage());
+            log.error("Failed to encrypt token: { }", e.getMessage());
             throw new RuntimeException("Token encryption failed", e);
         }
     }
@@ -104,13 +105,13 @@ public class TokenEncryptionService {
             System.arraycopy(encryptedWithIv, 0, iv, 0, GCM_IV_LENGTH);
             System.arraycopy(encryptedWithIv, GCM_IV_LENGTH, encryptedBytes, 0, encryptedBytes.length);
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
+            GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * BITS_PER_BYTE, iv);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
             byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
             return new String(decryptedBytes, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            log.error("Failed to decrypt token: {}", e.getMessage());
+            log.error("Failed to decrypt token: { }", e.getMessage());
             throw new RuntimeException("Token decryption failed", e);
         }
     }
@@ -142,7 +143,7 @@ public class TokenEncryptionService {
     public static String generateNewKeyAsBase64() {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(256);
+            keyGenerator.init(KEY_LENGTH);
             SecretKey key = keyGenerator.generateKey();
             return Base64.getEncoder().encodeToString(key.getEncoded());
         } catch (Exception e) {

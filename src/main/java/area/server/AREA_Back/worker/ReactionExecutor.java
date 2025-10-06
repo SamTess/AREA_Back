@@ -45,7 +45,7 @@ public class ReactionExecutor {
     public ExecutionResult executeReaction(final Execution execution) {
         LocalDateTime startTime = LocalDateTime.now();
         try {
-            log.info("Starting execution of reaction for execution {} (attempt {})",
+            log.info("Starting execution of reaction for execution { } (attempt { })",
                     execution.getId(), execution.getAttempt() + 1);
 
             ActionInstance actionInstance = execution.getActionInstance();
@@ -63,14 +63,14 @@ public class ReactionExecutor {
                 execution
             );
 
-            log.info("Successfully executed reaction for execution {} in {}ms",
+            log.info("Successfully executed reaction for execution { } in { }ms",
                     execution.getId(),
                     java.time.Duration.between(startTime, LocalDateTime.now()).toMillis());
 
             return ExecutionResult.success(execution.getId(), result, startTime);
 
         } catch (Exception e) {
-            log.error("Failed to execute reaction for execution {}: {}",
+            log.error("Failed to execute reaction for execution { }: { }",
                      execution.getId(), e.getMessage(), e);
 
             boolean shouldRetry = retryManager.shouldRetry(execution.getAttempt(), e);
@@ -222,7 +222,7 @@ public class ReactionExecutor {
             result.put("executionId", execution.getId());
             return result;
         } catch (Exception e) {
-            log.error("Failed to execute GitHub action {}: {}", actionKey, e.getMessage(), e);
+            log.error("Failed to execute GitHub action { }: { }", actionKey, e.getMessage(), e);
             throw new RuntimeException("GitHub action execution failed: " + e.getMessage(), e);
         }
     }

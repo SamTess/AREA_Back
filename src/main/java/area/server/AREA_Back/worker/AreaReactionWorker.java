@@ -38,7 +38,7 @@ public class AreaReactionWorker {
 
     @PostConstruct
     public void initialize() {
-        log.info("Initializing AREA Reaction Worker: {}", redisConfig.getAreasConsumerName());
+        log.info("Initializing AREA Reaction Worker: { }", redisConfig.getAreasConsumerName());
         redisEventService.initializeStream();
         log.info("AREA Reaction Worker initialized successfully");
     }
@@ -57,14 +57,14 @@ public class AreaReactionWorker {
                     redisConfig.getAreasEventsStream(), ReadOffset.lastConsumed())
             );
             if (records != null && !records.isEmpty()) {
-                log.debug("Processing {} events from Redis stream", records.size());
+                log.debug("Processing { } events from Redis stream", records.size());
                 for (var record : records) {
                     processEventRecord(record);
                 }
             }
 
         } catch (Exception e) {
-            log.error("Error processing Redis stream events: {}", e.getMessage(), e);
+            log.error("Error processing Redis stream events: { }", e.getMessage(), e);
         }
     }
 
@@ -77,14 +77,14 @@ public class AreaReactionWorker {
         try {
             List<Execution> queuedExecutions = executionService.getQueuedExecutions();
             if (!queuedExecutions.isEmpty()) {
-                log.info("Processing {} queued executions", queuedExecutions.size());
+                log.info("Processing { } queued executions", queuedExecutions.size());
                 for (Execution execution : queuedExecutions) {
                     processExecution(execution);
                 }
             }
 
         } catch (Exception e) {
-            log.error("Error processing queued executions: {}", e.getMessage(), e);
+            log.error("Error processing queued executions: { }", e.getMessage(), e);
         }
     }
 
@@ -99,14 +99,14 @@ public class AreaReactionWorker {
             List<Execution> retryExecutions = executionService.getExecutionsReadyForRetry(retryThreshold);
 
             if (!retryExecutions.isEmpty()) {
-                log.info("Processing {} executions ready for retry", retryExecutions.size());
+                log.info("Processing { } executions ready for retry", retryExecutions.size());
                 for (Execution execution : retryExecutions) {
                     processExecution(execution);
                 }
             }
 
         } catch (Exception e) {
-            log.error("Error processing retry executions: {}", e.getMessage(), e);
+            log.error("Error processing retry executions: { }", e.getMessage(), e);
         }
     }
 
@@ -121,7 +121,7 @@ public class AreaReactionWorker {
             LocalDateTime timeoutThreshold = LocalDateTime.now().minusMinutes(TIMEOUT_MINUTES);
             List<Execution> timedOutExecutions = executionService.getTimedOutExecutions(timeoutThreshold);
             if (!timedOutExecutions.isEmpty()) {
-                log.warn("Found {} timed out executions, marking as failed", timedOutExecutions.size());
+                log.warn("Found { } timed out executions, marking as failed", timedOutExecutions.size());
                 for (Execution execution : timedOutExecutions) {
                     ExecutionResult failureResult = ExecutionResult.failure(
                         execution.getId(),
@@ -132,12 +132,12 @@ public class AreaReactionWorker {
                         null
                     );
                     executionService.updateExecutionWithResult(failureResult);
-                    log.info("Marked timed out execution {} as failed", execution.getId());
+                    log.info("Marked timed out execution { } as failed", execution.getId());
                 }
             }
 
         } catch (Exception e) {
-            log.error("Error cleaning up timed out executions: {}", e.getMessage(), e);
+            log.error("Error cleaning up timed out executions: { }", e.getMessage(), e);
         }
     }
 
@@ -145,11 +145,11 @@ public class AreaReactionWorker {
     public void logStatistics() {
         try {
             var stats = executionService.getExecutionStatistics();
-            log.info("Execution statistics: queued={}, running={}, ok={}, retry={}, failed={}, canceled={}",
+            log.info("Execution statistics: queued={ }, running={ }, ok={ }, retry={ }, failed={ }, canceled={ }",
                     stats.get("queued"), stats.get("running"), stats.get("ok"),
                     stats.get("retry"), stats.get("failed"), stats.get("canceled"));
         } catch (Exception e) {
-            log.warn("Failed to log statistics: {}", e.getMessage());
+            log.warn("Failed to log statistics: { }", e.getMessage());
         }
     }
 
@@ -157,7 +157,7 @@ public class AreaReactionWorker {
     public void processEventRecord(final MapRecord<String, Object, Object> record) {
         try {
             Map<Object, Object> values = record.getValue();
-            log.debug("Processing event record: {}", record.getId());
+            log.debug("Processing event record: { }", record.getId());
             Object executionIdObj = values.get("executionId");
             if (executionIdObj != null) {
                 String executionIdStr = executionIdObj.toString();
@@ -168,7 +168,7 @@ public class AreaReactionWorker {
                 if (executionOpt.isPresent()) {
                     processExecution(executionOpt.get());
                 } else {
-                    log.warn("Execution not found for event: {}", executionId);
+                    log.warn("Execution not found for event: { }", executionId);
                 }
             }
             redisTemplate.opsForStream().acknowledge(
@@ -178,27 +178,27 @@ public class AreaReactionWorker {
             );
 
         } catch (Exception e) {
-            log.error("Error processing event record {}: {}", record.getId(), e.getMessage(), e);
+            log.error("Error processing event record { }: { }", record.getId(), e.getMessage(), e);
         }
     }
 
     @Async("reactionTaskExecutor")
     public void processExecution(final Execution execution) {
         try {
-            log.info("Processing execution: id={}, actionInstance={}, attempt={}",
+            log.info("Processing execution: id={ }, actionInstance={ }, attempt={ }",
                     execution.getId(),
                     execution.getActionInstance().getId(),
                     execution.getAttempt());
             executionService.markExecutionAsStarted(execution.getId());
             ExecutionResult result = reactionExecutor.executeReaction(execution);
             executionService.updateExecutionWithResult(result);
-            log.info("Completed execution: id={}, status={}, duration={}ms",
+            log.info("Completed execution: id={ }, status={ }, duration={ }ms",
                     execution.getId(),
                     result.getStatus(),
                     result.getDurationMs());
 
         } catch (Exception e) {
-            log.error("Error processing execution {}: {}", execution.getId(), e.getMessage(), e);
+            log.error("Error processing execution { }: { }", execution.getId(), e.getMessage(), e);
             try {
                 ExecutionResult failureResult = ExecutionResult.failure(
                     execution.getId(),
@@ -210,13 +210,13 @@ public class AreaReactionWorker {
                 );
                 executionService.updateExecutionWithResult(failureResult);
             } catch (Exception updateError) {
-                log.error("Failed to update execution after processing error: {}", updateError.getMessage());
+                log.error("Failed to update execution after processing error: { }", updateError.getMessage());
             }
         }
     }
 
     public void shutdown() {
-        log.info("Shutting down AREA Reaction Worker: {}", redisConfig.getAreasConsumerName());
+        log.info("Shutting down AREA Reaction Worker: { }", redisConfig.getAreasConsumerName());
         running = false;
     }
 

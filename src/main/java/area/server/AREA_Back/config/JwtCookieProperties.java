@@ -14,6 +14,16 @@ import org.springframework.stereotype.Component;
 public class JwtCookieProperties {
 
     /**
+     * Default access token expiry: 24 hours in seconds.
+     */
+    private static final int DEFAULT_ACCESS_TOKEN_EXPIRY = 86400;
+
+    /**
+     * Default refresh token expiry: 7 days in seconds.
+     */
+    private static final int DEFAULT_REFRESH_TOKEN_EXPIRY = 604800;
+
+    /**
      * Whether cookies should be marked as Secure (HTTPS only).
      * true in production, false in development.
      */
@@ -35,11 +45,11 @@ public class JwtCookieProperties {
      * Access token lifetime in seconds.
      * Default is 24 hours (86400 seconds).
      */
-    private int accessTokenExpiry = 86400;
+    private int accessTokenExpiry = DEFAULT_ACCESS_TOKEN_EXPIRY;
 
     /**
      * Refresh token lifetime in seconds.
      * Default is 7 days (604800 seconds).
      */
-    private int refreshTokenExpiry = 604800;
+    private int refreshTokenExpiry = DEFAULT_REFRESH_TOKEN_EXPIRY;
 }

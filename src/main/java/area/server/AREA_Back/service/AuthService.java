@@ -41,7 +41,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
-        log.info("Attempting to register user with email: {}", request.getEmail());
+        log.info("Attempting to register user with email: { }", request.getEmail());
 
         if (userLocalIdentityRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -55,7 +55,7 @@ public class AuthService {
         user.setCreatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
-        log.debug("Created user with ID: {}", savedUser.getId());
+        log.debug("Created user with ID: { }", savedUser.getId());
 
         UserLocalIdentity localIdentity = new UserLocalIdentity();
         localIdentity.setUser(savedUser);
@@ -67,7 +67,7 @@ public class AuthService {
         localIdentity.setUpdatedAt(LocalDateTime.now());
 
         userLocalIdentityRepository.save(localIdentity);
-        log.debug("Created local identity for user: {}", savedUser.getId());
+        log.debug("Created local identity for user: { }", savedUser.getId());
 
         String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getEmail());
         String refreshToken = jwtService.generateRefreshToken(savedUser.getId(), savedUser.getEmail());
@@ -80,7 +80,7 @@ public class AuthService {
         savedUser.setLastLoginAt(LocalDateTime.now());
         userRepository.save(savedUser);
 
-        log.info("Successfully registered user: {}", savedUser.getEmail());
+        log.info("Successfully registered user: { }", savedUser.getEmail());
 
         return new AuthResponse(
             "User registered successfully",
@@ -90,11 +90,11 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LocalLoginRequest request, HttpServletResponse response) {
-        log.info("Attempting to login user with email: {}", request.getEmail());
+        log.info("Attempting to login user with email: { }", request.getEmail());
 
         Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
         if (localIdentityOpt.isEmpty()) {
-            log.warn("Login attempt with non-existent email: {}", request.getEmail());
+            log.warn("Login attempt with non-existent email: { }", request.getEmail());
             throw new RuntimeException("Invalid credentials");
         }
 
@@ -102,24 +102,24 @@ public class AuthService {
         User user = localIdentity.getUser();
 
         if (localIdentity.isAccountLocked()) {
-            log.warn("Login attempt on locked account: {}", request.getEmail());
+            log.warn("Login attempt on locked account: { }", request.getEmail());
             throw new RuntimeException("Account is temporarily locked due to failed login attempts");
         }
 
         if (!user.getIsActive()) {
-            log.warn("Login attempt on inactive account: {}", request.getEmail());
+            log.warn("Login attempt on inactive account: { }", request.getEmail());
             throw new RuntimeException("Account is inactive");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), localIdentity.getPasswordHash())) {
-            log.warn("Failed login attempt for email: {}", request.getEmail());
+            log.warn("Failed login attempt for email: { }", request.getEmail());
 
             userLocalIdentityRepository.incrementFailedLoginAttempts(request.getEmail());
 
             if (localIdentity.getFailedLoginAttempts() + 1 >= MAX_FAILED_ATTEMPTS) {
                 LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(ACCOUNT_LOCK_DURATION_MINUTES);
                 userLocalIdentityRepository.lockAccount(request.getEmail(), lockUntil);
-                log.warn("Account locked due to failed attempts: {}", request.getEmail());
+                log.warn("Account locked due to failed attempts: { }", request.getEmail());
             }
 
             throw new RuntimeException("Invalid credentials");
@@ -138,7 +138,7 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        log.info("Successfully logged in user: {}", user.getEmail());
+        log.info("Successfully logged in user: { }", user.getEmail());
 
         return new AuthResponse(
             "Login successful",
@@ -164,7 +164,7 @@ public class AuthService {
 
         if (userId != null && accessToken != null) {
             redisTokenService.deleteAllTokensForUser(userId, accessToken);
-            log.info("Logged out user: {}", userId);
+            log.info("Logged out user: { }", userId);
         }
 
         clearTokenCookies(response);
@@ -207,7 +207,7 @@ public class AuthService {
 
         setTokenCookies(response, newAccessToken, newRefreshToken);
 
-        log.info("Refreshed tokens for user: {}", user.getEmail());
+        log.info("Refreshed tokens for user: { }", user.getEmail());
 
         return new AuthResponse(
             "Tokens refreshed successfully",
@@ -277,7 +277,7 @@ public class AuthService {
 
         response.addCookie(refreshCookie);
 
-        log.debug("Set HttpOnly cookies for authentication (secure: {})", jwtCookieProperties.isSecure());
+        log.debug("Set HttpOnly cookies for authentication (secure: { })", jwtCookieProperties.isSecure());
     }
 
     private void clearTokenCookies(HttpServletResponse response) {

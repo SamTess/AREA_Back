@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
@@ -54,6 +55,9 @@ class AuthServiceTest {
     private RedisTokenService redisTokenService;
 
     @Mock
+    private JwtCookieProperties jwtCookieProperties;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -76,7 +80,8 @@ class AuthServiceTest {
             userLocalIdentityRepository,
             passwordEncoder,
             jwtService,
-            redisTokenService
+            redisTokenService,
+            jwtCookieProperties
         );
 
         testUserId = UUID.randomUUID();

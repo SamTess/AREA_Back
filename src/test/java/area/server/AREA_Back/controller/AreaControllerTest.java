@@ -1,5 +1,6 @@
 package area.server.AREA_Back.controller;
 
+import area.server.AREA_Back.config.UnitTestConfig;
 import area.server.AREA_Back.dto.CreateAreaRequest;
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.User;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AreaController.class)
+@Import(UnitTestConfig.class)
 @WithMockUser
 class AreaControllerTest {
 

@@ -26,7 +26,8 @@ public interface ActivationModeRepository extends JpaRepository<ActivationMode, 
     /**
      * Find activation modes by action instance, type and enabled status
      */
-    List<ActivationMode> findByActionInstanceAndTypeAndEnabled(ActionInstance actionInstance, ActivationModeType type, Boolean enabled);
+    List<ActivationMode> findByActionInstanceAndTypeAndEnabled(ActionInstance actionInstance,
+        ActivationModeType type, Boolean enabled);
 
     /**
      * Find enabled activation modes by type

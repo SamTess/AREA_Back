@@ -43,7 +43,7 @@ public class WebhookController {
             @RequestBody Map<String, Object> payload) {
 
         try {
-            log.info("Received GitHub webhook for user {}, event type: {}, delivery: {}",
+            log.info("Received GitHub webhook for user { }, event type: { }, delivery: { }",
                     userId, eventType, deliveryId);
 
             Map<String, Object> result = gitHubWebhookService.processWebhook(
@@ -53,7 +53,7 @@ public class WebhookController {
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            log.error("Failed to process GitHub webhook for user {}: {}", userId, e.getMessage(), e);
+            log.error("Failed to process GitHub webhook for user { }: { }", userId, e.getMessage(), e);
 
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Webhook processing failed",
@@ -71,7 +71,7 @@ public class WebhookController {
             @PathVariable UUID userId,
             @RequestBody(required = false) Map<String, Object> payload) {
 
-        log.info("Test GitHub webhook called for user {}", userId);
+        log.info("Test GitHub webhook called for user { }", userId);
 
         return ResponseEntity.ok(Map.of(
             "status", "success",

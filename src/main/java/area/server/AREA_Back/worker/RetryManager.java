@@ -35,17 +35,17 @@ public class RetryManager {
             factor = maxFactor;
         }
         long finalDelay = Math.max(1L, Math.round(delaySeconds * factor));
-        log.debug("Calculated retry delay for attempt {}: {} seconds", attemptNumber, finalDelay);
+        log.debug("Calculated retry delay for attempt { }: { } seconds", attemptNumber, finalDelay);
         return LocalDateTime.now().plusSeconds(finalDelay);
     }
 
     public boolean shouldRetry(final int attemptNumber, final Throwable error) {
         if (attemptNumber >= MAX_RETRY_ATTEMPTS) {
-            log.info("Max retry attempts ({}) reached, not retrying", MAX_RETRY_ATTEMPTS);
+            log.info("Max retry attempts ({ }) reached, not retrying", MAX_RETRY_ATTEMPTS);
             return false;
         }
         if (isNonRetryableError(error)) {
-            log.info("Non-retryable error encountered: {}", error.getClass().getSimpleName());
+            log.info("Non-retryable error encountered: { }", error.getClass().getSimpleName());
             return false;
         }
         return true;

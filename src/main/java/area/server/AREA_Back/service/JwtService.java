@@ -23,6 +23,7 @@ public class JwtService {
 
     private static final int MIN_KEY_LENGTH_BYTES = 32;
     private static final int BITS_PER_BYTE = 8;
+    private static final int LOG_TOKEN_PREFIX_LENGTH = 20;
 
     @Value("${JWT_ACCESS_SECRET:}")
     private String accessTokenSecret;
@@ -52,14 +53,14 @@ public class JwtService {
 
     public UUID extractUserIdFromAccessToken(String token) {
         try {
-            log.debug("Extracting user ID from access token (prefix: {}...)",
-                token.substring(0, Math.min(20, token.length())));
+            log.debug("Extracting user ID from access token (prefix: { }...)",
+                token.substring(0, Math.min(LOG_TOKEN_PREFIX_LENGTH, token.length())));
             Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
             String userId = claims.getSubject();
-            log.debug("Extracted user ID: {}", userId);
+            log.debug("Extracted user ID: { }", userId);
             return UUID.fromString(userId);
         } catch (Exception e) {
-            log.error("Failed to extract user ID from access token: {}", e.getMessage(), e);
+            log.error("Failed to extract user ID from access token: { }", e.getMessage(), e);
             throw e;
         }
     }
@@ -141,7 +142,7 @@ public class JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            log.error("Failed to parse JWT token: {}", e.getMessage(), e);
+            log.error("Failed to parse JWT token: { }", e.getMessage(), e);
             throw e;
         }
     }
@@ -156,7 +157,7 @@ public class JwtService {
     }
 
     private SecretKey getAccessTokenSigningKey() {
-        log.debug("Getting access token signing key, secret configured: {}",
+        log.debug("Getting access token signing key, secret configured: { }",
             accessTokenSecret != null && !accessTokenSecret.trim().isEmpty());
 
         if (accessTokenSecret == null || accessTokenSecret.trim().isEmpty()) {
@@ -167,14 +168,14 @@ public class JwtService {
         try {
             byte[] keyBytes = Decoders.BASE64.decode(accessTokenSecret);
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Access token secret is too short ({} bits), generating secure key",
+                log.warn("Access token secret is too short ({ } bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
-            log.debug("Using configured access token secret ({} bytes)", keyBytes.length);
+            log.debug("Using configured access token secret ({ } bytes)", keyBytes.length);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid access token secret format, generating secure key: {}", e.getMessage());
+            log.warn("Invalid access token secret format, generating secure key: { }", e.getMessage());
             return Jwts.SIG.HS256.key().build();
         }
     }
@@ -188,13 +189,13 @@ public class JwtService {
         try {
             byte[] keyBytes = Decoders.BASE64.decode(refreshTokenSecret);
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Refresh token secret is too short ({} bits), generating secure key",
+                log.warn("Refresh token secret is too short ({ } bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid refresh token secret format, generating secure key: {}", e.getMessage());
+            log.warn("Invalid refresh token secret format, generating secure key: { }", e.getMessage());
             return Jwts.SIG.HS256.key().build();
         }
     }

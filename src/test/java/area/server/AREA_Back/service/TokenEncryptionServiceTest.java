@@ -2,7 +2,7 @@ package area.server.AREA_Back.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests pour le service de chiffrement des tokens
@@ -23,12 +23,12 @@ class TokenEncryptionServiceTest {
         
         // Chiffrer le token
         String encryptedToken = tokenEncryptionService.encryptToken(originalToken);
-        assertNotNull(encryptedToken);
-        assertNotEquals(originalToken, encryptedToken);
+        Assertions.assertNotNull(encryptedToken);
+        Assertions.assertNotEquals(originalToken, encryptedToken);
         
         // Déchiffrer le token
         String decryptedToken = tokenEncryptionService.decryptToken(encryptedToken);
-        assertEquals(originalToken, decryptedToken);
+        Assertions.assertEquals(originalToken, decryptedToken);
     }
 
     @Test
@@ -39,39 +39,39 @@ class TokenEncryptionServiceTest {
         String encrypted2 = tokenEncryptionService.encryptToken(originalToken);
         
         // Les résultats doivent être différents (IV aléatoire)
-        assertNotEquals(encrypted1, encrypted2);
+        Assertions.assertNotEquals(encrypted1, encrypted2);
         
         // Mais les deux doivent déchiffrer vers le même token
-        assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted1));
-        assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted2));
+        Assertions.assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted1));
+        Assertions.assertEquals(originalToken, tokenEncryptionService.decryptToken(encrypted2));
     }
 
     @Test
     void testEncryptNullOrEmptyToken() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken(null);
         });
         
-        assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken("");
         });
         
-        assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.encryptToken("   ");
         });
     }
 
     @Test
     void testDecryptInvalidToken() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.decryptToken(null);
         });
         
-        assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             tokenEncryptionService.decryptToken("");
         });
         
-        assertThrows(RuntimeException.class, () -> {
+        Assertions.assertThrows(RuntimeException.class, () -> {
             tokenEncryptionService.decryptToken("invalid_base64_string");
         });
     }
@@ -79,11 +79,11 @@ class TokenEncryptionServiceTest {
     @Test
     void testKeyGeneration() {
         String keyBase64 = TokenEncryptionService.generateNewKeyAsBase64();
-        assertNotNull(keyBase64);
+        Assertions.assertNotNull(keyBase64);
         
         // Vérifier que la clé est bien en Base64 et fait 32 bytes (256 bits)
         byte[] keyBytes = java.util.Base64.getDecoder().decode(keyBase64);
-        assertEquals(32, keyBytes.length);
+        Assertions.assertEquals(32, keyBytes.length);
     }
 
     @Test
@@ -95,6 +95,6 @@ class TokenEncryptionServiceTest {
         String encrypted = serviceWithKey.encryptToken(originalToken);
         String decrypted = serviceWithKey.decryptToken(encrypted);
         
-        assertEquals(originalToken, decrypted);
+        Assertions.assertEquals(originalToken, decrypted);
     }
 }

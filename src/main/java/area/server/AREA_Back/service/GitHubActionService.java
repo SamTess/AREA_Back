@@ -6,12 +6,21 @@ import area.server.AREA_Back.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +28,7 @@ import java.util.*;
 public class GitHubActionService {
 
     private static final String GITHUB_API_BASE = "https://api.github.com";
+    private static final int DATETIME_PREFIX_LENGTH = 19;
     private static final String GITHUB_PROVIDER_KEY = "github";
 
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
@@ -31,7 +41,7 @@ public class GitHubActionService {
                                                    Map<String, Object> actionParams,
                                                    UUID userId) {
         try {
-            log.info("Executing GitHub action: {} for user: {}", actionKey, userId);
+            log.info("Executing GitHub action: { } for user: { }", actionKey, userId);
 
             String githubToken = getGitHubToken(userId);
             if (githubToken == null) {
@@ -51,7 +61,7 @@ public class GitHubActionService {
                     throw new IllegalArgumentException("Unknown GitHub action: " + actionKey);
             }
         } catch (Exception e) {
-            log.error("Failed to execute GitHub action {}: {}", actionKey, e.getMessage(), e);
+            log.error("Failed to execute GitHub action { }: { }", actionKey, e.getMessage(), e);
             throw new RuntimeException("GitHub action execution failed: " + e.getMessage(), e);
         }
     }
@@ -61,11 +71,11 @@ public class GitHubActionService {
                                                         UUID userId,
                                                         LocalDateTime lastCheck) {
         try {
-            log.debug("Checking GitHub events: {} for user: {}", actionKey, userId);
+            log.debug("Checking GitHub events: { } for user: { }", actionKey, userId);
 
             String githubToken = getGitHubToken(userId);
             if (githubToken == null) {
-                log.warn("No GitHub token found for user: {}", userId);
+                log.warn("No GitHub token found for user: { }", userId);
                 return Collections.emptyList();
             }
 
@@ -77,11 +87,11 @@ public class GitHubActionService {
                 case "push_to_branch":
                     return checkPushToBranch(githubToken, actionParams, lastCheck);
                 default:
-                    log.warn("Unknown GitHub event action: {}", actionKey);
+                    log.warn("Unknown GitHub event action: { }", actionKey);
                     return Collections.emptyList();
             }
         } catch (Exception e) {
-            log.error("Failed to check GitHub events {}: {}", actionKey, e.getMessage(), e);
+            log.error("Failed to check GitHub events { }: { }", actionKey, e.getMessage(), e);
             return Collections.emptyList();
         }
     }
@@ -114,7 +124,7 @@ public class GitHubActionService {
 
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.POST, request,
-            new ParameterizedTypeReference<Map<String, Object>>() {}
+            new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
@@ -143,7 +153,7 @@ public class GitHubActionService {
 
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.POST, request,
-            new ParameterizedTypeReference<Map<String, Object>>() {}
+            new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
@@ -180,7 +190,7 @@ public class GitHubActionService {
 
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.PATCH, request,
-            new ParameterizedTypeReference<Map<String, Object>>() {}
+            new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
@@ -211,7 +221,7 @@ public class GitHubActionService {
 
         ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
             url, HttpMethod.POST, request,
-            new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            new ParameterizedTypeReference<List<Map<String, Object>>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
@@ -230,7 +240,8 @@ public class GitHubActionService {
         return result;
     }
 
-    private List<Map<String, Object>> checkNewIssues(String token, Map<String, Object> params, LocalDateTime lastCheck) {
+    private List<Map<String, Object>> checkNewIssues(String token,
+        Map<String, Object> params, LocalDateTime lastCheck) {
         String repository = getRequiredParam(params, "repository", String.class);
 
         @SuppressWarnings("unchecked")
@@ -244,21 +255,23 @@ public class GitHubActionService {
 
         ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
             url, HttpMethod.GET, request,
-            new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            new ParameterizedTypeReference<List<Map<String, Object>>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            log.warn("Failed to fetch GitHub issues: {}", response.getStatusCode());
+            log.warn("Failed to fetch GitHub issues: { }", response.getStatusCode());
             return Collections.emptyList();
         }
 
         List<Map<String, Object>> issues = response.getBody();
-        if (issues == null) return Collections.emptyList();
+        if (issues == null) {
+            return Collections.emptyList();
+        }
 
         return issues.stream()
             .filter(issue -> {
                 String createdAt = (String) issue.get("created_at");
-                LocalDateTime createdDateTime = LocalDateTime.parse(createdAt.substring(0, 19));
+                LocalDateTime createdDateTime = LocalDateTime.parse(createdAt.substring(0, DATETIME_PREFIX_LENGTH));
                 if (createdDateTime.isBefore(lastCheck)) {
                     return false;
                 }
@@ -294,7 +307,8 @@ public class GitHubActionService {
             .toList();
     }
 
-    private List<Map<String, Object>> checkNewPullRequests(String token, Map<String, Object> params, LocalDateTime lastCheck) {
+    private List<Map<String, Object>> checkNewPullRequests(String token,
+        Map<String, Object> params, LocalDateTime lastCheck) {
         String repository = getRequiredParam(params, "repository", String.class);
         String targetBranch = getOptionalParam(params, "target_branch", String.class, "main");
 
@@ -306,21 +320,23 @@ public class GitHubActionService {
 
         ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
             url, HttpMethod.GET, request,
-            new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            new ParameterizedTypeReference<List<Map<String, Object>>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            log.warn("Failed to fetch GitHub pull requests: {}", response.getStatusCode());
+            log.warn("Failed to fetch GitHub pull requests: { }", response.getStatusCode());
             return Collections.emptyList();
         }
 
         List<Map<String, Object>> prs = response.getBody();
-        if (prs == null) return Collections.emptyList();
+        if (prs == null) {
+            return Collections.emptyList();
+        }
 
         return prs.stream()
             .filter(pr -> {
                 String createdAt = (String) pr.get("created_at");
-                LocalDateTime createdDateTime = LocalDateTime.parse(createdAt.substring(0, 19));
+                LocalDateTime createdDateTime = LocalDateTime.parse(createdAt.substring(0, DATETIME_PREFIX_LENGTH));
                 return createdDateTime.isAfter(lastCheck);
             })
             .map(pr -> {
@@ -345,7 +361,8 @@ public class GitHubActionService {
             .toList();
     }
 
-    private List<Map<String, Object>> checkPushToBranch(String token, Map<String, Object> params, LocalDateTime lastCheck) {
+    private List<Map<String, Object>> checkPushToBranch(String token, Map<String,
+        Object> params, LocalDateTime lastCheck) {
         String repository = getRequiredParam(params, "repository", String.class);
         String branch = getRequiredParam(params, "branch", String.class);
 
@@ -357,16 +374,18 @@ public class GitHubActionService {
 
         ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
             url, HttpMethod.GET, request,
-            new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            new ParameterizedTypeReference<List<Map<String, Object>>>() { }
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            log.warn("Failed to fetch GitHub commits: {}", response.getStatusCode());
+            log.warn("Failed to fetch GitHub commits: { }", response.getStatusCode());
             return Collections.emptyList();
         }
 
         List<Map<String, Object>> commits = response.getBody();
-        if (commits == null) return Collections.emptyList();
+        if (commits == null) {
+            return Collections.emptyList();
+        }
 
         return commits.stream()
             .filter(commit -> {
@@ -375,7 +394,7 @@ public class GitHubActionService {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> author = (Map<String, Object>) commitData.get("author");
                 String date = (String) author.get("date");
-                LocalDateTime commitDateTime = LocalDateTime.parse(date.substring(0, 19));
+                LocalDateTime commitDateTime = LocalDateTime.parse(date.substring(0, DATETIME_PREFIX_LENGTH));
                 return commitDateTime.isAfter(lastCheck);
             })
             .map(commit -> {
@@ -401,30 +420,29 @@ public class GitHubActionService {
         Optional<area.server.AREA_Back.entity.User> userOpt =
             userRepository.findById(userId);
         if (userOpt.isEmpty()) {
-            log.warn("User not found: {}", userId);
+            log.warn("User not found: { }", userId);
             return null;
         }
         Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository
             .findByUserAndProvider(userOpt.get(), GITHUB_PROVIDER_KEY);
         if (oauthOpt.isEmpty()) {
-            log.warn("No GitHub OAuth identity found for user: {}", userId);
+            log.warn("No GitHub OAuth identity found for user: { }", userId);
             return null;
         }
 
         UserOAuthIdentity oauth = oauthOpt.get();
         String encryptedToken = oauth.getAccessTokenEnc();
         if (encryptedToken == null || encryptedToken.trim().isEmpty()) {
-            log.warn("GitHub token is null or empty for user: {}", userId);
+            log.warn("GitHub token is null or empty for user: { }", userId);
             return null;
         }
-        
         try {
-            // Déchiffrer le token avec AES-256-GCM
             String decryptedToken = tokenEncryptionService.decryptToken(encryptedToken);
-            log.debug("Token GitHub déchiffré avec succès pour l'utilisateur: {}", userId);
+            log.debug("Token GitHub déchiffré avec succès pour l'utilisateur: { }", userId);
             return decryptedToken;
         } catch (Exception e) {
-            log.error("Erreur lors du déchiffrement du token GitHub pour l'utilisateur {}: {}", userId, e.getMessage());
+            log.error("Erreur lors du déchiffrement du token GitHub pour l'utilisateur { }: { }",
+                userId, e.getMessage());
             return null;
         }
     }

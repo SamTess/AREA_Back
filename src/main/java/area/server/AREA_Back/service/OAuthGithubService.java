@@ -2,6 +2,7 @@ package area.server.AREA_Back.service;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,7 +15,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -32,35 +32,33 @@ public class OAuthGithubService extends OAuthService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final String redirectBaseUrl;
-    private final TokenEncryptionService tokenEncryptionService;
+
+    @Autowired
+    private TokenEncryptionService tokenEncryptionService;
+
+    @Autowired
+    private UserOAuthIdentityRepository userOAuthIdentityRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
-        PasswordEncoder passwordEncoder,
-        UserOAuthIdentityRepository userOAuthIdentityRepository,
-        UserRepository userRepository,
-        RedisTokenService redisTokenService,
-        JwtService jwtService,
-        TokenEncryptionService tokenEncryptionService
+        JwtService jwtService
     ) {
         super(
             "github",
             "GitHub",
             "/oauth-icons/github.svg",
-            "https://github.com/login/oauth/authorize?client_id=" + githubClientId +
-                "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
+            "https://github.com/login/oauth/authorize?client_id=" + githubClientId
+                + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
             githubClientId,
             githubClientSecret,
             jwtService
         );
         this.redirectBaseUrl = redirectBaseUrl;
-        this.passwordEncoder = passwordEncoder;
-        this.userOAuthIdentityRepository = userOAuthIdentityRepository;
-        this.userRepository = userRepository;
-        this.redisTokenService = redisTokenService;
-        this.tokenEncryptionService = tokenEncryptionService;
     }
 
     @Override

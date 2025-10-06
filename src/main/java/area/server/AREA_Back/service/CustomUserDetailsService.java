@@ -39,7 +39,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         } catch (IllegalArgumentException e) {
             throw new UsernameNotFoundException("Invalid user ID format: " + username);
         } catch (Exception e) {
-            log.error("Error loading user details for: {}", username, e);
+            log.error("Error loading user details for: { }", username, e);
             throw new UsernameNotFoundException("Error loading user details", e);
         }
     }

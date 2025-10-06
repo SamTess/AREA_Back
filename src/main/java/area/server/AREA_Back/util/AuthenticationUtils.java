@@ -12,7 +12,14 @@ import java.util.UUID;
  * from any controller or service
  */
 @Component
-public class AuthenticationUtils {
+public final class AuthenticationUtils {
+
+    /**
+     * Private constructor to prevent instantiation of utility class.
+     */
+    private AuthenticationUtils() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     /**
      * Retrieves the currently authenticated user
@@ -21,9 +28,9 @@ public class AuthenticationUtils {
     public static CustomUserDetailsService.CustomUserPrincipal getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null &&
-            authentication.isAuthenticated() &&
-            authentication.getPrincipal() instanceof CustomUserDetailsService.CustomUserPrincipal) {
+        if (authentication != null
+            && authentication.isAuthenticated()
+            && authentication.getPrincipal() instanceof CustomUserDetailsService.CustomUserPrincipal) {
 
             return (CustomUserDetailsService.CustomUserPrincipal) authentication.getPrincipal();
         }
@@ -37,7 +44,10 @@ public class AuthenticationUtils {
      */
     public static UUID getCurrentUserId() {
         CustomUserDetailsService.CustomUserPrincipal user = getCurrentUser();
-        return user != null ? user.getUserId() : null;
+        if (user != null) {
+            return user.getUserId();
+        }
+        return null;
     }
 
     /**
@@ -46,7 +56,10 @@ public class AuthenticationUtils {
      */
     public static String getCurrentUserEmail() {
         CustomUserDetailsService.CustomUserPrincipal user = getCurrentUser();
-        return user != null ? user.getEmail() : null;
+        if (user != null) {
+            return user.getEmail();
+        }
+        return null;
     }
 
     /**
@@ -64,9 +77,9 @@ public class AuthenticationUtils {
      */
     public static boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null &&
-               authentication.isAuthenticated() &&
-               !(authentication.getPrincipal() instanceof String); // Avoids "anonymousUser"
+        return authentication != null
+               && authentication.isAuthenticated()
+               && !(authentication.getPrincipal() instanceof String); // Avoids "anonymousUser"
     }
 
     /**
@@ -75,6 +88,9 @@ public class AuthenticationUtils {
      */
     public static area.server.AREA_Back.entity.User getCurrentUserEntity() {
         CustomUserDetailsService.CustomUserPrincipal user = getCurrentUser();
-        return user != null ? user.getUser() : null;
+        if (user != null) {
+            return user.getUser();
+        }
+        return null;
     }
 }

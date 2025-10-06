@@ -23,6 +23,8 @@ import java.util.Map;
 @Slf4j
 public class GitHubEventPollingService {
 
+    private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300; // 5 minutes
+
     private final GitHubActionService gitHubActionService;
     private final ActionInstanceRepository actionInstanceRepository;
     private final ActivationModeRepository activationModeRepository;
@@ -44,16 +46,16 @@ public class GitHubEventPollingService {
                 try {
                     processActionInstance(actionInstance);
                 } catch (Exception e) {
-                    log.error("Failed to process GitHub action instance {}: {}", 
+                    log.error("Failed to process GitHub action instance { }: { }", 
                              actionInstance.getId(), e.getMessage(), e);
                 }
             }
             
-            log.debug("Completed GitHub events polling cycle, processed {} instances", 
+            log.debug("Completed GitHub events polling cycle, processed { } instances", 
                      githubActionInstances.size());
                      
         } catch (Exception e) {
-            log.error("Failed to complete GitHub events polling cycle: {}", e.getMessage(), e);
+            log.error("Failed to complete GitHub events polling cycle: { }", e.getMessage(), e);
         }
     }
 
@@ -85,13 +87,13 @@ public class GitHubEventPollingService {
             );
 
             if (!events.isEmpty()) {
-                log.info("Found {} new GitHub events for action instance {}", 
+                log.info("Found { } new GitHub events for action instance { }", 
                         events.size(), actionInstance.getId());
                 
-                // TODO: Trigger the linked reactions for each event
+                // TODO : Trigger the linked reactions for each event
                 // This would involve creating executions and adding them to the execution queue
                 for (Map<String, Object> event : events) {
-                    log.debug("GitHub event: {}", event);
+                    log.debug("GitHub event: { }", event);
                     // Here you would:
                     // 1. Create an Execution entity
                     // 2. Set the input payload to the event data
@@ -100,7 +102,7 @@ public class GitHubEventPollingService {
             }
             
         } catch (Exception e) {
-            log.error("Failed to check GitHub events for action instance {}: {}", 
+            log.error("Failed to check GitHub events for action instance { }: { }", 
                      actionInstance.getId(), e.getMessage(), e);
         }
     }
@@ -108,7 +110,7 @@ public class GitHubEventPollingService {
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
         // Get polling interval from activation mode config
         Map<String, Object> config = activationMode.getConfig();
-        Integer intervalSeconds = (Integer) config.getOrDefault("interval_seconds", 300); // Default 5 minutes
+        Integer intervalSeconds = (Integer) config.getOrDefault("interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
         
         return LocalDateTime.now().minusSeconds(intervalSeconds);
     }

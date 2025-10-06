@@ -40,9 +40,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
+            @NonNull final HttpServletRequest request,
+            @NonNull final HttpServletResponse response,
+            @NonNull final FilterChain filterChain
     ) throws ServletException, IOException {
         String requestPath = request.getRequestURI();
         if (isPublicEndpoint(requestPath)) {
@@ -78,13 +78,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-                    log.debug("Successfully authenticated user with ID: {}", userId);
+                    log.debug("Successfully authenticated user with ID: { }", userId);
                 } else {
                     log.debug("JWT token validation failed");
                 }
 
             } catch (Exception e) {
-                log.debug("JWT token processing failed: {}", e.getMessage());
+                log.debug("JWT token processing failed: { }", e.getMessage());
                 // In case of error, continue without authentication
             }
         }
@@ -95,7 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Extracts the authentication token from HttpOnly cookies.
      */
-    private String extractTokenFromCookies(HttpServletRequest request) {
+    private String extractTokenFromCookies(final HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;
         }
@@ -110,21 +110,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Checks if the endpoint is public and does not require authentication.
      */
-    private boolean isPublicEndpoint(String path) {
-        return path.equals("/api/auth/login") ||
-               path.equals("/api/auth/register") ||
-               path.equals("/api/auth/logout") ||
-               path.equals("/api/auth/refresh") ||
-               path.startsWith("/api/debug/") ||
-               path.startsWith("/api/oauth/") ||
-               path.equals("/api/services/catalog") ||
-               path.equals("/api/services/catalog/enabled") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs/") ||
-               path.equals("/swagger-ui.html") ||
-               path.startsWith("/api/about") ||
-               path.startsWith("/actuator/") ||
-               path.startsWith("/webjars/") ||
-               path.startsWith("/favicon.ico");
+    private boolean isPublicEndpoint(final String path) {
+        return path.equals("/api/auth/login")
+               || path.equals("/api/auth/register")
+               || path.equals("/api/auth/logout")
+               || path.equals("/api/auth/refresh")
+               || path.startsWith("/api/debug/")
+               || path.startsWith("/api/oauth/")
+               || path.equals("/api/services/catalog")
+               || path.equals("/api/services/catalog/enabled")
+               || path.startsWith("/swagger-ui/")
+               || path.startsWith("/v3/api-docs/")
+               || path.equals("/swagger-ui.html")
+               || path.startsWith("/api/about")
+               || path.startsWith("/actuator/")
+               || path.startsWith("/webjars/")
+               || path.startsWith("/favicon.ico");
     }
 }

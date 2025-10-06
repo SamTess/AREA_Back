@@ -28,7 +28,7 @@ public class RedisEventService {
                     .in(redisConfig.getAreasEventsStream())
                     .ofObject(message);
             var recordId = redisTemplate.opsForStream().add(record);
-            log.info("Published event to stream {}: executionId={}, actionInstanceId={}, eventType={}",
+            log.info("Published event to stream { }: executionId={ }, actionInstanceId={ }, eventType={ }",
                     redisConfig.getAreasEventsStream(),
                     message.getExecutionId(),
                     message.getActionInstanceId(),
@@ -43,7 +43,7 @@ public class RedisEventService {
             return returnValue;
 
         } catch (Exception e) {
-            log.error("Failed to publish event to Redis stream: {}", e.getMessage(), e);
+            log.error("Failed to publish event to Redis stream: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to publish event to Redis stream", e);
         }
     }
@@ -60,7 +60,7 @@ public class RedisEventService {
             try {
                 redisTemplate.opsForStream().info(redisConfig.getAreasEventsStream());
             } catch (Exception e) {
-                log.info("Creating Redis stream: {}", redisConfig.getAreasEventsStream());
+                log.info("Creating Redis stream: { }", redisConfig.getAreasEventsStream());
                 var dummyRecord = StreamRecords.string(Map.of("init", "true"))
                         .withStreamKey(redisConfig.getAreasEventsStream());
                 var recordId = redisTemplate.opsForStream().add(dummyRecord);
@@ -71,17 +71,17 @@ public class RedisEventService {
                         redisConfig.getAreasEventsStream(),
                         ReadOffset.from("0"),
                         redisConfig.getAreasConsumerGroup());
-                log.info("Created consumer group: {} for stream: {}",
+                log.info("Created consumer group: { } for stream: { }",
                         redisConfig.getAreasConsumerGroup(),
                         redisConfig.getAreasEventsStream());
             } catch (Exception e) {
-                log.debug("Consumer group {} already exists for stream {}",
+                log.debug("Consumer group { } already exists for stream { }",
                          redisConfig.getAreasConsumerGroup(),
                          redisConfig.getAreasEventsStream());
             }
 
         } catch (Exception e) {
-            log.error("Failed to initialize Redis stream: {}", e.getMessage(), e);
+            log.error("Failed to initialize Redis stream: { }", e.getMessage(), e);
         }
     }
 
@@ -95,7 +95,7 @@ public class RedisEventService {
                 "streamInfo", streamInfoValue
             );
         } catch (Exception e) {
-            log.warn("Failed to get stream info: {}", e.getMessage());
+            log.warn("Failed to get stream info: { }", e.getMessage());
             return Map.of(
                 "streamKey", redisConfig.getAreasEventsStream(),
                 "consumerGroup", redisConfig.getAreasConsumerGroup(),

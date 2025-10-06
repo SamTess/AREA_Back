@@ -19,6 +19,8 @@ import java.util.UUID;
 @Slf4j
 public class GitHubWebhookService {
 
+    private static final int SIGNATURE_PREFIX_LENGTH = 10;
+
     /**
      * Process a GitHub webhook event
      *
@@ -28,8 +30,9 @@ public class GitHubWebhookService {
      * @param payload The webhook payload
      * @return Processing result
      */
-    public Map<String, Object> processWebhook(UUID userId, String eventType, String signature, Map<String, Object> payload) {
-        log.info("Processing GitHub webhook for user {}, event type: {}", userId, eventType);
+    public Map<String, Object> processWebhook(UUID userId, String eventType,
+        String signature, Map<String, Object> payload) {
+        log.info("Processing GitHub webhook for user { }, event type: { }", userId, eventType);
 
         Map<String, Object> result = new HashMap<>();
         result.put("status", "processed");
@@ -38,14 +41,19 @@ public class GitHubWebhookService {
         result.put("processedAt", LocalDateTime.now().toString());
 
         try {
-            // TODO: Implement webhook signature verification
+            // TODO : Implement webhook signature verification
             if (signature != null) {
-                log.debug("Webhook signature provided for verification: {}", signature.substring(0, Math.min(10, signature.length())) + "...");
+                log.debug("Webhook signature provided for verification: { }",
+                    signature.substring(0, Math.min(SIGNATURE_PREFIX_LENGTH, signature.length())) + "...");
                 // verifyWebhookSignature(payload, signature);
             }
 
-            // TODO: Implement event-specific processing
-            switch (eventType != null ? eventType.toLowerCase() : "") {
+            // TODO : Implement event-specific processing
+            String safeEventType = "";
+            if (eventType != null) {
+                safeEventType = eventType.toLowerCase();
+            }
+            switch (safeEventType) {
                 case "issues":
                     result.putAll(processIssuesEvent(userId, payload));
                     break;
@@ -59,14 +67,14 @@ public class GitHubWebhookService {
                     result.putAll(processPingEvent(payload));
                     break;
                 default:
-                    log.warn("Unhandled GitHub event type: {}", eventType);
+                    log.warn("Unhandled GitHub event type: { }", eventType);
                     result.put("warning", "Event type not yet supported: " + eventType);
             }
 
             return result;
 
         } catch (Exception e) {
-            log.error("Error processing GitHub webhook: {}", e.getMessage(), e);
+            log.error("Error processing GitHub webhook: { }", e.getMessage(), e);
             result.put("status", "error");
             result.put("error", e.getMessage());
             return result;
@@ -74,7 +82,7 @@ public class GitHubWebhookService {
     }
 
     private Map<String, Object> processIssuesEvent(UUID userId, Map<String, Object> payload) {
-        log.debug("Processing GitHub issues event for user {}", userId);
+        log.debug("Processing GitHub issues event for user { }", userId);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> issue = (Map<String, Object>) payload.get("issue");
@@ -90,14 +98,19 @@ public class GitHubWebhookService {
             result.put("issueState", issue.get("state"));
         }
 
-        // TODO: Trigger corresponding action instances
-        log.info("GitHub issues event processed: action={}, issue={}", action, issue != null ? issue.get("number") : "unknown");
+        // TODO : Trigger corresponding action instances
+        Object issueNumber = "unknown";
+        if (issue != null) {
+            issueNumber = issue.get("number");
+        }
+        log.info("GitHub issues event processed: action={ }, issue={ }",
+            action, issueNumber);
 
         return result;
     }
 
     private Map<String, Object> processPullRequestEvent(UUID userId, Map<String, Object> payload) {
-        log.debug("Processing GitHub pull request event for user {}", userId);
+        log.debug("Processing GitHub pull request event for user { }", userId);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> pullRequest = (Map<String, Object>) payload.get("pull_request");
@@ -113,14 +126,19 @@ public class GitHubWebhookService {
             result.put("prState", pullRequest.get("state"));
         }
 
-        // TODO: Trigger corresponding action instances
-        log.info("GitHub pull request event processed: action={}, pr={}", action, pullRequest != null ? pullRequest.get("number") : "unknown");
+        // TODO : Trigger corresponding action instances
+        Object prNumber = "unknown";
+        if (pullRequest != null) {
+            prNumber = pullRequest.get("number");
+        }
+        log.info("GitHub pull request event processed: action={ }, pr={ }",
+            action, prNumber);
 
         return result;
     }
 
     private Map<String, Object> processPushEvent(UUID userId, Map<String, Object> payload) {
-        log.debug("Processing GitHub push event for user {}", userId);
+        log.debug("Processing GitHub push event for user { }", userId);
 
         String ref = (String) payload.get("ref");
         @SuppressWarnings("unchecked")
@@ -129,10 +147,15 @@ public class GitHubWebhookService {
         Map<String, Object> result = new HashMap<>();
         result.put("eventType", "push");
         result.put("ref", ref);
-        result.put("commitCount", commits != null ? commits.size() : 0);
+        int commitCount = 0;
+        if (commits != null) {
+            commitCount = commits.size();
+        }
+        result.put("commitCount", commitCount);
 
-        // TODO: Trigger corresponding action instances
-        log.info("GitHub push event processed: ref={}, commits={}", ref, commits != null ? commits.size() : 0);
+        // TODO : Trigger corresponding action instances
+        log.info("GitHub push event processed: ref={ }, commits={ }",
+            ref, commitCount);
 
         return result;
     }

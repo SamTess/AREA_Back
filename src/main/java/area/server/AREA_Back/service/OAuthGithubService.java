@@ -15,6 +15,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -46,7 +47,9 @@ public class OAuthGithubService extends OAuthService {
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
-        JwtService jwtService
+        JwtService jwtService,
+        RedisTokenService redisTokenService,
+        PasswordEncoder passwordEncoder
     ) {
         super(
             "github",
@@ -59,6 +62,8 @@ public class OAuthGithubService extends OAuthService {
             jwtService
         );
         this.redirectBaseUrl = redirectBaseUrl;
+        this.redisTokenService = redisTokenService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override

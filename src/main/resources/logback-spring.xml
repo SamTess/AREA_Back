@@ -1,0 +1,30 @@
+<configuration>
+
+    <!-- Only log ERROR and above by default -->
+    <property name="LOG_LEVEL" value="ERROR" />
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+            <immediateFlush>true</immediateFlush>
+        </encoder>
+    </appender>
+
+    <!-- Reduce noise from framework and Hibernate logging -->
+    <logger name="org.springframework" level="ERROR"/>
+    <logger name="org.springframework.web" level="ERROR"/>
+    <logger name="org.springframework.security" level="ERROR"/>
+    <logger name="org.hibernate" level="ERROR"/>
+    <logger name="org.hibernate.SQL" level="ERROR"/>
+    <logger name="org.hibernate.type" level="ERROR"/>
+
+    <!-- Application package logger (inherits root level unless overridden) -->
+    <logger name="area.server" level="ERROR"/>
+
+    <root level="${LOG_LEVEL:-ERROR}">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

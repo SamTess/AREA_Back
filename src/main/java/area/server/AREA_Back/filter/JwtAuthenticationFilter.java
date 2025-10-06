@@ -22,11 +22,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
-/**
- * JWT filter for authentication based on HttpOnly cookies.
- * This filter intercepts all requests and checks for the presence
- * of a valid authentication token in the HttpOnly cookies.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -92,9 +87,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extracts the authentication token from HttpOnly cookies.
-     */
     private String extractTokenFromCookies(final HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;
@@ -107,9 +99,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .orElse(null);
     }
 
-    /**
-     * Checks if the endpoint is public and does not require authentication.
-     */
     private boolean isPublicEndpoint(final String path) {
         return path.equals("/api/auth/login")
                || path.equals("/api/auth/register")

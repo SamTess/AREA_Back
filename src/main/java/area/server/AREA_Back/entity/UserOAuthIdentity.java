@@ -16,12 +16,12 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "a_user_oauth_identity", schema = "area",
+@Table(name = "a_user_oauth_identities", schema = "area",
        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "provider"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserOauthIdentity {
+public class UserOAuthIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

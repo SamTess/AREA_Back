@@ -26,7 +26,6 @@ class AuthResponseTest {
             false,
             LocalDateTime.now(),
             LocalDateTime.now(),
-            LocalDateTime.now(),
             "https://example.com/avatar.jpg"
         );
 
@@ -68,7 +67,6 @@ class AuthResponseTest {
             true,
             LocalDateTime.now().minusDays(1),
             null,
-            null,
             null
         );
 
@@ -94,7 +92,6 @@ class AuthResponseTest {
             "constructor@example.com",
             true,
             false,
-            LocalDateTime.now(),
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/constructor-avatar.jpg"

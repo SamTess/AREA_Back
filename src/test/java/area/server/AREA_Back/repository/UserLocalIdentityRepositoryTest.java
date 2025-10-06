@@ -39,7 +39,6 @@ class UserLocalIdentityRepositoryTest {
         // Create and persist test user
         testUser = new User();
         testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedPassword123");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
@@ -90,7 +89,6 @@ class UserLocalIdentityRepositoryTest {
     void testFindByUserNotFound() {
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("hashedPassword123");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         anotherUser.setCreatedAt(LocalDateTime.now());
@@ -295,7 +293,6 @@ class UserLocalIdentityRepositoryTest {
         // Create another user and identity
         User anotherUser = new User();
         anotherUser.setEmail("another@example.com");
-        anotherUser.setPasswordHash("hashedPassword123");
         anotherUser.setIsActive(true);
         anotherUser.setIsAdmin(false);
         anotherUser.setCreatedAt(LocalDateTime.now());

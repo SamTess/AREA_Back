@@ -16,7 +16,6 @@ public class UserResponse {
     private Boolean isActive;
     private Boolean isAdmin;
     private LocalDateTime createdAt;
-    private LocalDateTime confirmedAt;
     private LocalDateTime lastLoginAt;
     private String avatarUrl;
 }

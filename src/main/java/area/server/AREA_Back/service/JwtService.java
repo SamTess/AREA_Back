@@ -112,8 +112,6 @@ public class JwtService {
         return java.util.Base64.getEncoder().encodeToString(key.getEncoded());
     }
 
-    // Private helper methods
-
     private String generateToken(Map<String, Object> extraClaims, String subject,
                                   Date expiration, SecretKey signingKey) {
         return Jwts.builder()

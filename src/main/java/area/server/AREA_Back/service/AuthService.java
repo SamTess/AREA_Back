@@ -1,7 +1,7 @@
 package area.server.AREA_Back.service;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LoginRequest;
+import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
@@ -62,7 +62,7 @@ public class AuthService {
         localIdentity.setUser(savedUser);
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        localIdentity.setIsEmailVerified(false); // TODO: Implement email verification
+        localIdentity.setIsEmailVerified(false); // TODO Implement email verification
         localIdentity.setFailedLoginAttempts(0);
         localIdentity.setCreatedAt(LocalDateTime.now());
         localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -90,7 +90,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request, HttpServletResponse response) {
+    public AuthResponse login(LocalLoginRequest request, HttpServletResponse response) {
         log.info("Attempting to login user with email: {}", request.getEmail());
 
         Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
@@ -294,7 +294,6 @@ public class AuthService {
             user.getIsActive(),
             user.getIsAdmin(),
             user.getCreatedAt(),
-            user.getConfirmedAt(),
             user.getLastLoginAt(),
             user.getAvatarUrl()
         );

@@ -1,6 +1,5 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.dto.CreateUserRequest;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
@@ -16,9 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,9 +29,6 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     @GetMapping
     @Operation(summary = "Get all users",
@@ -93,31 +87,6 @@ public class UserController {
         return ResponseEntity.ok(userResponses);
     }
 
-    @PostMapping
-    @Operation(summary = "Create a new user",
-               description = "Creates a new user with the provided information")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "User created successfully"),
-        @ApiResponse(responseCode = "409", description = "User already exists (email)")
-    })
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
-        User user = new User();
-        user.setEmail(request.getEmail());
-        if (request.getPassword() != null) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
-        user.setAvatarUrl(request.getAvatarUrl());
-        user.setIsActive(true);
-        user.setIsAdmin(false);
-
-        User savedUser = userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedUser));
-    }
-
     @PutMapping("/{id}")
     @Operation(summary = "Update a user",
                description = "Updates an existing user's information")
@@ -139,9 +108,6 @@ public class UserController {
 
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
-        }
-        if (request.getPassword() != null) {
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
         if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());
@@ -198,7 +164,6 @@ public class UserController {
         response.setIsActive(user.getIsActive());
         response.setIsAdmin(user.getIsAdmin());
         response.setCreatedAt(user.getCreatedAt());
-        response.setConfirmedAt(user.getConfirmedAt());
         response.setLastLoginAt(user.getLastLoginAt());
         response.setAvatarUrl(user.getAvatarUrl());
         return response;

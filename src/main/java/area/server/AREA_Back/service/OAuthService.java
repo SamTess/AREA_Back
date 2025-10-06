@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.constants.AuthTokenConstants;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
@@ -23,8 +24,6 @@ public abstract class OAuthService {
     protected UserRepository userRepository;
     protected RedisTokenService redisTokenService;
 
-    private static final String ACCESS_TOKEN_COOKIE = "access_token";
-    private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     private static final int ACCESS_TOKEN_COOKIE_MAX_AGE = 15 * 60;
     private static final int REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 
@@ -75,14 +74,14 @@ public abstract class OAuthService {
     public abstract AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response);
 
     protected void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        Cookie accessCookie = new Cookie(ACCESS_TOKEN_COOKIE, accessToken);
+        Cookie accessCookie = new Cookie(AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
         accessCookie.setHttpOnly(true);
         accessCookie.setSecure(false);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(ACCESS_TOKEN_COOKIE_MAX_AGE);
         response.addCookie(accessCookie);
 
-        Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
+        Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");

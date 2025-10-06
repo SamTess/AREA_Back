@@ -1,5 +1,7 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
+import area.server.AREA_Back.constants.AuthTokenConstants;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
@@ -32,11 +34,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RedisTokenService redisTokenService;
+    private final JwtCookieProperties jwtCookieProperties;
 
-    private static final String ACCESS_TOKEN_COOKIE = "access_token";
-    private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
-    private static final int ACCESS_TOKEN_COOKIE_MAX_AGE = 15 * 60;
-    private static final int REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int ACCOUNT_LOCK_DURATION_MINUTES = 30;
 
@@ -161,7 +160,7 @@ public class AuthService {
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         UUID userId = getUserIdFromRequest(request);
-        String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
+        String accessToken = getTokenFromCookie(request, AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME);
 
         if (userId != null && accessToken != null) {
             redisTokenService.deleteAllTokensForUser(userId, accessToken);
@@ -173,7 +172,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = getTokenFromCookie(request, REFRESH_TOKEN_COOKIE);
+        String refreshToken = getTokenFromCookie(request, AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME);
         if (refreshToken == null) {
             throw new RuntimeException("Refresh token not found");
         }
@@ -222,7 +221,7 @@ public class AuthService {
     }
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
-        String accessToken = getTokenFromCookie(request, ACCESS_TOKEN_COOKIE);
+        String accessToken = getTokenFromCookie(request, AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME);
         if (accessToken == null) {
             return null;
         }
@@ -256,35 +255,56 @@ public class AuthService {
     }
 
     private void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        Cookie accessCookie = new Cookie(ACCESS_TOKEN_COOKIE, accessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(ACCESS_TOKEN_COOKIE_MAX_AGE);
-        response.addCookie(accessCookie);
+        Cookie authCookie = new Cookie(AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(jwtCookieProperties.isSecure());
+        authCookie.setPath("/");
+        authCookie.setMaxAge(jwtCookieProperties.getAccessTokenExpiry());
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            authCookie.setDomain(jwtCookieProperties.getDomain());
+        }
 
-        Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
+        response.addCookie(authCookie);
+        Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
+        refreshCookie.setSecure(jwtCookieProperties.isSecure());
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(REFRESH_TOKEN_COOKIE_MAX_AGE);
+        refreshCookie.setMaxAge(jwtCookieProperties.getRefreshTokenExpiry());
+
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            refreshCookie.setDomain(jwtCookieProperties.getDomain());
+        }
+
         response.addCookie(refreshCookie);
+
+        log.debug("Set HttpOnly cookies for authentication (secure: {})", jwtCookieProperties.isSecure());
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
-        Cookie accessCookie = new Cookie(ACCESS_TOKEN_COOKIE, "");
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(0);
-        response.addCookie(accessCookie);
+        Cookie authCookie = new Cookie(AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME, "");
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(jwtCookieProperties.isSecure());
+        authCookie.setPath("/");
+        authCookie.setMaxAge(0);
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            authCookie.setDomain(jwtCookieProperties.getDomain());
+        }
 
-        Cookie refreshCookie = new Cookie(REFRESH_TOKEN_COOKIE, "");
+        response.addCookie(authCookie);
+
+        Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, "");
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
+        refreshCookie.setSecure(jwtCookieProperties.isSecure());
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
+
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            refreshCookie.setDomain(jwtCookieProperties.getDomain());
+        }
+
         response.addCookie(refreshCookie);
+
+        log.debug("Cleared HttpOnly authentication cookies");
     }
 
     private UserResponse mapToUserResponse(User user) {

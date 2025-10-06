@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.constants.AuthTokenConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -16,12 +17,10 @@ public class RedisTokenService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final JwtService jwtService;
 
-    private static final String ACCESS_TOKEN_PREFIX = "access:";
-    private static final String REFRESH_TOKEN_PREFIX = "refresh:";
     private static final int TOKEN_LOG_PREFIX_LENGTH = 10;
 
     public void storeAccessToken(String accessToken, UUID userId) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         Duration ttl = Duration.ofMillis(jwtService.getAccessTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, userId.toString(), ttl);
@@ -29,7 +28,7 @@ public class RedisTokenService {
     }
 
     public void storeRefreshToken(UUID userId, String refreshToken) {
-        String key = REFRESH_TOKEN_PREFIX + userId.toString();
+        String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         Duration ttl = Duration.ofMillis(jwtService.getRefreshTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, refreshToken, ttl);
@@ -37,7 +36,7 @@ public class RedisTokenService {
     }
 
     public boolean isAccessTokenValid(String accessToken) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         String userId = (String) redisTemplate.opsForValue().get(key);
         boolean isValid = userId != null;
 
@@ -51,7 +50,7 @@ public class RedisTokenService {
     }
 
     public UUID getUserIdFromAccessToken(String accessToken) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         String userId = (String) redisTemplate.opsForValue().get(key);
 
         if (userId == null) {
@@ -68,7 +67,7 @@ public class RedisTokenService {
     }
 
     public String getRefreshToken(UUID userId) {
-        String key = REFRESH_TOKEN_PREFIX + userId.toString();
+        String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         return (String) redisTemplate.opsForValue().get(key);
     }
 
@@ -84,13 +83,13 @@ public class RedisTokenService {
     }
 
     public void deleteAccessToken(String accessToken) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         Boolean deleted = redisTemplate.delete(key);
         log.debug("Deleted access token: {}", deleted);
     }
 
     public void deleteRefreshToken(UUID userId) {
-        String key = REFRESH_TOKEN_PREFIX + userId.toString();
+        String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         Boolean deleted = redisTemplate.delete(key);
         log.debug("Deleted refresh token for user {}: {}", userId, deleted);
     }
@@ -112,22 +111,22 @@ public class RedisTokenService {
     }
 
     public Long getAccessTokenTTL(String accessToken) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         return redisTemplate.getExpire(key);
     }
 
     public Long getRefreshTokenTTL(UUID userId) {
-        String key = REFRESH_TOKEN_PREFIX + userId.toString();
+        String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         return redisTemplate.getExpire(key);
     }
 
     public boolean hasActiveRefreshToken(UUID userId) {
-        String key = REFRESH_TOKEN_PREFIX + userId.toString();
+        String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         return redisTemplate.hasKey(key);
     }
 
     public void extendAccessTokenTTL(String accessToken, Duration newTTL) {
-        String key = ACCESS_TOKEN_PREFIX + accessToken;
+        String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
         if (redisTemplate.hasKey(key)) {
             redisTemplate.expire(key, newTTL);
             log.debug("Extended access token TTL to: {}", newTTL);

@@ -59,4 +59,26 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
            + "AND am.type = 'POLL' "
            + "AND am.enabled = true")
     List<ActionInstance> findActiveGitHubActionInstances();
+
+    /**
+     * Find enabled action instances by user and service key
+     */
+    @Query("SELECT ai FROM ActionInstance ai "
+           + "JOIN ai.actionDefinition ad "
+           + "JOIN ad.service s "
+           + "WHERE ai.user.id = :userId "
+           + "AND s.key = :serviceKey "
+           + "AND ai.enabled = true")
+    List<ActionInstance> findEnabledActionInstancesByUserAndService(@Param("userId") UUID userId, 
+                                                                   @Param("serviceKey") String serviceKey);
+
+    /**
+     * Find enabled action instances by service key
+     */
+    @Query("SELECT ai FROM ActionInstance ai "
+           + "JOIN ai.actionDefinition ad "
+           + "JOIN ad.service s "
+           + "WHERE s.key = :serviceKey "
+           + "AND ai.enabled = true")
+    List<ActionInstance> findEnabledActionInstancesByService(@Param("serviceKey") String serviceKey);
 }

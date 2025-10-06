@@ -8,6 +8,7 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.AreaRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.AreaService;
+import area.server.AREA_Back.service.CronSchedulerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,6 +44,9 @@ public class AreaController {
 
     @Autowired
     private AreaService areaService;
+
+    @Autowired  
+    private CronSchedulerService cronSchedulerService;
 
     @GetMapping
     public ResponseEntity<Page<AreaResponse>> getAllAreas(
@@ -124,6 +128,66 @@ public class AreaController {
                 .body(Map.of(
                     "error", "Internal server error",
                     "message", "An unexpected error occurred"
+                ));
+        }
+    }
+
+    @PostMapping("/{id}/trigger")
+    @Operation(summary = "Manually trigger an AREA execution",
+               description = "Manually triggers the execution of an AREA with optional input payload")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "AREA triggered successfully"),
+        @ApiResponse(responseCode = "404", description = "AREA not found"),
+        @ApiResponse(responseCode = "400", description = "AREA is disabled or has no action instances")
+    })
+    public ResponseEntity<Map<String, Object>> triggerArea(
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, Object> inputPayload) {
+        
+        try {
+            log.info("Manual trigger requested for AREA: {}", id);
+            
+            Map<String, Object> result = areaService.triggerAreaManually(id, inputPayload);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to trigger AREA {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "error", "Invalid request",
+                    "message", e.getMessage()
+                ));
+        } catch (Exception e) {
+            log.error("Unexpected error triggering AREA {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Internal server error",
+                    "message", "An unexpected error occurred"
+                ));
+        }
+    }
+
+    @GetMapping("/scheduler/status")
+    @Operation(summary = "Get CRON scheduler status",
+               description = "Returns the status of all scheduled CRON tasks")
+    public ResponseEntity<Map<String, Object>> getSchedulerStatus() {
+        try {
+            Map<UUID, Boolean> tasksStatus = cronSchedulerService.getScheduledTasksStatus();
+            int activeTasksCount = cronSchedulerService.getActiveTasksCount();
+            
+            return ResponseEntity.ok(Map.of(
+                "active_tasks_count", activeTasksCount,
+                "total_tasks_count", tasksStatus.size(),
+                "tasks_status", tasksStatus,
+                "scheduler_running", true
+            ));
+        } catch (Exception e) {
+            log.error("Failed to get scheduler status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Failed to get scheduler status",
+                    "message", e.getMessage()
                 ));
         }
     }

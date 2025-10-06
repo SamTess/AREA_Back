@@ -6,11 +6,16 @@ import area.server.AREA_Back.dto.AreaResponse;
 import area.server.AREA_Back.dto.CreateAreaWithActionsRequest;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.ActionInstance;
+import area.server.AREA_Back.entity.ActivationMode;
 import area.server.AREA_Back.entity.Area;
+import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ServiceAccount;
 import area.server.AREA_Back.entity.User;
+import area.server.AREA_Back.entity.enums.ActivationModeType;
+import area.server.AREA_Back.entity.enums.DedupStrategy;
 import area.server.AREA_Back.repository.ActionDefinitionRepository;
 import area.server.AREA_Back.repository.ActionInstanceRepository;
+import area.server.AREA_Back.repository.ActivationModeRepository;
 import area.server.AREA_Back.repository.AreaRepository;
 import area.server.AREA_Back.repository.ServiceAccountRepository;
 import area.server.AREA_Back.repository.UserRepository;
@@ -19,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +42,10 @@ public class AreaService {
     private final UserRepository userRepository;
     private final ActionDefinitionRepository actionDefinitionRepository;
     private final ActionInstanceRepository actionInstanceRepository;
+    private final ActivationModeRepository activationModeRepository;
     private final ServiceAccountRepository serviceAccountRepository;
     private final JsonSchemaValidationService jsonSchemaValidationService;
+    private final ExecutionTriggerService executionTriggerService;
 
     /**
      * Creates a new AREA with actions and reactions.
@@ -215,7 +223,12 @@ public class AreaService {
                 actionInstance.setParams(Map.of());
             }
 
-            actionInstanceRepository.save(actionInstance);
+            ActionInstance savedActionInstance = actionInstanceRepository.save(actionInstance);
+            
+            // Create activation modes if specified
+            if (action.getActivationConfig() != null) {
+                createActivationModes(savedActionInstance, action.getActivationConfig());
+            }
         }
 
         for (AreaReactionRequest reaction : reactions) {
@@ -260,5 +273,113 @@ public class AreaService {
         response.setCreatedAt(area.getCreatedAt());
         response.setUpdatedAt(area.getUpdatedAt());
         return response;
+    }
+
+    /**
+     * Manually triggers execution of an AREA
+     */
+    public Map<String, Object> triggerAreaManually(UUID areaId, Map<String, Object> inputPayload) {
+        log.info("Manually triggering AREA: {}", areaId);
+
+        Area area = areaRepository.findById(areaId)
+            .orElseThrow(() -> new IllegalArgumentException("AREA not found with ID: " + areaId));
+
+        if (!area.getEnabled()) {
+            throw new IllegalArgumentException("AREA is disabled: " + areaId);
+        }
+
+        // Get action instances for this area (actions are triggers)
+        List<ActionInstance> actionInstances = actionInstanceRepository.findEnabledByArea(area);
+        
+        if (actionInstances.isEmpty()) {
+            throw new IllegalArgumentException("No enabled action instances found for AREA: " + areaId);
+        }
+
+        // Use the first action instance as trigger for manual execution
+        ActionInstance triggerAction = actionInstances.get(0);
+
+        // Prepare input payload
+        Map<String, Object> payload = inputPayload != null ? inputPayload : Map.of(
+            "triggered_by", "manual",
+            "trigger_time", LocalDateTime.now().toString()
+        );
+
+        // Trigger execution
+        Execution execution = executionTriggerService.triggerManualExecution(triggerAction, payload);
+
+        return Map.of(
+            "status", "triggered",
+            "areaId", areaId,
+            "executionId", execution.getId(),
+            "message", "AREA execution triggered successfully",
+            "timestamp", LocalDateTime.now().toString()
+        );
+    }
+
+    /**
+     * Creates activation modes for an action instance
+     */
+    private void createActivationModes(ActionInstance actionInstance, Map<String, Object> activationConfig) {
+        if (activationConfig == null || activationConfig.isEmpty()) {
+            return;
+        }
+
+        String type = (String) activationConfig.get("type");
+        if (type == null) {
+            log.warn("No activation type specified for action instance: {}", actionInstance.getId());
+            return;
+        }
+
+        try {
+            ActivationModeType activationModeType = ActivationModeType.valueOf(type.toUpperCase());
+            
+            ActivationMode activationMode = new ActivationMode();
+            activationMode.setActionInstance(actionInstance);
+            activationMode.setType(activationModeType);
+            activationMode.setEnabled(true);
+            activationMode.setDedup(DedupStrategy.NONE);
+            
+            // Copy configuration
+            Map<String, Object> config = new HashMap<>(activationConfig);
+            config.remove("type"); // Remove type as it's stored separately
+            activationMode.setConfig(config);
+            
+            // Set specific configurations based on type
+            switch (activationModeType) {
+                case WEBHOOK:
+                    // Webhook specific configuration
+                    activationMode.setMaxConcurrency((Integer) config.getOrDefault("max_concurrency", 10));
+                    break;
+                case CRON:
+                    // CRON specific configuration
+                    if (!config.containsKey("cron_expression")) {
+                        throw new IllegalArgumentException("CRON activation mode requires 'cron_expression'");
+                    }
+                    break;
+                case POLL:
+                    // Polling specific configuration
+                    if (!config.containsKey("interval_seconds")) {
+                        config.put("interval_seconds", 300); // Default to 5 minutes
+                    }
+                    break;
+                case MANUAL:
+                    // Manual mode doesn't need specific config
+                    break;
+                case CHAIN:
+                    // Chain mode configuration
+                    activationMode.setMaxConcurrency((Integer) config.getOrDefault("max_concurrency", 5));
+                    break;
+            }
+            
+            activationModeRepository.save(activationMode);
+            
+            log.info("Created activation mode {} for action instance: {}", 
+                    activationModeType, actionInstance.getId());
+                    
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid activation mode type '{}' for action instance {}: {}", 
+                    type, actionInstance.getId(), e.getMessage());
+            throw new IllegalArgumentException("Invalid activation mode type: " + type, e);
+        }
     }
 }

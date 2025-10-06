@@ -32,24 +32,20 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allowed origins (more restrictive for production)
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",   // Development frontend
             "https://yourdomain.com"   // Production domain
         ));
 
-        // Allowed HTTP methods
         configuration.setAllowedMethods(Arrays.asList(
             "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
 
-        // Allowed headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         // IMPORTANT: Allows sending HttpOnly cookies
         configuration.setAllowCredentials(true);
 
-        // Headers exposed to the client
         configuration.setExposedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "Content-Length"
         ));
@@ -68,7 +64,6 @@ public class SecurityConfig {
             // CORS configuration
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-            // Request authorization configuration
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints (no authentication required)
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
@@ -78,12 +73,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
-
-                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
-
-            // Add JWT filter before the standard authentication filter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

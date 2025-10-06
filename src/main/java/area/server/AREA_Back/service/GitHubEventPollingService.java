@@ -29,16 +29,11 @@ public class GitHubEventPollingService {
     private final ActionInstanceRepository actionInstanceRepository;
     private final ActivationModeRepository activationModeRepository;
 
-    /**
-     * Poll GitHub events every 5 minutes
-     * This method checks all active GitHub action instances with POLL activation mode
-     */
-    @Scheduled(fixedRate = 300000) // 5 minutes in milliseconds
+    @Scheduled(fixedRate = 300000)
     public void pollGitHubEvents() {
         log.debug("Starting GitHub events polling cycle");
-        
+
         try {
-            // Find all active GitHub action instances with POLL activation mode
             List<ActionInstance> githubActionInstances = actionInstanceRepository
                 .findActiveGitHubActionInstances();
 
@@ -46,14 +41,14 @@ public class GitHubEventPollingService {
                 try {
                     processActionInstance(actionInstance);
                 } catch (Exception e) {
-                    log.error("Failed to process GitHub action instance { }: { }", 
+                    log.error("Failed to process GitHub action instance { }: { }",
                              actionInstance.getId(), e.getMessage(), e);
                 }
             }
-            
-            log.debug("Completed GitHub events polling cycle, processed { } instances", 
+
+            log.debug("Completed GitHub events polling cycle, processed { } instances",
                      githubActionInstances.size());
-                     
+
         } catch (Exception e) {
             log.error("Failed to complete GitHub events polling cycle: { }", e.getMessage(), e);
         }
@@ -64,7 +59,6 @@ public class GitHubEventPollingService {
             return;
         }
 
-        // Get the activation mode for this action instance
         List<ActivationMode> activationModes = activationModeRepository
             .findByActionInstanceAndTypeAndEnabled(actionInstance, ActivationModeType.POLL, true);
 
@@ -72,13 +66,11 @@ public class GitHubEventPollingService {
             return;
         }
 
-        ActivationMode activationMode = activationModes.get(0); // Take the first one
-        
-        // Calculate last check time based on polling interval
+        ActivationMode activationMode = activationModes.get(0);
+
         LocalDateTime lastCheck = calculateLastCheckTime(activationMode);
-        
+
         try {
-            // Check for new events
             List<Map<String, Object>> events = gitHubActionService.checkGitHubEvents(
                 actionInstance.getActionDefinition().getKey(),
                 actionInstance.getParams(),
@@ -87,9 +79,9 @@ public class GitHubEventPollingService {
             );
 
             if (!events.isEmpty()) {
-                log.info("Found { } new GitHub events for action instance { }", 
+                log.info("Found { } new GitHub events for action instance { }",
                         events.size(), actionInstance.getId());
-                
+
                 // TODO : Trigger the linked reactions for each event
                 // This would involve creating executions and adding them to the execution queue
                 for (Map<String, Object> event : events) {
@@ -100,18 +92,17 @@ public class GitHubEventPollingService {
                     // 3. Queue it for processing by the worker
                 }
             }
-            
+
         } catch (Exception e) {
-            log.error("Failed to check GitHub events for action instance { }: { }", 
+            log.error("Failed to check GitHub events for action instance { }: { }",
                      actionInstance.getId(), e.getMessage(), e);
         }
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
-        // Get polling interval from activation mode config
         Map<String, Object> config = activationMode.getConfig();
         Integer intervalSeconds = (Integer) config.getOrDefault("interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
-        
+
         return LocalDateTime.now().minusSeconds(intervalSeconds);
     }
 }

@@ -59,7 +59,7 @@ public class ExecutionService {
             execution.setAttempt(execution.getAttempt() + 1);
         }
 
-        log.info("Updated execution {} with status {}, attempt {}",
+        log.info("Updated execution { } with status { }, attempt { }",
                 execution.getId(), execution.getStatus(), execution.getAttempt());
 
         return executionRepository.save(execution);
@@ -106,7 +106,7 @@ public class ExecutionService {
             execution.setError(Map.of("reason", reason, "canceledAt", LocalDateTime.now().toString()));
         }
 
-        log.info("Canceled execution {} with reason: {}", executionId, reason);
+        log.info("Canceled execution { } with reason: { }", executionId, reason);
         return executionRepository.save(execution);
     }
 

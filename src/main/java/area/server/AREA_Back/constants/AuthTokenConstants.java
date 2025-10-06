@@ -1,0 +1,42 @@
+package area.server.AREA_Back.constants;
+
+/**
+ * Centralized constants for authentication token names
+ * Used throughout the application to ensure consistency
+ */
+public final class AuthTokenConstants {
+
+    private AuthTokenConstants() {
+        // Prevents instantiation of this constants class
+    }
+
+    /**
+     * HTTP-Only cookie name for the access token
+     */
+    public static final String ACCESS_TOKEN_COOKIE_NAME = "authToken";
+
+    /**
+     * HTTP-Only cookie name for the refresh token
+     */
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+
+    /**
+     * Redis prefix for access tokens
+     */
+    public static final String REDIS_ACCESS_TOKEN_PREFIX = "access:";
+
+    /**
+     * Redis prefix for refresh tokens
+     */
+    public static final String REDIS_REFRESH_TOKEN_PREFIX = "refresh:";
+
+    /**
+     * Token type in the JWT payload for access tokens
+     */
+    public static final String ACCESS_TOKEN_TYPE = "access";
+
+    /**
+     * Token type in the JWT payload for refresh tokens
+     */
+    public static final String REFRESH_TOKEN_TYPE = "refresh";
+}

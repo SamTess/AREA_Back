@@ -99,10 +99,10 @@ public class ServiceCacheService {
             getAllServicesCached();
             return true;
         } catch (RedisConnectionFailureException e) {
-            log.warn("Redis cache is not available: {}", e.getMessage());
+            log.warn("Redis cache is not available: { }", e.getMessage());
             return false;
         } catch (Exception e) {
-            log.warn("Cache availability check failed: {}", e.getMessage());
+            log.warn("Cache availability check failed: { }", e.getMessage());
             return false;
         }
     }

@@ -98,7 +98,7 @@ public class RedisConfig {
     @Bean
     public StreamMessageListenerContainer<String, ?> streamMessageListenerContainer(
             RedisConnectionFactory connectionFactory) {
-        log.info("Configuring Redis Stream Listener with consumer name: {}", streamProperties.getConsumerName());
+        log.info("Configuring Redis Stream Listener with consumer name: { }", streamProperties.getConsumerName());
 
         StreamMessageListenerContainerOptions<String, ?> options = StreamMessageListenerContainerOptions
                 .builder()

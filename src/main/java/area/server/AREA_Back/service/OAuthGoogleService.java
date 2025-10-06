@@ -28,7 +28,7 @@ public class OAuthGoogleService extends OAuthService {
         super(
             "google",
             "Google",
-            "https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png",
+            "/oauth-icons/google.svg",
             "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId + "&redirect_uri=http://localhost:3000&response_type=code&scope=openid%20email%20profile",
             googleClientId,
             googleClientSecret,

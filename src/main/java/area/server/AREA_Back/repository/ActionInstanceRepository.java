@@ -45,4 +45,18 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
      * Count action instances by area
      */
     long countByArea(Area area);
+
+    /**
+     * Find active GitHub action instances (event-capable actions with POLL activation mode)
+     */
+    @Query("SELECT DISTINCT ai FROM ActionInstance ai "
+           + "JOIN ai.actionDefinition ad "
+           + "JOIN ad.service s "
+           + "JOIN ActivationMode am ON am.actionInstance = ai "
+           + "WHERE s.key = 'github' "
+           + "AND ad.isEventCapable = true "
+           + "AND ai.enabled = true "
+           + "AND am.type = 'POLL' "
+           + "AND am.enabled = true")
+    List<ActionInstance> findActiveGitHubActionInstances();
 }

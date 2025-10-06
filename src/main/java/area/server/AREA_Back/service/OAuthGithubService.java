@@ -2,6 +2,7 @@ package area.server.AREA_Back.service;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,7 +15,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -31,48 +31,44 @@ import jakarta.servlet.http.HttpServletResponse;
 public class OAuthGithubService extends OAuthService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final String redirectBaseUrl;
+
+    @Autowired
+    private TokenEncryptionService tokenEncryptionService;
+
+    @Autowired
+    private UserOAuthIdentityRepository userOAuthIdentityRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
-        PasswordEncoder passwordEncoder,
-        UserOAuthIdentityRepository userOAuthIdentityRepository,
-        UserRepository userRepository,
-        RedisTokenService redisTokenService,
+        @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
         JwtService jwtService
     ) {
         super(
             "github",
             "GitHub",
-            "https://images.icon-icons.com/2845/PNG/512/github_logo_icon_181401.png",
-            "https://github.com/login/oauth/authorize?client_id=" + githubClientId + "&scope=user:email",
+            "/oauth-icons/github.svg",
+            "https://github.com/login/oauth/authorize?client_id=" + githubClientId
+                + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
             githubClientId,
             githubClientSecret,
             jwtService
         );
-        this.passwordEncoder = passwordEncoder;
-        this.userOAuthIdentityRepository = userOAuthIdentityRepository;
-        this.userRepository = userRepository;
-        this.redisTokenService = redisTokenService;
+        this.redirectBaseUrl = redirectBaseUrl;
     }
 
     @Override
     public AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response) {
-        //! 1: Exchange code for access token
         String githubAccessToken = exchangeCodeForToken(request.getAuthorizationCode());
-
-        //! 2: Fetch user profile and email
         UserProfileData profileData = fetchUserProfile(githubAccessToken);
-
-        //! 3: Validate email (now mandatory)
         if (profileData.email == null || profileData.email.isEmpty()) {
             throw new RuntimeException("GitHub account email is required for authentication");
         }
-
-        //! 4: If registered, update; else create user and OAuth identity
         UserOAuthIdentity oauth = handleUserAuthentication(profileData, githubAccessToken);
-
-        //! 5: Set cookies and return response
         return generateAuthResponse(oauth, response);
     }
 
@@ -87,6 +83,7 @@ public class OAuthGithubService extends OAuthService {
         body.add("client_id", this.clientId);
         body.add("client_secret", this.clientSecret);
         body.add("code", authorizationCode);
+        body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
 
         HttpEntity<MultiValueMap<String, String>> githubRequest = new HttpEntity<>(body, headers);
 
@@ -186,23 +183,14 @@ public class OAuthGithubService extends OAuthService {
     }
 
     private UserOAuthIdentity handleUserAuthentication(UserProfileData profileData, String githubAccessToken) {
-        Optional<UserOAuthIdentity> oauthOpt;
-        try {
-            oauthOpt = userOAuthIdentityRepository.findByProviderAndProviderUserId(
-                this.providerKey, profileData.userIdentifier);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Database error during OAuth identity lookup: " + e.getMessage(), e);
+        Optional<User> userOpt = Optional.empty();
+        if (profileData.email != null && !profileData.email.isEmpty()) {
+            userOpt = userRepository.findByEmail(profileData.email);
         }
 
-        UserOAuthIdentity oauth;
-
-        if (oauthOpt.isPresent()) {
-            oauth = oauthOpt.get();
-            oauth.setAccessTokenEnc(passwordEncoder.encode(githubAccessToken));
-            this.userOAuthIdentityRepository.save(oauth);
-
-            User user = oauth.getUser();
+        User user;
+        if (userOpt.isPresent()) {
+            user = userOpt.get();
             user.setLastLoginAt(java.time.LocalDateTime.now());
             user.setEmail(profileData.email);
             if (profileData.avatarUrl != null && !profileData.avatarUrl.isEmpty()) {
@@ -210,34 +198,53 @@ public class OAuthGithubService extends OAuthService {
             }
             this.userRepository.save(user);
         } else {
-            Optional<User> userOpt = Optional.empty();
-            if (profileData.email != null && !profileData.email.isEmpty()) {
-                userOpt = userRepository.findByEmail(profileData.email);
+            user = new User();
+            user.setEmail(profileData.email);
+            user.setIsActive(true);
+            user.setIsAdmin(false);
+            user.setCreatedAt(java.time.LocalDateTime.now());
+            if (profileData.avatarUrl != null && !profileData.avatarUrl.isEmpty()) {
+                user.setAvatarUrl(profileData.avatarUrl);
             }
+            user = this.userRepository.save(user);
+        }
 
+        Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository
+            .findByUserAndProvider(user, this.providerKey);
+
+        UserOAuthIdentity oauth;
+        if (oauthOpt.isPresent()) {
+            oauth = oauthOpt.get();
+            oauth.setProviderUserId(profileData.userIdentifier);
+            oauth.setAccessTokenEnc(tokenEncryptionService.encryptToken(githubAccessToken));
+            oauth.setUpdatedAt(java.time.LocalDateTime.now());
+        } else {
             oauth = new UserOAuthIdentity();
-
-            if (userOpt.isPresent()) {
-                oauth.setUser(userOpt.get());
-            } else {
-                User newUser = new User();
-                newUser.setEmail(profileData.email);
-                newUser.setIsActive(true);
-                newUser.setIsAdmin(false);
-                newUser.setCreatedAt(java.time.LocalDateTime.now());
-                if (profileData.avatarUrl != null && !profileData.avatarUrl.isEmpty()) {
-                    newUser.setAvatarUrl(profileData.avatarUrl);
-                }
-                User savedUser = this.userRepository.save(newUser);
-                oauth.setUser(savedUser);
-            }
-
+            oauth.setUser(user);
             oauth.setProvider(this.providerKey);
             oauth.setProviderUserId(profileData.userIdentifier);
-            oauth.setAccessTokenEnc(passwordEncoder.encode(githubAccessToken));
+            oauth.setAccessTokenEnc(tokenEncryptionService.encryptToken(githubAccessToken));
             oauth.setCreatedAt(java.time.LocalDateTime.now());
             oauth.setUpdatedAt(java.time.LocalDateTime.now());
-            this.userOAuthIdentityRepository.save(oauth);
+        }
+
+        try {
+            oauth = this.userOAuthIdentityRepository.save(oauth);
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("duplicate key")) {
+                oauthOpt = userOAuthIdentityRepository.findByUserAndProvider(user, this.providerKey);
+                if (oauthOpt.isPresent()) {
+                    oauth = oauthOpt.get();
+                    oauth.setProviderUserId(profileData.userIdentifier);
+                    oauth.setAccessTokenEnc(tokenEncryptionService.encryptToken(githubAccessToken));
+                    oauth.setUpdatedAt(java.time.LocalDateTime.now());
+                    oauth = this.userOAuthIdentityRepository.save(oauth);
+                } else {
+                    throw new RuntimeException("Failed to handle OAuth identity: " + e.getMessage(), e);
+                }
+            } else {
+                throw new RuntimeException("Database error during OAuth identity save: " + e.getMessage(), e);
+            }
         }
 
         return oauth;

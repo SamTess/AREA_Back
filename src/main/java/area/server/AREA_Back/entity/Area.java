@@ -8,8 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +41,14 @@ public class Area {
 
     @Column(nullable = false)
     private Boolean enabled = true;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "actions", columnDefinition = "jsonb")
+    private List<Map<String, Object>> actions;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "reactions", columnDefinition = "jsonb")
+    private List<Map<String, Object>> reactions;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -2,12 +2,18 @@ package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.dto.AreaResponse;
 import area.server.AREA_Back.dto.CreateAreaRequest;
+import area.server.AREA_Back.dto.CreateAreaWithActionsRequest;
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.AreaRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.AreaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,6 +32,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/areas")
 @Tag(name = "Areas", description = "API for managing areas (automations)")
+@Slf4j
 public class AreaController {
 
     @Autowired
@@ -32,6 +40,9 @@ public class AreaController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AreaService areaService;
 
     @GetMapping
     public ResponseEntity<Page<AreaResponse>> getAllAreas(
@@ -69,6 +80,7 @@ public class AreaController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new basic area")
     public ResponseEntity<AreaResponse> createArea(@Valid @RequestBody CreateAreaRequest request) {
         Optional<User> user = userRepository.findById(request.getUserId());
         if (!user.isPresent()) {
@@ -82,7 +94,38 @@ public class AreaController {
         area.setEnabled(true);
 
         Area savedArea = areaRepository.save(area);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(savedArea));
+        return ResponseEntity.status(HttpStatus.CREATED).body(areaService.convertToResponse(savedArea));
+    }
+
+    @PostMapping("/with-actions")
+    @Operation(summary = "Create a new AREA automation with actions and reactions",
+               description = "Creates a new AREA with specified actions (triggers) and reactions. "
+                           + "Validates JSON schemas and creates necessary action instances.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "AREA created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data or validation failure"),
+        @ApiResponse(responseCode = "404", description = "User, action definition, or service account not found")
+    })
+    public ResponseEntity<?> createAreaWithActions(@Valid @RequestBody CreateAreaWithActionsRequest request) {
+        try {
+            log.info("Creating AREA with actions: {} for user: {}", request.getName(), request.getUserId());
+            AreaResponse response = areaService.createAreaWithActions(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            log.warn("Area creation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "error", "Validation failed",
+                    "message", e.getMessage()
+                ));
+        } catch (Exception e) {
+            log.error("Unexpected error creating AREA", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Internal server error",
+                    "message", "An unexpected error occurred"
+                ));
+        }
     }
 
     @PutMapping("/{id}")
@@ -137,15 +180,6 @@ public class AreaController {
     }
 
     private AreaResponse convertToResponse(Area area) {
-        AreaResponse response = new AreaResponse();
-        response.setId(area.getId());
-        response.setName(area.getName());
-        response.setDescription(area.getDescription());
-        response.setEnabled(area.getEnabled());
-        response.setUserId(area.getUser().getId());
-        response.setUserEmail(area.getUser().getEmail());
-        response.setCreatedAt(area.getCreatedAt());
-        response.setUpdatedAt(area.getUpdatedAt());
-        return response;
+        return areaService.convertToResponse(area);
     }
 }

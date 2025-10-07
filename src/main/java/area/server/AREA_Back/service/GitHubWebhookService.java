@@ -224,7 +224,6 @@ public class GitHubWebhookService {
         return result;
     }
 
-    @PostConstruct
     public void init() {
         webhookCounter = meterRegistry.counter("webhook.counter");
     }

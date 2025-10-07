@@ -238,7 +238,6 @@ public class AreaReactionWorker {
             } catch (Exception updateError) {
                 log.error("Failed to update execution after processing error: { }", updateError.getMessage());
             }
-            failedExecutionsCounter.increment();
         }
     }
 

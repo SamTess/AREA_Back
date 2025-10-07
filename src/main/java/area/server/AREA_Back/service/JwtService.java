@@ -17,6 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Service
 @Slf4j
 public class JwtService {
@@ -37,14 +41,50 @@ public class JwtService {
     @Value("${REFRESH_TOKEN_EXPIRES_IN:7d}")
     private String refreshTokenExpiresIn;
 
+    private final MeterRegistry meterRegistry;
+
+    private Counter generateAccessTokenCalls;
+    private Counter generateRefreshTokenCalls;
+    private Counter accessTokenValidationCalls;
+    private Counter refreshTokenValidationCalls;
+    private Counter tokenValidationFailures;
+
+    public JwtService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void initMetrics() {
+        generateAccessTokenCalls = Counter.builder("jwt.generate_access.calls")
+                .description("Total number of access token generation calls")
+                .register(meterRegistry);
+
+        generateRefreshTokenCalls = Counter.builder("jwt.generate_refresh.calls")
+                .description("Total number of refresh token generation calls")
+                .register(meterRegistry);
+
+        accessTokenValidationCalls = Counter.builder("jwt.validate_access.calls")
+                .description("Total number of access token validation calls")
+                .register(meterRegistry);
+
+        refreshTokenValidationCalls = Counter.builder("jwt.validate_refresh.calls")
+                .description("Total number of refresh token validation calls")
+                .register(meterRegistry);
+
+        tokenValidationFailures = Counter.builder("jwt.validation_failures")
+                .description("Total number of JWT validation failures")
+                .register(meterRegistry);
+    }
+
     public String generateAccessToken(UUID userId, String email) {
+        generateAccessTokenCalls.increment();
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.ACCESS_TOKEN_TYPE);
         return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
     }
-
     public String generateRefreshToken(UUID userId, String email) {
+        generateRefreshTokenCalls.increment();
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.REFRESH_TOKEN_TYPE);
@@ -82,20 +122,24 @@ public class JwtService {
     }
 
     public boolean isAccessTokenValid(String token, UUID userId) {
+        accessTokenValidationCalls.increment();
         try {
             final UUID tokenUserId = extractUserIdFromAccessToken(token);
             return tokenUserId.equals(userId) && !isTokenExpired(token, getAccessTokenSigningKey());
         } catch (Exception e) {
+            tokenValidationFailures.increment();
             log.debug("Access token validation failed", e);
             return false;
         }
     }
 
     public boolean isRefreshTokenValid(String token, UUID userId) {
+        refreshTokenValidationCalls.increment();
         try {
             final UUID tokenUserId = extractUserIdFromRefreshToken(token);
             return tokenUserId.equals(userId) && !isTokenExpired(token, getRefreshTokenSigningKey());
         } catch (Exception e) {
+            tokenValidationFailures.increment();
             log.debug("Refresh token validation failed", e);
             return false;
         }

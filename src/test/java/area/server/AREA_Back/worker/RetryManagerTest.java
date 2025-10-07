@@ -1,8 +1,9 @@
 package area.server.AREA_Back.worker;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
@@ -16,8 +17,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 class RetryManagerTest {
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
+
     private RetryManager retryManager;
+
+    @BeforeEach
+    void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        retryManager = new RetryManager(meterRegistry);
+        retryManager.init();
+    }
 
     @Test
     void calculateNextRetryTimeFirstAttempt() {

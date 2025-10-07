@@ -3,6 +3,8 @@ package area.server.AREA_Back.service;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -13,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import jakarta.annotation.PostConstruct;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -36,11 +40,23 @@ public class GitHubActionService {
     private final TokenEncryptionService tokenEncryptionService;
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private final MeterRegistry meterRegistry;
+    private Counter githubActionsExecuted;
+    private Counter githubActionsFailed;
+
+    @PostConstruct
+    public void init() {
+        githubActionsExecuted = meterRegistry.counter("github_actions_executed_total");
+        githubActionsFailed = meterRegistry.counter("github_actions_failed_total");
+    }
+
     public Map<String, Object> executeGitHubAction(String actionKey,
                                                    Map<String, Object> inputPayload,
                                                    Map<String, Object> actionParams,
                                                    UUID userId) {
         try {
+            githubActionsExecuted.increment();
+
             String githubToken = getGitHubToken(userId);
             if (githubToken == null) {
                 throw new RuntimeException("No GitHub token found for user: " + userId);
@@ -59,6 +75,7 @@ public class GitHubActionService {
                     throw new IllegalArgumentException("Unknown GitHub action: " + actionKey);
             }
         } catch (Exception e) {
+            githubActionsFailed.increment();
             log.error("Failed to execute GitHub action { }: { }", actionKey, e.getMessage(), e);
             throw new RuntimeException("GitHub action execution failed: " + e.getMessage(), e);
         }

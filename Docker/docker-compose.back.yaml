@@ -60,45 +60,100 @@ services:
     networks:
       - area-network
 
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: area-prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-  #     - prometheus_data:/prometheus
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
-  #     - '--web.console.templates=/etc/prometheus/consoles'
-  #     - '--storage.tsdb.retention.time=200h'
-  #     - '--web.enable-lifecycle'
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - area-backend
-  #   networks:
-  #     - area-network
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: area-postgres-exporter
+    env_file: ../.env
+    environment:
+      DATA_SOURCE_NAME: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - area-network
 
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: area-grafana
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
-  #     - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=${ADMIN_USERNAME:-admin}
-  #     - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-  #     - GF_USERS_ALLOW_SIGN_UP=false
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - prometheus
-  #   networks:
-  #     - area-network
+  redis_exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: area-redis-exporter
+    environment:
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ""
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - area-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: area-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    depends_on:
+      - area-backend
+    networks:
+      - area-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: area-grafana
+    ports:
+      - "8082:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USERNAME:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - area-network
+
+  loki:
+    image: grafana/loki:latest
+    container_name: area-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - area-network
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: area-promtail
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+    networks:
+      - area-network
 
 networks:
   area-network:
@@ -107,5 +162,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  # prometheus_data:
-  # grafana_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

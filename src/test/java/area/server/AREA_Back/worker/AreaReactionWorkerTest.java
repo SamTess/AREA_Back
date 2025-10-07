@@ -7,11 +7,11 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.service.ExecutionService;
 import area.server.AREA_Back.service.RedisEventService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -63,7 +63,7 @@ class AreaReactionWorkerTest {
     @Mock
     private StreamOperations<String, Object, Object> streamOperations;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
     private AreaReactionWorker areaReactionWorker;
 
     private Execution testExecution;
@@ -72,6 +72,18 @@ class AreaReactionWorkerTest {
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+
+        // Create AreaReactionWorker manually with all dependencies
+        areaReactionWorker = new AreaReactionWorker(
+            redisTemplate,
+            redisEventService,
+            executionService,
+            reactionExecutor,
+            redisConfig,
+            meterRegistry
+        );
+
         // Setup RedisConfig mock
         when(redisConfig.getAreasEventsStream()).thenReturn("areas:events");
         when(redisConfig.getAreasConsumerGroup()).thenReturn("area-processors");
@@ -93,11 +105,14 @@ class AreaReactionWorkerTest {
             Map.of("result", "success"),
             testExecution.getStartedAt()
         );
+
+        // Note: initialize() is called in individual tests that need it
     }
 
     @Test
     void testProcessExecutionSuccess() {
         // Given
+        areaReactionWorker.initialize();
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
 
         // When
@@ -112,6 +127,7 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessExecutionWithException() {
         // Given
+        areaReactionWorker.initialize();
         RuntimeException exception = new RuntimeException("Test exception");
         when(reactionExecutor.executeReaction(testExecution)).thenThrow(exception);
 
@@ -134,6 +150,7 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessExecutionWithUpdateException() {
         // Given
+        areaReactionWorker.initialize();
         RuntimeException executionException = new RuntimeException("Execution error");
         RuntimeException updateException = new RuntimeException("Update error");
 
@@ -150,6 +167,7 @@ class AreaReactionWorkerTest {
     @Test
     void testCleanupTimedOutExecutionsWithTimedOutExecutions() {
         // Given
+        areaReactionWorker.initialize();
         List<Execution> timedOutExecutions = Arrays.asList(testExecution);
 
         when(executionService.getTimedOutExecutions(any(LocalDateTime.class))).thenReturn(timedOutExecutions);
@@ -198,6 +216,7 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessEventRecordSuccess() {
         // Given
+        areaReactionWorker.initialize();
         String executionId = testExecution.getId().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
         MapRecord<String, Object, Object> record = MapRecord.create(
@@ -275,6 +294,7 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessRetryExecutionsWithRetryExecutions() {
         // Given
+        areaReactionWorker.initialize();
         List<Execution> retryExecutions = Arrays.asList(testExecution);
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class))).thenReturn(retryExecutions);
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
@@ -319,6 +339,7 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessQueuedExecutionsWithQueuedExecutions() {
         // Given
+        areaReactionWorker.initialize();
         List<Execution> queuedExecutions = Arrays.asList(testExecution);
         when(executionService.getQueuedExecutions()).thenReturn(queuedExecutions);
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);

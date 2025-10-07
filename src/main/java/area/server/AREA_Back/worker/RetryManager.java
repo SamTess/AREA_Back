@@ -1,5 +1,8 @@
 package area.server.AREA_Back.worker;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -16,10 +19,29 @@ public class RetryManager {
     private static final double JITTER_FACTOR = 0.1;
     private static final double JITTER_BASE = 0.5;
 
+    private final MeterRegistry meterRegistry;
+    private Counter retriesCalculated;
+    private Counter retriesAttempted;
+    private Counter retriesSkipped;
+    private Counter nonRetryableErrors;
+
+    public RetryManager(final MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void init() {
+        retriesCalculated = meterRegistry.counter("area_retry_calculated_total");
+        retriesAttempted = meterRegistry.counter("area_retry_attempted_total");
+        retriesSkipped = meterRegistry.counter("area_retry_skipped_total");
+        nonRetryableErrors = meterRegistry.counter("area_non_retryable_errors_total");
+    }
+
     public LocalDateTime calculateNextRetryTime(final int attemptNumber) {
         if (attemptNumber >= MAX_RETRY_ATTEMPTS) {
             return null;
         }
+        retriesCalculated.increment();
         long delaySeconds = Math.min(
             BASE_DELAY_SECONDS * (1L << attemptNumber),
             MAX_DELAY_SECONDS
@@ -41,13 +63,16 @@ public class RetryManager {
 
     public boolean shouldRetry(final int attemptNumber, final Throwable error) {
         if (attemptNumber >= MAX_RETRY_ATTEMPTS) {
+            retriesSkipped.increment();
             log.info("Max retry attempts ({ }) reached, not retrying", MAX_RETRY_ATTEMPTS);
             return false;
         }
         if (isNonRetryableError(error)) {
+            nonRetryableErrors.increment();
             log.info("Non-retryable error encountered: { }", error.getClass().getSimpleName());
             return false;
         }
+        retriesAttempted.increment();
         return true;
     }
 

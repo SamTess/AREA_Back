@@ -6,10 +6,11 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
+import area.server.AREA_Back.service.GitHubActionService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,7 +32,11 @@ class ReactionExecutorTest {
     @Mock
     private RetryManager retryManager;
 
-    @InjectMocks
+    @Mock
+    private GitHubActionService gitHubActionService;
+
+    private SimpleMeterRegistry meterRegistry;
+
     private ReactionExecutor reactionExecutor;
 
     private Execution execution;
@@ -41,6 +46,15 @@ class ReactionExecutorTest {
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+
+        // Create ReactionExecutor manually with all dependencies
+        reactionExecutor = new ReactionExecutor(
+            retryManager,
+            gitHubActionService,
+            meterRegistry
+        );
+
         service = new Service();
         service.setKey("email");
         service.setName("Email Service");

@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -34,11 +36,16 @@ class RedisTokenServiceTest {
     @Mock
     private JwtService jwtService;
 
+    private MeterRegistry meterRegistry;
+
     private RedisTokenService redisTokenService;
 
     @BeforeEach
     void setUp() {
-        redisTokenService = new RedisTokenService(redisTemplate, jwtService);
+        meterRegistry = new SimpleMeterRegistry();
+        redisTokenService = new RedisTokenService(redisTemplate, jwtService, meterRegistry);
+        // Initialize metrics manually since @PostConstruct is not called in unit tests
+        redisTokenService.initMetrics();
     }
 
     @Test

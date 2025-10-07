@@ -10,6 +10,9 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,15 +38,43 @@ public class AuthService {
     private final JwtService jwtService;
     private final RedisTokenService redisTokenService;
     private final JwtCookieProperties jwtCookieProperties;
+    private final MeterRegistry meterRegistry;
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int ACCOUNT_LOCK_DURATION_MINUTES = 30;
+
+    private Counter registerSuccessCounter;
+    private Counter registerFailureCounter;
+    private Counter loginSuccessCounter;
+    private Counter loginFailureCounter;
+
+    @PostConstruct
+    private void init() {
+
+        registerSuccessCounter = Counter.builder("auth.register.success")
+            .description("Successful user registrations")
+            .register(meterRegistry);
+
+        registerFailureCounter = Counter.builder("auth.register.failure")
+            .description("Failed user registrations")
+            .register(meterRegistry);
+
+        loginSuccessCounter = Counter.builder("auth.login.success")
+            .description("Successful user logins")
+            .register(meterRegistry);
+
+        loginFailureCounter = Counter.builder("auth.login.failure")
+            .description("Failed user logins")
+            .register(meterRegistry);
+
+    }
 
     @Transactional
     public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
         log.info("Attempting to register user with email: { }", request.getEmail());
 
         if (userLocalIdentityRepository.existsByEmail(request.getEmail())) {
+            registerFailureCounter.increment();
             throw new RuntimeException("Email already registered");
         }
 
@@ -81,6 +112,7 @@ public class AuthService {
         userRepository.save(savedUser);
 
         log.info("Successfully registered user: { }", savedUser.getEmail());
+        registerSuccessCounter.increment();
 
         return new AuthResponse(
             "User registered successfully",
@@ -95,6 +127,7 @@ public class AuthService {
         Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
         if (localIdentityOpt.isEmpty()) {
             log.warn("Login attempt with non-existent email: { }", request.getEmail());
+            loginFailureCounter.increment();
             throw new RuntimeException("Invalid credentials");
         }
 
@@ -113,6 +146,7 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), localIdentity.getPasswordHash())) {
             log.warn("Failed login attempt for email: { }", request.getEmail());
+            loginFailureCounter.increment();
 
             userLocalIdentityRepository.incrementFailedLoginAttempts(request.getEmail());
 
@@ -139,6 +173,7 @@ public class AuthService {
         userRepository.save(user);
 
         log.info("Successfully logged in user: { }", user.getEmail());
+        loginSuccessCounter.increment();
 
         return new AuthResponse(
             "Login successful",

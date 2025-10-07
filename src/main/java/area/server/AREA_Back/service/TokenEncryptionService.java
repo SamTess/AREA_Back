@@ -1,5 +1,8 @@
 package area.server.AREA_Back.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,10 +32,36 @@ public class TokenEncryptionService {
 
     private final SecretKey secretKey;
     private final SecureRandom secureRandom;
+    private final MeterRegistry meterRegistry;
 
-    public TokenEncryptionService(@Value("${app.encryption.key:}") String base64Key) {
+    private Counter encryptTokenCalls;
+    private Counter decryptTokenCalls;
+    private Counter encryptFailures;
+    private Counter decryptFailures;
+
+    public TokenEncryptionService(@Value("${app.encryption.key:}") String base64Key, MeterRegistry meterRegistry) {
         this.secureRandom = new SecureRandom();
         this.secretKey = initializeKey(base64Key);
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void initMetrics() {
+        encryptTokenCalls = Counter.builder("encryption.token.encrypt.calls")
+                .description("Total number of token encryption calls")
+                .register(meterRegistry);
+
+        decryptTokenCalls = Counter.builder("encryption.token.decrypt.calls")
+                .description("Total number of token decryption calls")
+                .register(meterRegistry);
+
+        encryptFailures = Counter.builder("encryption.token.encrypt.failures")
+                .description("Total number of token encryption failures")
+                .register(meterRegistry);
+
+        decryptFailures = Counter.builder("encryption.token.decrypt.failures")
+                .description("Total number of token decryption failures")
+                .register(meterRegistry);
     }
 
     private SecretKey initializeKey(String base64Key) {
@@ -64,6 +93,7 @@ public class TokenEncryptionService {
             throw new IllegalArgumentException("Token cannot be null or empty");
         }
 
+        encryptTokenCalls.increment();
         try {
             byte[] iv = new byte[GCM_IV_LENGTH];
             secureRandom.nextBytes(iv);
@@ -79,6 +109,7 @@ public class TokenEncryptionService {
             return Base64.getEncoder().encodeToString(encryptedWithIv);
 
         } catch (Exception e) {
+            encryptFailures.increment();
             log.error("Failed to encrypt token: { }", e.getMessage());
             throw new RuntimeException("Token encryption failed", e);
         }
@@ -94,6 +125,7 @@ public class TokenEncryptionService {
             throw new IllegalArgumentException("Encrypted token cannot be null or empty");
         }
 
+        decryptTokenCalls.increment();
         try {
             byte[] encryptedWithIv = Base64.getDecoder().decode(encryptedToken);
 
@@ -111,6 +143,7 @@ public class TokenEncryptionService {
             return new String(decryptedBytes, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
+            decryptFailures.increment();
             log.error("Failed to decrypt token: { }", e.getMessage());
             throw new RuntimeException("Token decryption failed", e);
         }

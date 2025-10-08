@@ -47,6 +47,10 @@ public class AreaService {
     private final JsonSchemaValidationService jsonSchemaValidationService;
     private final ActionLinkService actionLinkService;
 
+    private static final int DEFAULT_MAX_CONCURRENCY = 5;
+    private static final int DEFAULT_RETRY_DELAY_SECONDS = 10;
+    private static final int DEFAULT_TIMEOUT_SECONDS = 300;
+
     /**
      * Creates a new AREA with actions and reactions.
      *
@@ -269,7 +273,7 @@ public class AreaService {
                 chainActivationMode.setEnabled(true);
                 chainActivationMode.setDedup(DedupStrategy.NONE);
                 chainActivationMode.setConfig(Map.of());
-                chainActivationMode.setMaxConcurrency(5);
+                chainActivationMode.setMaxConcurrency(DEFAULT_MAX_CONCURRENCY);
                 activationModeRepository.save(chainActivationMode);
                 log.info("Created default CHAIN activation mode for reaction: {}", savedReactionInstance.getId());
             }
@@ -322,27 +326,27 @@ public class AreaService {
         if (isEvent && !isExecutable) {
             if (activationMode == ActivationModeType.CRON) {
                 throw new IllegalArgumentException(
-                    String.format("CRON activation mode is not compatible with event action '%s'. " +
-                                "Events can only use WEBHOOK, POLL, or MANUAL activation modes.",
+                    String.format("CRON activation mode is not compatible with event action '%s'. "
+                                + "Events can only use WEBHOOK, POLL, or MANUAL activation modes.",
                                 actionDef.getKey()));
             }
             if (activationMode == ActivationModeType.CHAIN) {
                 throw new IllegalArgumentException(
-                    String.format("CHAIN activation mode is not compatible with event action '%s'. " +
-                                "Events are triggers, not reactions in a chain.",
+                    String.format("CHAIN activation mode is not compatible with event action '%s'. "
+                                + "Events are triggers, not reactions in a chain.",
                                 actionDef.getKey()));
             }
         } else if (!isEvent && isExecutable) {
             if (activationMode == ActivationModeType.WEBHOOK) {
                 throw new IllegalArgumentException(
-                    String.format("WEBHOOK activation mode is not compatible with reaction action '%s'. " +
-                                "Reactions should use CRON, MANUAL, or CHAIN activation modes.",
+                    String.format("WEBHOOK activation mode is not compatible with reaction action '%s'. "
+                                + "Reactions should use CRON, MANUAL, or CHAIN activation modes.",
                                 actionDef.getKey()));
             }
             if (activationMode == ActivationModeType.POLL) {
                 throw new IllegalArgumentException(
-                    String.format("POLL activation mode is not compatible with reaction action '%s'. " +
-                                "Reactions should use CRON, MANUAL, or CHAIN activation modes.",
+                    String.format("POLL activation mode is not compatible with reaction action '%s'. "
+                                + "Reactions should use CRON, MANUAL, or CHAIN activation modes.",
                                 actionDef.getKey()));
             }
         } else if (isEvent && isExecutable) {
@@ -383,7 +387,8 @@ public class AreaService {
 
             switch (activationModeType) {
                 case WEBHOOK:
-                    activationMode.setMaxConcurrency((Integer) config.getOrDefault("max_concurrency", 10));
+                    activationMode.setMaxConcurrency(
+                            (Integer) config.getOrDefault("max_concurrency", DEFAULT_RETRY_DELAY_SECONDS));
                     break;
                 case CRON:
                     if (!config.containsKey("cron_expression")) {
@@ -392,14 +397,17 @@ public class AreaService {
                     break;
                 case POLL:
                     if (!config.containsKey("interval_seconds")) {
-                        config.put("interval_seconds", 300);
+                        config.put("interval_seconds", DEFAULT_TIMEOUT_SECONDS);
                     }
                     break;
                 case MANUAL:
                     break;
                 case CHAIN:
-                    activationMode.setMaxConcurrency((Integer) config.getOrDefault("max_concurrency", 5));
+                    activationMode.setMaxConcurrency(
+                            (Integer) config.getOrDefault("max_concurrency", DEFAULT_MAX_CONCURRENCY));
                     break;
+                default:
+                    throw new IllegalArgumentException("Unknown activation mode type: " + activationModeType);
             }
 
             activationModeRepository.save(activationMode);
@@ -433,20 +441,33 @@ public class AreaService {
 
         Area savedArea = areaRepository.save(area);
 
-        Map<String, UUID> serviceIdMapping = createActionInstancesWithMapping(savedArea, request.getActions(), request.getReactions());
+        Map<String, UUID> serviceIdMapping = createActionInstancesWithMapping(
+                savedArea, request.getActions(), request.getReactions());
 
         if (request.getConnections() != null && !request.getConnections().isEmpty()) {
             createActionLinks(savedArea, request.getConnections(), serviceIdMapping);
-        } else if ("linear".equals(request.getLayoutMode())) {
-            createLinearActionLinks(savedArea, request.getActions(), request.getReactions(), serviceIdMapping);
+        } else {
+            String layoutMode = request.getLayoutMode();
+            if ("linear".equals(layoutMode)) {
+                createLinearActionLinks(savedArea, request.getActions(), 
+                        request.getReactions(), serviceIdMapping);
+            }
         }
 
-        log.info("Successfully created AREA with ID: {} and {} links", savedArea.getId(),
-                request.getConnections() != null ? request.getConnections().size() : 0);
+        int connectionCount;
+        if (request.getConnections() != null) {
+            connectionCount = request.getConnections().size();
+        } else {
+            connectionCount = 0;
+        }
+        
+        log.info("Successfully created AREA with ID: {} and {} links", 
+                savedArea.getId(), connectionCount);
         return convertToResponse(savedArea);
     }
 
-    private Map<String, UUID> createActionInstancesWithMapping(Area area, List<AreaActionRequest> actions, List<AreaReactionRequest> reactions) {
+    private Map<String, UUID> createActionInstancesWithMapping(Area area, 
+            List<AreaActionRequest> actions, List<AreaReactionRequest> reactions) {
         Map<String, UUID> serviceIdMapping = new HashMap<>();
 
         for (int i = 0; i < actions.size(); i++) {
@@ -520,7 +541,9 @@ public class AreaService {
         return serviceIdMapping;
     }
 
-    private void createActionLinks(Area area, List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections, Map<String, UUID> serviceIdMapping) {
+    private void createActionLinks(Area area, 
+            List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections, 
+            Map<String, UUID> serviceIdMapping) {
         for (CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest connection : connections) {
             UUID sourceActionId = serviceIdMapping.get(connection.getSourceServiceId());
             UUID targetActionId = serviceIdMapping.get(connection.getTargetServiceId());
@@ -539,7 +562,8 @@ public class AreaService {
                     actionLinkService.createActionLink(linkRequest, area.getId());
                     log.debug("Created link: {} -> {}", sourceActionId, targetActionId);
                 } catch (Exception e) {
-                    log.error("Failed to create action link from {} to {}: {}", sourceActionId, targetActionId, e.getMessage());
+                    log.error("Failed to create action link from {} to {}: {}", 
+                            sourceActionId, targetActionId, e.getMessage());
                 }
             } else {
                 log.warn("Cannot create link: source {} or target {} not found in mapping",
@@ -548,7 +572,8 @@ public class AreaService {
         }
     }
 
-    private void createLinearActionLinks(Area area, List<AreaActionRequest> actions, List<AreaReactionRequest> reactions, Map<String, UUID> serviceIdMapping) {
+    private void createLinearActionLinks(Area area, List<AreaActionRequest> actions, 
+            List<AreaReactionRequest> reactions, Map<String, UUID> serviceIdMapping) {
         List<String> serviceOrder = new ArrayList<>();
 
         for (int i = 0; i < actions.size(); i++) {
@@ -578,7 +603,8 @@ public class AreaService {
                     actionLinkService.createActionLink(linkRequest, area.getId());
                     log.debug("Created linear link {}: {} -> {}", i, sourceActionId, targetActionId);
                 } catch (Exception e) {
-                    log.error("Failed to create linear action link from {} to {}: {}", sourceActionId, targetActionId, e.getMessage());
+                    log.error("Failed to create linear action link from {} to {}: {}", 
+                            sourceActionId, targetActionId, e.getMessage());
                 }
             }
         }

@@ -65,8 +65,13 @@ public class ServiceAccountService {
         serviceAccount.setScopes(scopes);
         serviceAccount.setLastRefreshAt(LocalDateTime.now());
         serviceAccount.setRevokedAt(null);
-        serviceAccount.setTokenVersion(serviceAccount.getTokenVersion() != null ?
-                                     serviceAccount.getTokenVersion() + 1 : 1);
+        
+        Integer currentVersion = serviceAccount.getTokenVersion();
+        if (currentVersion != null) {
+            serviceAccount.setTokenVersion(currentVersion + 1);
+        } else {
+            serviceAccount.setTokenVersion(1);
+        }
 
         return serviceAccountRepository.save(serviceAccount);
     }
@@ -137,8 +142,9 @@ public class ServiceAccountService {
      */
     public boolean hasValidToken(UUID userId, String serviceKey) {
         return getServiceAccount(userId, serviceKey)
-                .map(account -> account.getAccessTokenEnc() != null &&
-                              (account.getExpiresAt() == null || account.getExpiresAt().isAfter(LocalDateTime.now())))
+                .map(account -> account.getAccessTokenEnc() != null 
+                              && (account.getExpiresAt() == null 
+                              || account.getExpiresAt().isAfter(LocalDateTime.now())))
                 .orElse(false);
     }
 

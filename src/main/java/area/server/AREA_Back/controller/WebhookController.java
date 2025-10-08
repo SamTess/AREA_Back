@@ -239,6 +239,9 @@ public class WebhookController {
                     return eventId.toString();
                 }
                 break;
+            default:
+                log.debug("Unknown service for event ID extraction: {}", service);
+                break;
         }
         
         // Fallback: generate event ID from timestamp and service
@@ -272,7 +275,7 @@ public class WebhookController {
     private String getWebhookSecret(String service) {
         // Try to get from service account configuration
         // For now, return null to allow unsigned webhooks
-        // TODO: Implement proper secret management
+        // FIXME: Implement proper secret management
         return null;
     }
 

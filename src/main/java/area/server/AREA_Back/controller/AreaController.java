@@ -124,7 +124,8 @@ public class AreaController {
 
     @PostMapping
     @Operation(summary = "Create a new basic area")
-    public ResponseEntity<AreaResponse> createArea(@Valid @RequestBody CreateAreaRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<AreaResponse> createArea(@Valid @RequestBody CreateAreaRequest request, 
+            HttpServletRequest httpRequest) {
         try {
             UUID userId = getUserIdFromRequest(httpRequest);
 
@@ -391,7 +392,8 @@ public class AreaController {
 
     @PostMapping("/with-links")
     @Operation(summary = "Create a new AREA with actions, reactions, and connections",
-               description = "Creates a new AREA including actions, reactions, and connections between them for advanced workflows")
+               description = "Creates a new AREA including actions, reactions, and connections "
+                           + "between them for advanced workflows")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "AREA created successfully with connections"),
         @ApiResponse(responseCode = "400", description = "Invalid request data"),

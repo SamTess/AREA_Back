@@ -39,10 +39,11 @@ public interface ActionLinkRepository extends JpaRepository<ActionLink, ActionLi
     /**
      * Finds all links where an action is the source by its ID with fetch join
      */
-    @Query("SELECT al FROM ActionLink al " +
-           "LEFT JOIN FETCH al.targetActionInstance " +
-           "WHERE al.sourceActionInstance.id = :sourceActionInstanceId")
-    List<ActionLink> findBySourceActionInstanceIdWithTargetFetch(@Param("sourceActionInstanceId") UUID sourceActionInstanceId);
+    @Query("SELECT al FROM ActionLink al "
+           + "LEFT JOIN FETCH al.targetActionInstance "
+           + "WHERE al.sourceActionInstance.id = :sourceActionInstanceId")
+    List<ActionLink> findBySourceActionInstanceIdWithTargetFetch(
+            @Param("sourceActionInstanceId") UUID sourceActionInstanceId);
 
     /**
      * Finds all links where an action is the target
@@ -52,19 +53,22 @@ public interface ActionLinkRepository extends JpaRepository<ActionLink, ActionLi
     /**
      * Finds all links involving a specific action (source or target)
      */
-    @Query("SELECT al FROM ActionLink al WHERE al.sourceActionInstance = :actionInstance OR al.targetActionInstance = :actionInstance")
+    @Query("SELECT al FROM ActionLink al WHERE al.sourceActionInstance = :actionInstance "
+            + "OR al.targetActionInstance = :actionInstance")
     List<ActionLink> findByActionInstance(@Param("actionInstance") ActionInstance actionInstance);
 
     /**
      * Finds all links involving a specific action by its ID (source or target)
      */
-    @Query("SELECT al FROM ActionLink al WHERE al.sourceActionInstance.id = :actionInstanceId OR al.targetActionInstance.id = :actionInstanceId")
+    @Query("SELECT al FROM ActionLink al WHERE al.sourceActionInstance.id = :actionInstanceId "
+            + "OR al.targetActionInstance.id = :actionInstanceId")
     List<ActionLink> findByActionInstanceId(@Param("actionInstanceId") UUID actionInstanceId);
 
     /**
      * Checks if a link exists between two actions
      */
-    boolean existsBySourceActionInstanceAndTargetActionInstance(ActionInstance sourceActionInstance, ActionInstance targetActionInstance);
+    boolean existsBySourceActionInstanceAndTargetActionInstance(
+            ActionInstance sourceActionInstance, ActionInstance targetActionInstance);
 
     /**
      * Deletes all links for a given area
@@ -74,6 +78,7 @@ public interface ActionLinkRepository extends JpaRepository<ActionLink, ActionLi
     /**
      * Deletes all links involving a specific action
      */
-    @Query("DELETE FROM ActionLink al WHERE al.sourceActionInstance = :actionInstance OR al.targetActionInstance = :actionInstance")
+    @Query("DELETE FROM ActionLink al WHERE al.sourceActionInstance = :actionInstance "
+            + "OR al.targetActionInstance = :actionInstance")
     void deleteByActionInstance(@Param("actionInstance") ActionInstance actionInstance);
 }

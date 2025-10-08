@@ -26,6 +26,12 @@ public class OAuthLinkController {
     private final AuthService authService;
     private final OAuthGithubService oauthGithubService;
 
+    private static final int HTTP_UNAUTHORIZED = 401;
+    private static final int HTTP_NOT_FOUND = 404;
+    private static final int HTTP_CONFLICT = 409;
+    private static final int HTTP_BAD_REQUEST = 400;
+    private static final int HTTP_INTERNAL_SERVER_ERROR = 500;
+
     @PostMapping("/{provider}/exchange")
     @Operation(summary = "Link OAuth account to current user without changing session")
     public ResponseEntity<?> linkOAuthAccount(
@@ -36,7 +42,7 @@ public class OAuthLinkController {
         try {
             User currentUser = authService.getCurrentUserEntity(request);
             if (currentUser == null) {
-                return ResponseEntity.status(401).build();
+                return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
             }
 
             String authorizationCode = requestBody.get("code");
@@ -50,7 +56,7 @@ public class OAuthLinkController {
                     linkedIdentity = oauthGithubService.linkToExistingUser(currentUser, authorizationCode);
                     break;
                 default:
-                    return ResponseEntity.status(404).build();
+                    return ResponseEntity.status(HTTP_NOT_FOUND).build();
             }
 
             ServiceConnectionStatus status = new ServiceConnectionStatus();
@@ -71,18 +77,18 @@ public class OAuthLinkController {
 
             String errorMessage = e.getMessage();
             if (errorMessage.contains("already linked to another user")) {
-                return ResponseEntity.status(409) // Conflict
+                return ResponseEntity.status(HTTP_CONFLICT) // Conflict
                     .body(OAuthLinkErrorResponse.accountAlreadyLinked(getServiceDisplayName(provider)));
             } else if (errorMessage.contains("email is required")) {
-                return ResponseEntity.status(400) // Bad Request
+                return ResponseEntity.status(HTTP_BAD_REQUEST) // Bad Request
                     .body(OAuthLinkErrorResponse.emailRequired(getServiceDisplayName(provider)));
             } else {
-                return ResponseEntity.status(500)
+                return ResponseEntity.status(HTTP_INTERNAL_SERVER_ERROR)
                     .body(OAuthLinkErrorResponse.internalError());
             }
         } catch (Exception e) {
             log.error("Unexpected error linking OAuth account for provider: {}", provider, e);
-            return ResponseEntity.status(500)
+            return ResponseEntity.status(HTTP_INTERNAL_SERVER_ERROR)
                 .body(OAuthLinkErrorResponse.internalError());
         }
     }

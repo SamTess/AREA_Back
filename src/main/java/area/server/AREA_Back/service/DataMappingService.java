@@ -100,7 +100,14 @@ public class DataMappingService {
             return transform.get("default");
         }
 
-        switch (type != null ? type.toLowerCase() : "direct") {
+        String transformType;
+        if (type != null) {
+            transformType = type.toLowerCase();
+        } else {
+            transformType = "direct";
+        }
+
+        switch (transformType) {
             case "string":
                 return String.valueOf(sourceValue);
             case "number":
@@ -198,28 +205,40 @@ public class DataMappingService {
 
 
     private boolean objectsEqual(Object actual, Object expected) {
-        if (actual == null && expected == null) return true;
-        if (actual == null || expected == null) return false;
+        if (actual == null && expected == null) {
+            return true;
+        }
+        if (actual == null || expected == null) {
+            return false;
+        }
         return actual.toString().equals(expected.toString());
     }
 
     private boolean stringContains(Object actual, Object expected) {
-        if (actual == null || expected == null) return false;
+        if (actual == null || expected == null) {
+            return false;
+        }
         return actual.toString().contains(expected.toString());
     }
 
     private boolean stringStartsWith(Object actual, Object expected) {
-        if (actual == null || expected == null) return false;
+        if (actual == null || expected == null) {
+            return false;
+        }
         return actual.toString().startsWith(expected.toString());
     }
 
     private boolean stringEndsWith(Object actual, Object expected) {
-        if (actual == null || expected == null) return false;
+        if (actual == null || expected == null) {
+            return false;
+        }
         return actual.toString().endsWith(expected.toString());
     }
 
     private boolean stringMatchesRegex(Object actual, Object expected) {
-        if (actual == null || expected == null) return false;
+        if (actual == null || expected == null) {
+            return false;
+        }
         try {
             Pattern pattern = Pattern.compile(expected.toString());
             return pattern.matcher(actual.toString()).matches();
@@ -230,7 +249,9 @@ public class DataMappingService {
     }
 
     private int compareNumbers(Object actual, Object expected) {
-        if (actual == null || expected == null) return 0;
+        if (actual == null || expected == null) {
+            return 0;
+        }
         try {
             double actualNum = convertToNumber(actual).doubleValue();
             double expectedNum = convertToNumber(expected).doubleValue();
@@ -241,7 +262,9 @@ public class DataMappingService {
     }
 
     private Number convertToNumber(Object value) {
-        if (value instanceof Number) return (Number) value;
+        if (value instanceof Number) {
+            return (Number) value;
+        }
         try {
             return Double.parseDouble(value.toString());
         } catch (NumberFormatException e) {
@@ -250,7 +273,9 @@ public class DataMappingService {
     }
 
     private Boolean convertToBoolean(Object value) {
-        if (value instanceof Boolean) return (Boolean) value;
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
         if (value instanceof String) {
             String str = ((String) value).toLowerCase();
             return "true".equals(str) || "yes".equals(str) || "1".equals(str);
@@ -262,7 +287,9 @@ public class DataMappingService {
     }
 
     private String applyTemplate(String template, Map<String, Object> data) {
-        if (template == null) return null;
+        if (template == null) {
+            return null;
+        }
 
         String result = template;
         Pattern pattern = Pattern.compile("\\{\\{([^}]+)\\}\\}");
@@ -271,7 +298,12 @@ public class DataMappingService {
         while (matcher.find()) {
             String placeholder = matcher.group(1);
             Object value = extractValueByPath(data, placeholder);
-            String replacement = value != null ? value.toString() : "";
+            String replacement;
+            if (value != null) {
+                replacement = value.toString();
+            } else {
+                replacement = "";
+            }
             result = result.replace("{{" + placeholder + "}}", replacement);
         }
 
@@ -279,7 +311,9 @@ public class DataMappingService {
     }
 
     private String applyFormat(Object value, String format) {
-        if (value == null || format == null) return String.valueOf(value);
+        if (value == null || format == null) {
+            return String.valueOf(value);
+        }
 
         try {
             switch (format.toLowerCase()) {

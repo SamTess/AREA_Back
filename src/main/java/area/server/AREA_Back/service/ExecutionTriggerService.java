@@ -39,7 +39,8 @@ public class ExecutionTriggerService {
                 actionInstance.getId(), activationMode);
 
         try {
-            var linkedActions = actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());
+            var linkedActions = actionLinkRepository
+                    .findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());
 
             if (!linkedActions.isEmpty()) {
                 log.info("Action {} is a trigger with {} linked reactions, triggering them directly",

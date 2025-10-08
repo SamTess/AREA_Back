@@ -121,7 +121,8 @@ public class OAuthGithubService extends OAuthService {
 
         try {
             oauth = this.userOAuthIdentityRepository.save(oauth);
-            log.info("Successfully linked GitHub account {} to user {}", profileData.userIdentifier, existingUser.getId());
+            log.info("Successfully linked GitHub account {} to user {}", 
+                    profileData.userIdentifier, existingUser.getId());
             return oauth;
         } catch (Exception e) {
             log.error("Failed to link GitHub account to existing user", e);

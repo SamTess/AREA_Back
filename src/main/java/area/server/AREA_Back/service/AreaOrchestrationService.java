@@ -146,11 +146,16 @@ public class AreaOrchestrationService {
 
             List<ActivationMode> allModes = activationModeRepository.findAllEnabled();
             Map<ActivationModeType, Long> modeCount = Map.of(
-                ActivationModeType.CRON, allModes.stream().filter(am -> am.getType() == ActivationModeType.CRON).count(),
-                ActivationModeType.WEBHOOK, allModes.stream().filter(am -> am.getType() == ActivationModeType.WEBHOOK).count(),
-                ActivationModeType.POLL, allModes.stream().filter(am -> am.getType() == ActivationModeType.POLL).count(),
-                ActivationModeType.MANUAL, allModes.stream().filter(am -> am.getType() == ActivationModeType.MANUAL).count(),
-                ActivationModeType.CHAIN, allModes.stream().filter(am -> am.getType() == ActivationModeType.CHAIN).count()
+                ActivationModeType.CRON, 
+                    allModes.stream().filter(am -> am.getType() == ActivationModeType.CRON).count(),
+                ActivationModeType.WEBHOOK, 
+                    allModes.stream().filter(am -> am.getType() == ActivationModeType.WEBHOOK).count(),
+                ActivationModeType.POLL, 
+                    allModes.stream().filter(am -> am.getType() == ActivationModeType.POLL).count(),
+                ActivationModeType.MANUAL, 
+                    allModes.stream().filter(am -> am.getType() == ActivationModeType.MANUAL).count(),
+                ActivationModeType.CHAIN, 
+                    allModes.stream().filter(am -> am.getType() == ActivationModeType.CHAIN).count()
             );
 
             int activeCronTasks = cronSchedulerService.getActiveTasksCount();

@@ -154,7 +154,12 @@ public class ReactionChainService {
         
         // Handle chain step increment safely
         Object currentStep = enriched.getOrDefault("chain_step", 0);
-        int stepNumber = (currentStep instanceof Integer) ? (Integer) currentStep : 0;
+        int stepNumber;
+        if (currentStep instanceof Integer) {
+            stepNumber = (Integer) currentStep;
+        } else {
+            stepNumber = 0;
+        }
         enriched.put("chain_step", stepNumber + 1);
         
         // Add execution result placeholder (would be populated after execution completes)

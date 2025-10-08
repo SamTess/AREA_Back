@@ -20,9 +20,12 @@ public class WebhookDeduplicationService {
 
     private static final String WEBHOOK_DEDUP_PREFIX = "webhook:dedup:";
     private static final Duration DEFAULT_TTL = Duration.ofHours(1); // 1 hour TTL
-    private static final Duration GITHUB_TTL = Duration.ofMinutes(30); // GitHub resends within 24h, but 30 min should be enough
-    private static final Duration SLACK_TTL = Duration.ofMinutes(5); // Slack typically resends within minutes
-    private static final Duration GENERIC_TTL = Duration.ofMinutes(15); // Generic TTL for other providers
+    // GitHub resends within 24h, but 30 min should be enough
+    private static final Duration GITHUB_TTL = Duration.ofMinutes(30);
+    // Slack typically resends within minutes
+    private static final Duration SLACK_TTL = Duration.ofMinutes(5);
+    // Generic TTL for other providers
+    private static final Duration GENERIC_TTL = Duration.ofMinutes(15);
 
     /**
      * Checks if an event has already been processed (is a duplicate)
@@ -81,7 +84,12 @@ public class WebhookDeduplicationService {
         }
 
         String key = buildDeduplicationKey(eventId, provider);
-        Duration ttl = customTtl != null ? customTtl : getTtlForProvider(provider);
+        Duration ttl;
+        if (customTtl != null) {
+            ttl = customTtl;
+        } else {
+            ttl = getTtlForProvider(provider);
+        }
 
         try {
             // Store a simple marker with expiration
@@ -121,7 +129,12 @@ public class WebhookDeduplicationService {
         }
 
         String key = buildDeduplicationKey(eventId, provider);
-        Duration ttl = customTtl != null ? customTtl : getTtlForProvider(provider);
+        Duration ttl;
+        if (customTtl != null) {
+            ttl = customTtl;
+        } else {
+            ttl = getTtlForProvider(provider);
+        }
 
         try {
             // Use SET NX EX to atomically set the key only if it doesn't exist

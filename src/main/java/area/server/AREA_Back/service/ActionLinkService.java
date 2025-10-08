@@ -37,11 +37,15 @@ public class ActionLinkService {
         Area area = areaRepository.findById(areaId)
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + areaId));
 
-        ActionInstance sourceAction = actionInstanceRepository.findById(request.getSourceActionInstanceId())
-                .orElseThrow(() -> new RuntimeException("Source action not found with id: " + request.getSourceActionInstanceId()));
+        ActionInstance sourceAction = actionInstanceRepository
+                .findById(request.getSourceActionInstanceId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Source action not found with id: " + request.getSourceActionInstanceId()));
 
-        ActionInstance targetAction = actionInstanceRepository.findById(request.getTargetActionInstanceId())
-                .orElseThrow(() -> new RuntimeException("Target action not found with id: " + request.getTargetActionInstanceId()));
+        ActionInstance targetAction = actionInstanceRepository
+                .findById(request.getTargetActionInstanceId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Target action not found with id: " + request.getTargetActionInstanceId()));
 
         if (!sourceAction.getArea().getId().equals(areaId)) {
             throw new RuntimeException("Source action does not belong to the specified area");
@@ -51,7 +55,8 @@ public class ActionLinkService {
             throw new RuntimeException("Target action does not belong to the specified area");
         }
 
-        if (actionLinkRepository.existsBySourceActionInstanceAndTargetActionInstance(sourceAction, targetAction)) {
+        if (actionLinkRepository.existsBySourceActionInstanceAndTargetActionInstance(
+                sourceAction, targetAction)) {
             throw new RuntimeException("Link already exists between these actions");
         }
 
@@ -60,8 +65,19 @@ public class ActionLinkService {
         actionLink.setTargetActionInstance(targetAction);
         actionLink.setArea(area);
         actionLink.setLinkType(request.getLinkType());
-        actionLink.setMapping(request.getMapping() != null ? request.getMapping() : new HashMap<>());
-        actionLink.setCondition(request.getCondition() != null ? request.getCondition() : new HashMap<>());
+        
+        if (request.getMapping() != null) {
+            actionLink.setMapping(request.getMapping());
+        } else {
+            actionLink.setMapping(new HashMap<>());
+        }
+        
+        if (request.getCondition() != null) {
+            actionLink.setCondition(request.getCondition());
+        } else {
+            actionLink.setCondition(new HashMap<>());
+        }
+        
         actionLink.setOrder(request.getOrder());
 
         ActionLink savedLink = actionLinkRepository.save(actionLink);
@@ -80,19 +96,36 @@ public class ActionLinkService {
 
         List<ActionLink> linksToSave = request.getLinks().stream()
                 .map(linkData -> {
-                    ActionInstance sourceAction = actionInstanceRepository.findById(linkData.getSourceActionInstanceId())
-                            .orElseThrow(() -> new RuntimeException("Source action not found with id: " + linkData.getSourceActionInstanceId()));
+                    ActionInstance sourceAction = actionInstanceRepository
+                            .findById(linkData.getSourceActionInstanceId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Source action not found with id: " 
+                                    + linkData.getSourceActionInstanceId()));
 
-                    ActionInstance targetAction = actionInstanceRepository.findById(linkData.getTargetActionInstanceId())
-                            .orElseThrow(() -> new RuntimeException("Target action not found with id: " + linkData.getTargetActionInstanceId()));
+                    ActionInstance targetAction = actionInstanceRepository
+                            .findById(linkData.getTargetActionInstanceId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Target action not found with id: " 
+                                    + linkData.getTargetActionInstanceId()));
 
                     ActionLink actionLink = new ActionLink();
                     actionLink.setSourceActionInstance(sourceAction);
                     actionLink.setTargetActionInstance(targetAction);
                     actionLink.setArea(area);
                     actionLink.setLinkType(linkData.getLinkType());
-                    actionLink.setMapping(linkData.getMapping() != null ? linkData.getMapping() : new HashMap<>());
-                    actionLink.setCondition(linkData.getCondition() != null ? linkData.getCondition() : new HashMap<>());
+                    
+                    if (linkData.getMapping() != null) {
+                        actionLink.setMapping(linkData.getMapping());
+                    } else {
+                        actionLink.setMapping(new HashMap<>());
+                    }
+                    
+                    if (linkData.getCondition() != null) {
+                        actionLink.setCondition(linkData.getCondition());
+                    } else {
+                        actionLink.setCondition(new HashMap<>());
+                    }
+                    
                     actionLink.setOrder(linkData.getOrder());
 
                     return actionLink;
@@ -126,7 +159,9 @@ public class ActionLinkService {
         actionInstanceRepository.findById(targetActionInstanceId)
                 .orElseThrow(() -> new RuntimeException("Target action not found with id: " + targetActionInstanceId));
 
-        actionLinkRepository.deleteById(new area.server.AREA_Back.entity.ActionLinkId(sourceActionInstanceId, targetActionInstanceId));
+        actionLinkRepository.deleteById(
+                new area.server.AREA_Back.entity.ActionLinkId(
+                        sourceActionInstanceId, targetActionInstanceId));
         log.info("Deleted action link from {} to {}", sourceActionInstanceId, targetActionInstanceId);
     }
 

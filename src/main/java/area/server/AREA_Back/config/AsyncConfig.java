@@ -23,6 +23,8 @@ public class AsyncConfig {
     private static final int REACTION_MAX_POOL_SIZE = 6;
     private static final int REACTION_QUEUE_CAPACITY = 50;
     private static final int REACTION_AWAIT_TERMINATION_SECONDS = 20;
+    private static final int SCHEDULER_POOL_SIZE = 10;
+    private static final int SCHEDULER_AWAIT_TERMINATION_SECONDS = 30;
 
     @Bean(name = "areaWorkerExecutor")
     public Executor areaWorkerExecutor() {
@@ -53,10 +55,10 @@ public class AsyncConfig {
     @Bean(name = "taskScheduler")
     public TaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(10);
+        scheduler.setPoolSize(SCHEDULER_POOL_SIZE);
         scheduler.setThreadNamePrefix("CRON-Scheduler-");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(30);
+        scheduler.setAwaitTerminationSeconds(SCHEDULER_AWAIT_TERMINATION_SECONDS);
         scheduler.initialize();
         return scheduler;
     }

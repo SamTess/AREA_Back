@@ -26,6 +26,8 @@ public class UserServiceConnectionController {
     private final UserIdentityService userIdentityService;
     private final AuthService authService;
 
+    private static final int HTTP_UNAUTHORIZED = 401;
+
     @GetMapping("/service-connection/{serviceKey}")
     @Operation(summary = "Get service connection status for current user")
     public ResponseEntity<ServiceConnectionStatus> getServiceConnectionStatus(
@@ -35,7 +37,7 @@ public class UserServiceConnectionController {
         try {
             User currentUser = authService.getCurrentUserEntity(request);
             if (currentUser == null) {
-                return ResponseEntity.status(401).build();
+                return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
             }
 
             String provider = mapServiceKeyToOAuthProvider(serviceKey);
@@ -78,7 +80,7 @@ public class UserServiceConnectionController {
         try {
             User currentUser = authService.getCurrentUserEntity(request);
             if (currentUser == null) {
-                return ResponseEntity.status(401).build();
+                return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
             }
 
             List<UserOAuthIdentity> oauthIdentities = userIdentityService.getUserOAuthIdentities(currentUser.getId());

@@ -34,6 +34,8 @@ public class ServiceTokenController {
     private final ServiceAccountService serviceAccountService;
     private final JwtService jwtService;
 
+    private static final int HTTP_UNAUTHORIZED = 401;
+
     @GetMapping("/{serviceName}/status")
     @Operation(summary = "Check if user has a valid token for a service")
     @ApiResponses(value = {
@@ -56,7 +58,7 @@ public class ServiceTokenController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error checking token status for service {}: {}", serviceName, e.getMessage());
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
         }
     }
 
@@ -88,7 +90,7 @@ public class ServiceTokenController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error storing token for service {}: {}", serviceName, e.getMessage());
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
         }
     }
 
@@ -115,7 +117,7 @@ public class ServiceTokenController {
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             log.error("Error getting token for service {}: {}", serviceName, e.getMessage());
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
         }
     }
 
@@ -142,7 +144,7 @@ public class ServiceTokenController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Error deleting token for service {}: {}", serviceName, e.getMessage());
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
         }
     }
 
@@ -165,7 +167,7 @@ public class ServiceTokenController {
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             log.error("Error getting all tokens: {}", e.getMessage());
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
         }
     }
 
@@ -178,7 +180,8 @@ public class ServiceTokenController {
         dto.setHasAccessToken(serviceAccount.getAccessTokenEnc() != null);
         dto.setHasRefreshToken(serviceAccount.getRefreshTokenEnc() != null);
         dto.setExpiresAt(serviceAccount.getExpiresAt());
-        dto.setExpired(serviceAccount.getExpiresAt() != null && serviceAccount.getExpiresAt().isBefore(LocalDateTime.now()));
+        dto.setExpired(serviceAccount.getExpiresAt() != null 
+                && serviceAccount.getExpiresAt().isBefore(LocalDateTime.now()));
         dto.setScopes(serviceAccount.getScopes());
         dto.setTokenVersion(serviceAccount.getTokenVersion());
         dto.setLastRefreshAt(serviceAccount.getLastRefreshAt());

@@ -23,15 +23,20 @@ services:
   redis:
     image: 'redis:latest'
     container_name: area-redis
-    ports:
-      - '6379:6379'
+    command: sh -c "sed 's/\$${REDIS_PASSWORD}/'\"$$REDIS_PASSWORD\"'/g' /usr/local/etc/redis/redis.conf.template
+      > /usr/local/etc/redis/redis.conf && redis-server /usr/local/etc/redis/redis.conf"
+    env_file: ../.env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf.template:ro
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "sh", "-c", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
     networks:
       - area-network
 

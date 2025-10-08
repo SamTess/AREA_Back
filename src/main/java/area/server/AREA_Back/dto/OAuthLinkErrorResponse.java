@@ -14,9 +14,9 @@ public class OAuthLinkErrorResponse {
 
     public static OAuthLinkErrorResponse accountAlreadyLinked(String provider) {
         return new OAuthLinkErrorResponse(
-            "ACCOUNT_ALREADY_LINKED",
-            "This " + provider + " account is already linked to another user",
-            "Please use a different " + provider + " account or disconnect it from the other user first"
+            "ACCOUNT_LINK_ERROR",
+            "Unable to link this account",
+            "Please verify your account details or try a different account"
         );
     }
 

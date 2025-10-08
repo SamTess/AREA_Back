@@ -46,24 +46,19 @@ public class WebhookController {
     public ResponseEntity<Map<String, Object>> handleWebhook(
             @Parameter(description = "Service name (github, slack, etc.)")
             @PathVariable String service,
-            
             @Parameter(description = "Action type (issues, pull_request, message, etc.)")
             @PathVariable String action,
-            
             @Parameter(description = "Optional user ID to scope the webhook")
             @RequestParam(required = false) UUID userId,
-            
             @RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
 
         long startTime = System.currentTimeMillis();
         String eventId = extractEventId(service, request, payload);
-        
-        log.info("Received webhook: service={}, action={}, eventId={}, userId={}", 
+        log.info("Received webhook: service={}, action={}, eventId={}, userId={}",
                 service, action, eventId, userId);
 
         try {
-            // Step 1: Signature validation
             if (!validateSignature(service, request, payload)) {
                 log.warn("Webhook signature validation failed for service {} action {}", service, action);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
@@ -74,7 +69,6 @@ public class WebhookController {
                 ));
             }
 
-            // Step 2: Deduplication check
             if (deduplicationService.checkAndMark(eventId, service)) {
                 log.info("Duplicate webhook event detected: {} for service {}", eventId, service);
                 return ResponseEntity.ok(Map.of(
@@ -87,7 +81,7 @@ public class WebhookController {
                 ));
             }
 
-            // Step 3: Process webhook event
+            // Process webhook event
             List<Execution> executions;
             if (userId != null) {
                 executions = eventProcessingService.processWebhookEventForUser(service, action, payload, userId);
@@ -96,7 +90,6 @@ public class WebhookController {
             }
 
             long processingTime = System.currentTimeMillis() - startTime;
-            
             log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms", 
                     service, action, executions.size(), processingTime);
 
@@ -112,7 +105,7 @@ public class WebhookController {
             ));
 
         } catch (Exception e) {
-            log.error("Failed to process webhook: service={}, action={}, error={}", 
+            log.error("Failed to process webhook: service={}, action={}, error={}",
                      service, action, e.getMessage(), e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
@@ -201,21 +194,18 @@ public class WebhookController {
             byte[] payloadBytes = getRequestBody(request);
             String signature = getSignatureHeader(service, request);
             String timestamp = getTimestampHeader(service, request);
-            
             if (signature == null) {
                 log.debug("No signature header found for service {}", service);
-                return true; // Allow webhooks without signatures for testing
+                return true;
             }
 
-            // Get webhook secret from service account or configuration
             String secret = getWebhookSecret(service);
             if (secret == null) {
                 log.warn("No webhook secret configured for service {}", service);
-                return true; // Allow if no secret is configured
+                return true;
             }
 
             return signatureValidator.validateSignature(service, payloadBytes, signature, secret, timestamp);
-            
         } catch (Exception e) {
             log.error("Error validating signature for service {}: {}", service, e.getMessage());
             return false;
@@ -243,8 +233,6 @@ public class WebhookController {
                 log.debug("Unknown service for event ID extraction: {}", service);
                 break;
         }
-        
-        // Fallback: generate event ID from timestamp and service
         return service + "_" + System.currentTimeMillis() + "_" + Math.abs(payload.hashCode());
     }
 

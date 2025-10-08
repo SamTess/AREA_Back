@@ -21,18 +21,19 @@ services:
       - area-network
 
   redis:
-    image: 'redis:latest'
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
     container_name: area-redis
-    command: sh -c "sed 's/\$${REDIS_PASSWORD}/'\"$$REDIS_PASSWORD\"'/g' /usr/local/etc/redis/redis.conf.template
-      > /usr/local/etc/redis/redis.conf && redis-server /usr/local/etc/redis/redis.conf"
     env_file: ../.env
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_SSL=${REDIS_SSL:-false}
     volumes:
       - redis_data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf.template:ro
+      - redis_certs:/usr/local/etc/redis/certs
     healthcheck:
-      test: ["CMD", "sh", "-c", "redis-cli --no-auth-warning -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG"]
+      test: ["CMD", "sh", "-c", "if [ \"$$REDIS_SSL\" = \"true\" ]; then redis-cli --tls --cert /usr/local/etc/redis/certs/redis-cert.pem --key /usr/local/etc/redis/certs/redis-key.pem --cacert /usr/local/etc/redis/certs/ca-cert.pem --no-auth-warning -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG; else redis-cli --no-auth-warning -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG; fi"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,5 +113,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  redis_certs:
   # prometheus_data:
   # grafana_data:

@@ -33,7 +33,18 @@ services:
       - redis_data:/data
       - redis_certs:/usr/local/etc/redis/certs
     healthcheck:
-      test: ["CMD", "sh", "-c", "if [ \"$$REDIS_SSL\" = \"true\" ]; then redis-cli --tls --cert /usr/local/etc/redis/certs/redis-cert.pem --key /usr/local/etc/redis/certs/redis-key.pem --cacert /usr/local/etc/redis/certs/ca-cert.pem --no-auth-warning -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG; else redis-cli --no-auth-warning -a $$REDIS_PASSWORD ping 2>/dev/null | grep PONG; fi"]
+      test: [
+        "CMD-SHELL",
+        "if [ \"$REDIS_SSL\" = \"true\" ]; \
+        then redis-cli --tls \
+          --cert /usr/local/etc/redis/certs/redis-cert.pem \
+          --key /usr/local/etc/redis/certs/redis-key.pem \
+          --cacert /usr/local/etc/redis/certs/ca-cert.pem \
+          --no-auth-warning -a \"$REDIS_PASSWORD\" ping 2>/dev/null | grep PONG; \
+        else \
+          redis-cli --no-auth-warning -a \"$REDIS_PASSWORD\" ping 2>/dev/null | grep PONG; \
+        fi"
+      ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -8,7 +8,6 @@ import area.server.AREA_Back.repository.ActivationModeRepository;
 import area.server.AREA_Back.repository.AreaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -31,10 +30,9 @@ public class AreaOrchestrationService {
     @PostConstruct
     public void initialize() {
         log.info("Initializing AREA Orchestration Service");
-        
-        // Initialize all CRON-based activations
+
         initializeCronActivations();
-        
+
         log.info("AREA Orchestration Service initialized successfully");
     }
 
@@ -44,15 +42,15 @@ public class AreaOrchestrationService {
     public void initializeCronActivations() {
         try {
             List<ActivationMode> cronModes = activationModeRepository
-                .findByTypeAndEnabled(ActivationModeType.CRON, true);
-            
+                .findByTypeAndEnabledWithActionInstance(ActivationModeType.CRON, true);
+
             log.info("Found {} CRON activation modes to initialize", cronModes.size());
-            
+
             for (ActivationMode activationMode : cronModes) {
                 try {
                     cronSchedulerService.scheduleActivationMode(activationMode);
                 } catch (Exception e) {
-                    log.error("Failed to schedule CRON activation mode {}: {}", 
+                    log.error("Failed to schedule CRON activation mode {}: {}",
                              activationMode.getId(), e.getMessage(), e);
                 }
             }
@@ -68,7 +66,6 @@ public class AreaOrchestrationService {
         log.info("Handling state change for AREA {}: enabled={}", area.getId(), enabled);
 
         try {
-            // Simplified - just get activation modes and filter by area
             List<ActivationMode> allActivationModes = activationModeRepository
                 .findAllEnabled();
 
@@ -86,7 +83,7 @@ public class AreaOrchestrationService {
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to handle state change for AREA {}: {}", 
+            log.error("Failed to handle state change for AREA {}: {}",
                      area.getId(), e.getMessage(), e);
         }
     }
@@ -95,7 +92,7 @@ public class AreaOrchestrationService {
      * Handles activation mode changes
      */
     public void handleActivationModeChange(ActivationMode activationMode, boolean enabled) {
-        log.info("Handling activation mode change: {} enabled={}", 
+        log.info("Handling activation mode change: {} enabled={}",
                 activationMode.getId(), enabled);
 
         try {
@@ -107,7 +104,7 @@ public class AreaOrchestrationService {
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to handle activation mode change {}: {}", 
+            log.error("Failed to handle activation mode change {}: {}",
                      activationMode.getId(), e.getMessage(), e);
         }
     }
@@ -120,8 +117,7 @@ public class AreaOrchestrationService {
             log.debug("Handling execution completion: {}", execution.getId());
 
             Area area = execution.getArea();
-            
-            // Check if this execution should trigger chain reactions
+
             List<ActivationMode> allActivationModes = activationModeRepository.findAllEnabled();
             List<ActivationMode> chainModes = allActivationModes.stream()
                 .filter(am -> am.getType() == ActivationModeType.CHAIN)
@@ -134,7 +130,7 @@ public class AreaOrchestrationService {
             }
 
         } catch (Exception e) {
-            log.error("Failed to handle execution completion for {}: {}", 
+            log.error("Failed to handle execution completion for {}: {}",
                      execution.getId(), e.getMessage(), e);
         }
     }
@@ -145,10 +141,9 @@ public class AreaOrchestrationService {
     public Map<String, Object> getActivationStatistics() {
         try {
             long totalAreas = areaRepository.count();
-            // Simplified count - get all and filter
             List<Area> allAreas = areaRepository.findAll();
             long enabledAreas = allAreas.stream().filter(Area::getEnabled).count();
-            
+
             List<ActivationMode> allModes = activationModeRepository.findAllEnabled();
             Map<ActivationModeType, Long> modeCount = Map.of(
                 ActivationModeType.CRON, allModes.stream().filter(am -> am.getType() == ActivationModeType.CRON).count(),
@@ -184,7 +179,6 @@ public class AreaOrchestrationService {
     public void shutdown() {
         log.info("Shutting down AREA Orchestration Service");
         try {
-            // Cleanup is handled by individual services
             log.info("AREA Orchestration Service shutdown completed");
         } catch (Exception e) {
             log.error("Error during AREA Orchestration Service shutdown: {}", e.getMessage(), e);

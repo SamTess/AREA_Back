@@ -3,7 +3,6 @@ package area.server.AREA_Back.service;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.Execution;
-import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.repository.ActionInstanceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -31,4 +31,6 @@ public class AreaReactionRequest {
     private Map<String, Object> condition;
 
     private Integer order = 0;
+
+    private Map<String, Object> activationConfig;
 }

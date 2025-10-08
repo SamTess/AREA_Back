@@ -30,7 +30,7 @@ public class TokenEncryptionService {
     private final SecretKey secretKey;
     private final SecureRandom secureRandom;
 
-    public TokenEncryptionService(@Value("${app.encryption.key:}") String base64Key) {
+    public TokenEncryptionService(@Value("${APP_ENCRYPTION_KEY:}") String base64Key) {
         this.secureRandom = new SecureRandom();
         this.secretKey = initializeKey(base64Key);
     }

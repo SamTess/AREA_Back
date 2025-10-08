@@ -53,7 +53,7 @@ public class CronSchedulerService {
      */
     public void loadAndScheduleAllCronActivations() {
         List<ActivationMode> cronActivations = activationModeRepository
-            .findByTypeAndEnabled(ActivationModeType.CRON, true);
+            .findByTypeAndEnabledWithActionInstance(ActivationModeType.CRON, true);
 
         log.info("Found {} CRON activation modes to schedule", cronActivations.size());
 
@@ -94,10 +94,15 @@ public class CronSchedulerService {
                 () -> executeCronTask(activationMode),
                 triggerContext -> {
                     CronExpression cron = CronExpression.parse(cronExpression);
+                    LocalDateTime now = LocalDateTime.now();
                     if (triggerContext.lastCompletion() != null) {
-                        return cron.next(triggerContext.lastCompletion());
+                        LocalDateTime lastCompletion = LocalDateTime.ofInstant(
+                            triggerContext.lastCompletion(), 
+                            java.time.ZoneId.systemDefault()
+                        );
+                        return cron.next(lastCompletion).atZone(java.time.ZoneId.systemDefault()).toInstant();
                     } else {
-                        return cron.next(java.time.Instant.now());
+                        return cron.next(now).atZone(java.time.ZoneId.systemDefault()).toInstant();
                     }
                 }
             );
@@ -136,21 +141,30 @@ public class CronSchedulerService {
     }
 
     /**
+     * Reloads and reschedules all CRON activation modes
+     */
+    public void reloadAllCronActivations() {
+        log.info("Reloading all CRON activation modes");
+        scheduledTasks.values().forEach(task -> task.cancel(false));
+        scheduledTasks.clear();
+        loadAndScheduleAllCronActivations();
+        log.info("Reloaded {} CRON activation modes", scheduledTasks.size());
+    }
+
+    /**
      * Executes a CRON task
      */
     private void executeCronTask(ActivationMode activationMode) {
         try {
             ActionInstance actionInstance = activationMode.getActionInstance();
-            
             if (!actionInstance.getEnabled() || !activationMode.getEnabled()) {
                 log.debug("Skipping disabled CRON task for activation mode: {}", activationMode.getId());
                 return;
             }
 
-            log.info("Executing CRON task for activation mode: {} (action: {})", 
+            log.info("Executing CRON task for activation mode: {} (action: {})",
                     activationMode.getId(), actionInstance.getName());
 
-            // Create execution payload with cron context
             Map<String, Object> cronPayload = Map.of(
                 "triggered_by", "cron",
                 "execution_time", LocalDateTime.now().toString(),
@@ -158,16 +172,14 @@ public class CronSchedulerService {
                 "activation_mode_id", activationMode.getId().toString()
             );
 
-            // Trigger execution
             executionTriggerService.triggerAreaExecution(
                 actionInstance,
                 ActivationModeType.CRON,
-                cronPayload,
-                UUID.randomUUID()
+                cronPayload
             );
 
         } catch (Exception e) {
-            log.error("Failed to execute CRON task for activation mode {}: {}", 
+            log.error("Failed to execute CRON task for activation mode {}: {}",
                      activationMode.getId(), e.getMessage(), e);
         }
     }

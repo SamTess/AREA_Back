@@ -8,16 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * Service for handling data mapping and condition evaluation in AREA workflows
- */
 @Service
 @Slf4j
 public class DataMappingService {
 
-    /**
-     * Applies data mapping transformation to input payload
-     */
     @SuppressWarnings("unchecked")
     public Map<String, Object> applyMapping(Map<String, Object> input, Map<String, Object> mapping) {
         if (mapping == null || mapping.isEmpty()) {
@@ -35,12 +29,10 @@ public class DataMappingService {
                 Object value = extractValueByPath(input, sourcePath);
                 result.put(targetField, value);
             } else if (sourcePathObj instanceof Map) {
-                // Complex mapping with transformation
                 Map<String, Object> transform = (Map<String, Object>) sourcePathObj;
                 Object value = applyTransformation(input, transform);
                 result.put(targetField, value);
             } else {
-                // Direct value assignment
                 result.put(targetField, sourcePathObj);
             }
         }
@@ -48,10 +40,6 @@ public class DataMappingService {
         return result;
     }
 
-    /**
-     * Evaluates conditions against input data
-     */
-    @SuppressWarnings("unchecked")
     public boolean evaluateCondition(Map<String, Object> data, Map<String, Object> condition) {
         if (condition == null || condition.isEmpty()) {
             return true;
@@ -59,7 +47,7 @@ public class DataMappingService {
 
         String operator = (String) condition.get("operator");
         if (operator == null) {
-            operator = "and"; // Default operator
+            operator = "and";
         }
 
         switch (operator.toLowerCase()) {
@@ -74,15 +62,11 @@ public class DataMappingService {
         }
     }
 
-    /**
-     * Extracts value from nested object using dot notation path
-     */
     private Object extractValueByPath(Map<String, Object> data, String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
         }
 
-        // Handle template variables like {{variable.path}}
         if (path.startsWith("{{") && path.endsWith("}}")) {
             path = path.substring(2, path.length() - 2);
         }
@@ -100,7 +84,6 @@ public class DataMappingService {
                 Map<String, Object> map = (Map<String, Object>) current;
                 current = map.get(part);
             } else {
-                // Could implement reflection for object properties here
                 log.warn("Cannot navigate path '{}' - object is not a Map at part '{}'", path, part);
                 return null;
             }
@@ -109,10 +92,6 @@ public class DataMappingService {
         return current;
     }
 
-    /**
-     * Applies transformation rules to data
-     */
-    @SuppressWarnings("unchecked")
     private Object applyTransformation(Map<String, Object> input, Map<String, Object> transform) {
         String type = (String) transform.get("type");
         Object sourceValue = extractValueByPath(input, (String) transform.get("source"));
@@ -137,9 +116,6 @@ public class DataMappingService {
         }
     }
 
-    /**
-     * Evaluates AND condition
-     */
     @SuppressWarnings("unchecked")
     private boolean evaluateAndCondition(Map<String, Object> data, Map<String, Object> condition) {
         List<Map<String, Object>> conditions = (List<Map<String, Object>>) condition.get("conditions");
@@ -155,9 +131,6 @@ public class DataMappingService {
         return true;
     }
 
-    /**
-     * Evaluates OR condition
-     */
     @SuppressWarnings("unchecked")
     private boolean evaluateOrCondition(Map<String, Object> data, Map<String, Object> condition) {
         List<Map<String, Object>> conditions = (List<Map<String, Object>>) condition.get("conditions");
@@ -173,18 +146,12 @@ public class DataMappingService {
         return false;
     }
 
-    /**
-     * Evaluates NOT condition
-     */
     @SuppressWarnings("unchecked")
     private boolean evaluateNotCondition(Map<String, Object> data, Map<String, Object> condition) {
         Map<String, Object> subCondition = (Map<String, Object>) condition.get("condition");
         return !evaluateCondition(data, subCondition);
     }
 
-    /**
-     * Evaluates simple condition (equals, contains, etc.)
-     */
     private boolean evaluateSimpleCondition(Map<String, Object> data, Map<String, Object> condition) {
         String field = (String) condition.get("field");
         String operator = (String) condition.get("operator");
@@ -229,7 +196,6 @@ public class DataMappingService {
         }
     }
 
-    // Helper methods for condition evaluation
 
     private boolean objectsEqual(Object actual, Object expected) {
         if (actual == null && expected == null) return true;
@@ -297,24 +263,24 @@ public class DataMappingService {
 
     private String applyTemplate(String template, Map<String, Object> data) {
         if (template == null) return null;
-        
+
         String result = template;
         Pattern pattern = Pattern.compile("\\{\\{([^}]+)\\}\\}");
         java.util.regex.Matcher matcher = pattern.matcher(template);
-        
+
         while (matcher.find()) {
             String placeholder = matcher.group(1);
             Object value = extractValueByPath(data, placeholder);
             String replacement = value != null ? value.toString() : "";
             result = result.replace("{{" + placeholder + "}}", replacement);
         }
-        
+
         return result;
     }
 
     private String applyFormat(Object value, String format) {
         if (value == null || format == null) return String.valueOf(value);
-        
+
         try {
             switch (format.toLowerCase()) {
                 case "uppercase":

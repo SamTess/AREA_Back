@@ -88,7 +88,10 @@ Content-Type: application/json
         ]
       },
       "order": 1,
-      "serviceAccountId": "33333333-3333-3333-3333-333333333333"
+      "serviceAccountId": "33333333-3333-3333-3333-333333333333",
+      "activationConfig": {
+        "type": "chain"
+      }
     }
   ]
 }
@@ -174,6 +177,42 @@ Content-Type: application/json
 - Parameters must conform to the action definition's input schema
 - Service account ID (if provided) must exist and match the service
 - Order defaults to 0 if not provided
+- Activation config is optional; if not provided, defaults to CHAIN mode
+
+## Activation Modes for Reactions
+
+Reactions support three activation modes:
+
+### CHAIN (Default)
+Triggered by completed trigger actions within the same AREA:
+```json
+{
+  "activationConfig": {
+    "type": "chain"
+  }
+}
+```
+
+### CRON
+Executed on a schedule using cron expressions:
+```json
+{
+  "activationConfig": {
+    "type": "cron",
+    "cron_expression": "0 */6 * * *"
+  }
+}
+```
+
+### MANUAL
+Only executed when manually triggered:
+```json
+{
+  "activationConfig": {
+    "type": "manual"
+  }
+}
+```
 
 ## Error Responses
 

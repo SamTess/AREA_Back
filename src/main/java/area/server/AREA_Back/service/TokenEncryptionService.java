@@ -39,7 +39,7 @@ public class TokenEncryptionService {
     private Counter encryptFailures;
     private Counter decryptFailures;
 
-    public TokenEncryptionService(@Value("${app.encryption.key:}") String base64Key, MeterRegistry meterRegistry) {
+    public TokenEncryptionService(@Value("${APP_ENCRYPTION_KEY:}") String base64Key, MeterRegistry meterRegistry) {
         this.secureRandom = new SecureRandom();
         this.secretKey = initializeKey(base64Key);
         this.meterRegistry = meterRegistry;

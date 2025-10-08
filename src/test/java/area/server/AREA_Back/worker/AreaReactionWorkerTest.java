@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,7 +67,6 @@ class AreaReactionWorkerTest {
 
     private Execution testExecution;
     private ActionInstance actionInstance;
-    private ExecutionResult executionResult;
 
     @BeforeEach
     void setUp() {
@@ -105,14 +103,11 @@ class AreaReactionWorkerTest {
             Map.of("result", "success"),
             testExecution.getStartedAt()
         );
-
-        // Note: initialize() is called in individual tests that need it
     }
 
     @Test
     void testProcessExecutionSuccess() {
         // Given
-        areaReactionWorker.initialize();
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
 
         // When
@@ -127,7 +122,6 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessExecutionWithException() {
         // Given
-        areaReactionWorker.initialize();
         RuntimeException exception = new RuntimeException("Test exception");
         when(reactionExecutor.executeReaction(testExecution)).thenThrow(exception);
 
@@ -150,7 +144,6 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessExecutionWithUpdateException() {
         // Given
-        areaReactionWorker.initialize();
         RuntimeException executionException = new RuntimeException("Execution error");
         RuntimeException updateException = new RuntimeException("Update error");
 
@@ -216,7 +209,6 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessEventRecordSuccess() {
         // Given
-        areaReactionWorker.initialize();
         String executionId = testExecution.getId().toString();
         Map<Object, Object> recordValues = Map.of("executionId", executionId);
         MapRecord<String, Object, Object> record = MapRecord.create(
@@ -294,7 +286,6 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessRetryExecutionsWithRetryExecutions() {
         // Given
-        areaReactionWorker.initialize();
         List<Execution> retryExecutions = Arrays.asList(testExecution);
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class))).thenReturn(retryExecutions);
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
@@ -339,7 +330,6 @@ class AreaReactionWorkerTest {
     @Test
     void testProcessQueuedExecutionsWithQueuedExecutions() {
         // Given
-        areaReactionWorker.initialize();
         List<Execution> queuedExecutions = Arrays.asList(testExecution);
         when(executionService.getQueuedExecutions()).thenReturn(queuedExecutions);
         when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);

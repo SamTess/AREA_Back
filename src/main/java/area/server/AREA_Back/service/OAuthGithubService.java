@@ -15,6 +15,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.extern.slf4j.Slf4j;
 
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -29,6 +31,7 @@ import jakarta.annotation.PostConstruct;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
+@Slf4j
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-id")
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-secret")
 @Service
@@ -59,7 +62,9 @@ public class OAuthGithubService extends OAuthService {
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
         JwtService jwtService,
-        MeterRegistry meterRegistry
+        MeterRegistry meterRegistry,
+        RedisTokenService redisTokenService,
+        PasswordEncoder passwordEncoder
     ) {
         super(
             "github",
@@ -96,6 +101,8 @@ public class OAuthGithubService extends OAuthService {
         this.tokenExchangeFailures = Counter.builder("oauth.github.token_exchange.failures")
             .description("Total number of GitHub token exchange failures")
             .register(meterRegistry);
+        this.redisTokenService = redisTokenService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -114,6 +121,57 @@ public class OAuthGithubService extends OAuthService {
         } catch (Exception e) {
             oauthLoginFailureCounter.increment();
             throw e;
+        }
+    }
+
+    public UserOAuthIdentity linkToExistingUser(User existingUser, String authorizationCode) {
+        String githubAccessToken = exchangeCodeForToken(authorizationCode);
+        UserProfileData profileData = fetchUserProfile(githubAccessToken);
+
+        if (profileData.email == null || profileData.email.isEmpty()) {
+            throw new RuntimeException("GitHub account email is required for account linking");
+        }
+
+        Optional<UserOAuthIdentity> existingOAuth = userOAuthIdentityRepository
+            .findByProviderAndProviderUserId(this.providerKey, profileData.userIdentifier);
+
+        if (existingOAuth.isPresent() && !existingOAuth.get().getUser().getId().equals(existingUser.getId())) {
+            throw new RuntimeException("This GitHub account is already linked to another user");
+        }
+
+        Optional<UserOAuthIdentity> userOAuthOpt = userOAuthIdentityRepository
+            .findByUserAndProvider(existingUser, this.providerKey);
+
+        UserOAuthIdentity oauth;
+        if (userOAuthOpt.isPresent()) {
+            oauth = userOAuthOpt.get();
+            oauth.setProviderUserId(profileData.userIdentifier);
+            oauth.setAccessTokenEnc(tokenEncryptionService.encryptToken(githubAccessToken));
+            oauth.setUpdatedAt(java.time.LocalDateTime.now());
+        } else {
+            oauth = new UserOAuthIdentity();
+            oauth.setUser(existingUser);
+            oauth.setProvider(this.providerKey);
+            oauth.setProviderUserId(profileData.userIdentifier);
+            oauth.setAccessTokenEnc(tokenEncryptionService.encryptToken(githubAccessToken));
+            oauth.setCreatedAt(java.time.LocalDateTime.now());
+            oauth.setUpdatedAt(java.time.LocalDateTime.now());
+        }
+
+        java.util.Map<String, Object> tokenMeta = new java.util.HashMap<>();
+        tokenMeta.put("name", profileData.name);
+        tokenMeta.put("login", profileData.login);
+        tokenMeta.put("avatar_url", profileData.avatarUrl);
+        oauth.setTokenMeta(tokenMeta);
+
+        try {
+            oauth = this.userOAuthIdentityRepository.save(oauth);
+            log.info("Successfully linked GitHub account {} to user {}", 
+                    profileData.userIdentifier, existingUser.getId());
+            return oauth;
+        } catch (Exception e) {
+            log.error("Failed to link GitHub account to existing user", e);
+            throw new RuntimeException("Failed to link GitHub account: " + e.getMessage(), e);
         }
     }
 
@@ -162,11 +220,15 @@ public class OAuthGithubService extends OAuthService {
         String email;
         String avatarUrl;
         String userIdentifier;
+        String name;
+        String login;
 
-        UserProfileData(String email, String avatarUrl, String userIdentifier) {
+        UserProfileData(String email, String avatarUrl, String userIdentifier, String name, String login) {
             this.email = email;
             this.avatarUrl = avatarUrl;
             this.userIdentifier = userIdentifier;
+            this.name = name;
+            this.login = login;
         }
     }
 
@@ -190,6 +252,8 @@ public class OAuthGithubService extends OAuthService {
 
         java.util.Map<String, Object> userBody = userResp.getBody();
         String avatarUrl = userBody.getOrDefault("avatar_url", "").toString();
+        String name = userBody.getOrDefault("name", "").toString();
+        String login = userBody.getOrDefault("login", "").toString();
 
         Object idObj = userBody.get("id");
         if (idObj == null) {
@@ -197,7 +261,7 @@ public class OAuthGithubService extends OAuthService {
         }
 
         String email = extractEmail(userBody, authRequest);
-        return new UserProfileData(email, avatarUrl, idObj.toString());
+        return new UserProfileData(email, avatarUrl, idObj.toString(), name, login);
     }
 
     private String extractEmail(java.util.Map<String, Object> userBody, HttpEntity<Void> authRequest) {

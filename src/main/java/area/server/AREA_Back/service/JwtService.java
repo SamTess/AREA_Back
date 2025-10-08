@@ -35,7 +35,7 @@ public class JwtService {
     @Value("${JWT_REFRESH_SECRET:}")
     private String refreshTokenSecret;
 
-    @Value("${ACCESS_TOKEN_EXPIRES_IN:15m}")
+    @Value("${ACCESS_TOKEN_EXPIRES_IN:24h}")
     private String accessTokenExpiresIn;
 
     @Value("${REFRESH_TOKEN_EXPIRES_IN:7d}")

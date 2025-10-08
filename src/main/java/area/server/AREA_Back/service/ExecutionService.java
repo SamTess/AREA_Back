@@ -4,6 +4,7 @@ import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActivationMode;
+import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.ExecutionRepository;
 import io.micrometer.core.instrument.Counter;
@@ -56,6 +57,25 @@ public class ExecutionService {
         execution.setCorrelationId(correlationId);
 
         executionsCreated.increment();
+        return executionRepository.save(execution);
+    }
+
+    @Transactional
+    public Execution createExecutionWithActivationType(ActionInstance actionInstance,
+                                                      ActivationModeType activationModeType,
+                                                      Map<String, Object> inputPayload,
+                                                      UUID correlationId) {
+        Execution execution = new Execution();
+        execution.setActionInstance(actionInstance);
+        // We set activation mode to null for this simplified version
+        // In a full implementation, you might want to create a temporary ActivationMode
+        execution.setActivationMode(null);
+        execution.setArea(actionInstance.getArea());
+        execution.setStatus(ExecutionStatus.QUEUED);
+        execution.setAttempt(0);
+        execution.setInputPayload(inputPayload);
+        execution.setCorrelationId(correlationId);
+
         return executionRepository.save(execution);
     }
 

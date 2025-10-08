@@ -38,6 +38,7 @@ public class GitHubActionService {
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
     private final UserRepository userRepository;
     private final TokenEncryptionService tokenEncryptionService;
+    private final ServiceAccountService serviceAccountService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     private final MeterRegistry meterRegistry;
@@ -432,6 +433,12 @@ public class GitHubActionService {
     }
 
     private String getGitHubToken(UUID userId) {
+        Optional<String> serviceToken = serviceAccountService.getAccessToken(userId, GITHUB_PROVIDER_KEY);
+        if (serviceToken.isPresent()) {
+            log.debug("GitHub token found in service accounts for user: {}", userId);
+            return serviceToken.get();
+        }
+
         Optional<area.server.AREA_Back.entity.User> userOpt =
             userRepository.findById(userId);
         if (userOpt.isEmpty()) {

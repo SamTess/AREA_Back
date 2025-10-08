@@ -10,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 @Entity
@@ -36,12 +37,15 @@ public class ActionLink {
     private Area area;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> mapping;
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> mapping = new HashMap<>();
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> condition;
+
+    @Column(name = "link_type", nullable = false)
+    private String linkType = "chain"; // chain, conditional, parallel, sequential
 
     @Column(name = "\"order\"", nullable = false)
     private Integer order = 0;

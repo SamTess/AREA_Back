@@ -3,6 +3,8 @@ package area.server.AREA_Back.worker;
 import area.server.AREA_Back.config.RedisConfig;
 import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;
+import area.server.AREA_Back.repository.ExecutionRepository;
+import area.server.AREA_Back.service.ActionLinkService;
 import area.server.AREA_Back.service.ExecutionService;
 import area.server.AREA_Back.service.RedisEventService;
 import io.micrometer.core.instrument.Counter;
@@ -34,9 +36,11 @@ public class AreaReactionWorker {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisEventService redisEventService;
     private final ExecutionService executionService;
+    private final ExecutionRepository executionRepository;
     private final ReactionExecutor reactionExecutor;
     private final RedisConfig redisConfig;
     private final MeterRegistry meterRegistry;
+    private final ActionLinkService actionLinkService;
     private volatile boolean running = true;
 
     private Counter processedEventsCounter;
@@ -205,27 +209,39 @@ public class AreaReactionWorker {
 
     @Async("reactionTaskExecutor")
     public void processExecution(final Execution execution) {
+        Execution fullExecution = executionRepository.findByIdWithActionInstance(execution.getId())
+            .orElseThrow(() -> new IllegalStateException("Execution not found: " + execution.getId()));
+
         try {
             log.info("Processing execution: id={ }, actionInstance={ }, attempt={ }",
-                    execution.getId(),
-                    execution.getActionInstance().getId(),
-                    execution.getAttempt());
-            executionService.markExecutionAsStarted(execution.getId());
-            ExecutionResult result = reactionExecutor.executeReaction(execution);
+                    fullExecution.getId(),
+                    fullExecution.getActionInstance().getId(),
+                    fullExecution.getAttempt());
+            executionService.markExecutionAsStarted(fullExecution.getId());
+            ExecutionResult result = reactionExecutor.executeReaction(fullExecution);
             executionService.updateExecutionWithResult(result);
             successfulExecutionsCounter.increment();
             log.info("Completed execution: id={ }, status={ }, duration={ }ms",
-                    execution.getId(),
+                    fullExecution.getId(),
                     result.getStatus(),
                     result.getDurationMs());
 
             processedExecutionsCounter.increment();
+            if ("SUCCESS".equals(result.getStatus().name())) {
+                try {
+                    actionLinkService.triggerLinkedActions(fullExecution);
+                    log.info("Successfully triggered linked actions for execution: { }", fullExecution.getId());
+                } catch (Exception linkError) {
+                    log.error("Failed to trigger linked actions for execution { }: { }",
+                             fullExecution.getId(), linkError.getMessage(), linkError);
+                }
+            }
 
         } catch (Exception e) {
-            log.error("Error processing execution { }: { }", execution.getId(), e.getMessage(), e);
+            log.error("Error processing execution { }: { }", fullExecution.getId(), e.getMessage(), e);
             try {
                 ExecutionResult failureResult = ExecutionResult.failure(
-                    execution.getId(),
+                    fullExecution.getId(),
                     "Worker processing error: " + e.getMessage(),
                     Map.of("workerError", e.getClass().getSimpleName(), "timestamp", LocalDateTime.now().toString()),
                     execution.getStartedAt(),

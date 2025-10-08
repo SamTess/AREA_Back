@@ -24,7 +24,7 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getAccessTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, userId.toString(), ttl);
-        log.debug("Stored access token for user: { }", userId);
+        log.debug("Stored access token for user");
     }
 
     public void storeRefreshToken(UUID userId, String refreshToken) {
@@ -32,7 +32,7 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getRefreshTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, refreshToken, ttl);
-        log.debug("Stored refresh token for user: { }", userId);
+        log.debug("Stored refresh token for user");
     }
 
     public boolean isAccessTokenValid(String accessToken) {
@@ -76,7 +76,7 @@ public class RedisTokenService {
         boolean isValid = storedToken != null && storedToken.equals(refreshToken);
 
         if (!isValid) {
-            log.debug("Refresh token validation failed for user: { }", userId);
+            log.debug("Refresh token validation failed");
         }
 
         return isValid;
@@ -91,19 +91,19 @@ public class RedisTokenService {
     public void deleteRefreshToken(UUID userId) {
         String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
         Boolean deleted = redisTemplate.delete(key);
-        log.debug("Deleted refresh token for user { }: { }", userId, deleted);
+        log.debug("Deleted refresh token: { }", deleted);
     }
 
     public void deleteAllTokensForUser(UUID userId, String accessToken) {
         deleteAccessToken(accessToken);
         deleteRefreshToken(userId);
-        log.debug("Deleted all tokens for user: { }", userId);
+        log.debug("Deleted all tokens for user");
     }
 
     public void rotateRefreshToken(UUID userId, String newRefreshToken) {
         deleteRefreshToken(userId);
         storeRefreshToken(userId, newRefreshToken);
-        log.debug("Rotated refresh token for user: { }", userId);
+        log.debug("Rotated refresh token for user");
     }
 
     public void cleanupExpiredTokens() {

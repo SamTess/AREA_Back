@@ -12,6 +12,10 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 /**
  * Service for managing cached service data.
  * Provides caching functionality with fallback to database when Redis is unavailable.
@@ -23,6 +27,19 @@ public class ServiceCacheService {
     @Autowired
     private ServiceRepository serviceRepository;
 
+    private final MeterRegistry meterRegistry;
+
+    private Counter getAllServicesCalls;
+    private Counter getEnabledServicesCalls;
+    private Counter cacheEvictions;
+    private Counter databaseFallbacks;
+    private Counter cacheAvailabilityChecks;
+
+    @Autowired
+    public ServiceCacheService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     /**
      * Gets all services from cache or database as fallback.
      * Cache key: 'all-services'
@@ -33,6 +50,8 @@ public class ServiceCacheService {
     @Cacheable(value = "services-catalog", key = "'all-services'")
     public List<ServiceResponse> getAllServicesCached() {
         log.debug("Fetching all services from database (cache miss or unavailable)");
+        getAllServicesCalls.increment();
+        databaseFallbacks.increment();
         try {
             List<Service> services = serviceRepository.findAll();
             return services.stream()
@@ -54,6 +73,8 @@ public class ServiceCacheService {
     @Cacheable(value = "services-catalog", key = "'enabled-services'")
     public List<ServiceResponse> getEnabledServicesCached() {
         log.debug("Fetching enabled services from database (cache miss or unavailable)");
+        getEnabledServicesCalls.increment();
+        databaseFallbacks.increment();
         try {
             List<Service> services = serviceRepository.findAllEnabledServices();
             return services.stream()
@@ -72,6 +93,7 @@ public class ServiceCacheService {
     @CacheEvict(value = "services-catalog", allEntries = true)
     public void invalidateServicesCache() {
         log.info("Invalidating services cache");
+        cacheEvictions.increment();
     }
 
     /**
@@ -94,8 +116,8 @@ public class ServiceCacheService {
      * @return true if Redis is available, false otherwise
      */
     public boolean isCacheAvailable() {
+        cacheAvailabilityChecks.increment();
         try {
-            // Try to access cache - this will fail if Redis is down
             getAllServicesCached();
             return true;
         } catch (RedisConnectionFailureException e) {
@@ -126,5 +148,28 @@ public class ServiceCacheService {
         response.setCreatedAt(service.getCreatedAt());
         response.setUpdatedAt(service.getUpdatedAt());
         return response;
+    }
+
+    @PostConstruct
+    private void init() {
+        getAllServicesCalls = Counter.builder("service_cache.get_all_services.calls")
+                .description("Total number of getAllServicesCached calls")
+                .register(meterRegistry);
+
+        getEnabledServicesCalls = Counter.builder("service_cache.get_enabled_services.calls")
+                .description("Total number of getEnabledServicesCached calls")
+                .register(meterRegistry);
+
+        cacheEvictions = Counter.builder("service_cache.evictions")
+                .description("Total number of cache evictions")
+                .register(meterRegistry);
+
+        databaseFallbacks = Counter.builder("service_cache.database_fallbacks")
+                .description("Total number of database fallbacks when cache fails")
+                .register(meterRegistry);
+
+        cacheAvailabilityChecks = Counter.builder("service_cache.availability_checks")
+                .description("Total number of cache availability checks")
+                .register(meterRegistry);
     }
 }

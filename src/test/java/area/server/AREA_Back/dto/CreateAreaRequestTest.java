@@ -144,4 +144,90 @@ class CreateAreaRequestTest {
         Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
         assertTrue(violations.isEmpty()); // No length restriction on description
     }
+
+    @Test
+    void testCreateAreaRequestWithSpecialCharactersInName() {
+        createAreaRequest.setName("Test Area with @#$%^&*()!");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testCreateAreaRequestWithUnicodeCharactersInName() {
+        createAreaRequest.setName("Test Area with ñáéíóú 中文 🚀");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testCreateAreaRequestWithSpecialCharactersInDescription() {
+        createAreaRequest.setDescription("Description with @#$%^&*()! and symbols");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testCreateAreaRequestWithUnicodeCharactersInDescription() {
+        createAreaRequest.setDescription("Description with ñáéíóú 中文 🚀");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testCreateAreaRequestWithWhitespaceOnlyName() {
+        createAreaRequest.setName("   ");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Area name is required")));
+    }
+
+    @Test
+    void testCreateAreaRequestWithWhitespaceOnlyDescription() {
+        createAreaRequest.setDescription("   ");
+        Set<ConstraintViolation<CreateAreaRequest>> violations = validator.validate(createAreaRequest);
+        assertTrue(violations.isEmpty()); // Whitespace-only description is allowed
+    }
+
+    @Test
+    void testCreateAreaRequestNotEqualsWithDifferentUserId() {
+        UUID userId1 = UUID.randomUUID();
+        UUID userId2 = UUID.randomUUID();
+        
+        CreateAreaRequest request1 = new CreateAreaRequest("Test", "Desc", userId1);
+        CreateAreaRequest request2 = new CreateAreaRequest("Test", "Desc", userId2);
+        
+        assertFalse(request1.equals(request2));
+    }
+
+    @Test
+    void testCreateAreaRequestNotEqualsWithDifferentName() {
+        UUID userId = UUID.randomUUID();
+        
+        CreateAreaRequest request1 = new CreateAreaRequest("Test1", "Desc", userId);
+        CreateAreaRequest request2 = new CreateAreaRequest("Test2", "Desc", userId);
+        
+        assertFalse(request1.equals(request2));
+    }
+
+    @Test
+    void testCreateAreaRequestNotEqualsWithDifferentDescription() {
+        UUID userId = UUID.randomUUID();
+        
+        CreateAreaRequest request1 = new CreateAreaRequest("Test", "Desc1", userId);
+        CreateAreaRequest request2 = new CreateAreaRequest("Test", "Desc2", userId);
+        
+        assertFalse(request1.equals(request2));
+    }
+
+    @Test
+    void testCreateAreaRequestEqualsWithNull() {
+        assertFalse(createAreaRequest.equals(null));
+    }
+
+    @Test
+    void testCreateAreaRequestHashCodeConsistency() {
+        int hash1 = createAreaRequest.hashCode();
+        int hash2 = createAreaRequest.hashCode();
+        assertEquals(hash1, hash2);
+    }
 }

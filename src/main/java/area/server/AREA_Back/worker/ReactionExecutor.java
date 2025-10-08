@@ -5,6 +5,8 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.service.GitHubActionService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -41,8 +43,10 @@ public class ReactionExecutor {
 
     private final RetryManager retryManager;
     private final GitHubActionService gitHubActionService;
+    private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         LocalDateTime startTime = LocalDateTime.now();
         try {
             log.info("Starting execution of reaction for execution { } (attempt { })",
@@ -67,6 +71,9 @@ public class ReactionExecutor {
                     execution.getId(),
                     java.time.Duration.between(startTime, LocalDateTime.now()).toMillis());
 
+            sample.stop(Timer.builder("area_reaction_execution_duration")
+                    .tag("status", "success")
+                    .register(meterRegistry));
             return ExecutionResult.success(execution.getId(), result, startTime);
 
         } catch (Exception e) {
@@ -81,6 +88,9 @@ public class ReactionExecutor {
 
             Map<String, Object> errorDetails = createErrorDetails(e, execution);
 
+            sample.stop(Timer.builder("area_reaction_execution_duration")
+                    .tag("status", "failure")
+                    .register(meterRegistry));
             return ExecutionResult.failure(
                 execution.getId(),
                 e.getMessage(),

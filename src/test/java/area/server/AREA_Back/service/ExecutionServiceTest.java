@@ -7,10 +7,10 @@ import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.ExecutionRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,7 +36,8 @@ class ExecutionServiceTest {
     @Mock
     private ExecutionRepository executionRepository;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
+
     private ExecutionService executionService;
 
     private ActionInstance actionInstance;
@@ -46,6 +47,10 @@ class ExecutionServiceTest {
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        executionService = new ExecutionService(executionRepository, meterRegistry);
+        executionService.init();
+
         area = new Area();
         area.setId(UUID.randomUUID());
 

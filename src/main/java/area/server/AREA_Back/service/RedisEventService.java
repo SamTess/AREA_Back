@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,8 +24,34 @@ public class RedisEventService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisConfig redisConfig;
+    private final MeterRegistry meterRegistry;
+
+    private Counter publishAreaEventCalls;
+    private Counter publishExecutionEventCalls;
+    private Counter streamInitializationCalls;
+    private Counter publishFailures;
+
+    @PostConstruct
+    public void initMetrics() {
+        publishAreaEventCalls = Counter.builder("redis_event.publish_area.calls")
+                .description("Total number of area event publish calls")
+                .register(meterRegistry);
+
+        publishExecutionEventCalls = Counter.builder("redis_event.publish_execution.calls")
+                .description("Total number of execution event publish calls")
+                .register(meterRegistry);
+
+        streamInitializationCalls = Counter.builder("redis_event.stream_init.calls")
+                .description("Total number of stream initialization calls")
+                .register(meterRegistry);
+
+        publishFailures = Counter.builder("redis_event.publish_failures")
+                .description("Total number of event publish failures")
+                .register(meterRegistry);
+    }
 
     public String publishAreaEvent(AreaEventMessage message) {
+        publishAreaEventCalls.increment();
         try {
             ObjectRecord<String, AreaEventMessage> record = StreamRecords
                     .newRecord()
@@ -43,6 +73,7 @@ public class RedisEventService {
             return returnValue;
 
         } catch (Exception e) {
+            publishFailures.increment();
             log.error("Failed to publish event to Redis stream: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to publish event to Redis stream", e);
         }
@@ -50,12 +81,14 @@ public class RedisEventService {
 
     public String publishExecutionEvent(UUID executionId, UUID actionInstanceId,
                                       UUID areaId, Map<String, Object> payload) {
+        publishExecutionEventCalls.increment();
         AreaEventMessage message = AreaEventMessage.fromExecution(
                 executionId, actionInstanceId, areaId, payload);
         return publishAreaEvent(message);
     }
 
     public void initializeStream() {
+        streamInitializationCalls.increment();
         try {
             try {
                 redisTemplate.opsForStream().info(redisConfig.getAreasEventsStream());

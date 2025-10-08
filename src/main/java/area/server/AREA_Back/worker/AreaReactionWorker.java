@@ -7,6 +7,8 @@ import area.server.AREA_Back.repository.ExecutionRepository;
 import area.server.AREA_Back.service.ActionLinkService;
 import area.server.AREA_Back.service.ExecutionService;
 import area.server.AREA_Back.service.RedisEventService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.Consumer;
@@ -37,14 +39,29 @@ public class AreaReactionWorker {
     private final ExecutionRepository executionRepository;
     private final ReactionExecutor reactionExecutor;
     private final RedisConfig redisConfig;
+    private final MeterRegistry meterRegistry;
     private final ActionLinkService actionLinkService;
     private volatile boolean running = true;
+
+    private Counter processedEventsCounter;
+    private Counter processedExecutionsCounter;
+    private Counter processedRetriesCounter;
+    private Counter cleanedTimeoutsCounter;
+    private Counter successfulExecutionsCounter;
+    private Counter failedExecutionsCounter;
 
     @PostConstruct
     public void initialize() {
         log.info("Initializing AREA Reaction Worker: { }", redisConfig.getAreasConsumerName());
         redisEventService.initializeStream();
         log.info("AREA Reaction Worker initialized successfully");
+
+        processedEventsCounter = meterRegistry.counter("area_worker_events_processed_total");
+        processedExecutionsCounter = meterRegistry.counter("area_worker_executions_processed_total");
+        processedRetriesCounter = meterRegistry.counter("area_worker_retries_processed_total");
+        cleanedTimeoutsCounter = meterRegistry.counter("area_worker_timeouts_cleaned_total");
+        successfulExecutionsCounter = meterRegistry.counter("area_worker_executions_successful_total");
+        failedExecutionsCounter = meterRegistry.counter("area_worker_executions_failed_total");
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -62,6 +79,7 @@ public class AreaReactionWorker {
             );
             if (records != null && !records.isEmpty()) {
                 log.debug("Processing { } events from Redis stream", records.size());
+                processedEventsCounter.increment(records.size());
                 for (var record : records) {
                     processEventRecord(record);
                 }
@@ -82,6 +100,7 @@ public class AreaReactionWorker {
             List<Execution> queuedExecutions = executionService.getQueuedExecutions();
             if (!queuedExecutions.isEmpty()) {
                 log.info("Processing { } queued executions", queuedExecutions.size());
+                processedExecutionsCounter.increment(queuedExecutions.size());
                 for (Execution execution : queuedExecutions) {
                     processExecution(execution);
                 }
@@ -104,6 +123,7 @@ public class AreaReactionWorker {
 
             if (!retryExecutions.isEmpty()) {
                 log.info("Processing { } executions ready for retry", retryExecutions.size());
+                processedRetriesCounter.increment(retryExecutions.size());
                 for (Execution execution : retryExecutions) {
                     processExecution(execution);
                 }
@@ -126,6 +146,7 @@ public class AreaReactionWorker {
             List<Execution> timedOutExecutions = executionService.getTimedOutExecutions(timeoutThreshold);
             if (!timedOutExecutions.isEmpty()) {
                 log.warn("Found { } timed out executions, marking as failed", timedOutExecutions.size());
+                cleanedTimeoutsCounter.increment(timedOutExecutions.size());
                 for (Execution execution : timedOutExecutions) {
                     ExecutionResult failureResult = ExecutionResult.failure(
                         execution.getId(),
@@ -199,11 +220,13 @@ public class AreaReactionWorker {
             executionService.markExecutionAsStarted(fullExecution.getId());
             ExecutionResult result = reactionExecutor.executeReaction(fullExecution);
             executionService.updateExecutionWithResult(result);
+            successfulExecutionsCounter.increment();
             log.info("Completed execution: id={ }, status={ }, duration={ }ms",
                     fullExecution.getId(),
                     result.getStatus(),
                     result.getDurationMs());
 
+            processedExecutionsCounter.increment();
             if ("SUCCESS".equals(result.getStatus().name())) {
                 try {
                     actionLinkService.triggerLinkedActions(fullExecution);
@@ -226,6 +249,8 @@ public class AreaReactionWorker {
                     null
                 );
                 executionService.updateExecutionWithResult(failureResult);
+
+                failedExecutionsCounter.increment();
             } catch (Exception updateError) {
                 log.error("Failed to update execution after processing error: { }", updateError.getMessage());
             }

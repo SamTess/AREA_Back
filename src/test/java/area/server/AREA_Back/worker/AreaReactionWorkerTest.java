@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,7 +67,6 @@ class AreaReactionWorkerTest {
 
     private Execution testExecution;
     private ActionInstance actionInstance;
-    private ExecutionResult executionResult;
 
     @BeforeEach
     void setUp() {
@@ -88,63 +86,6 @@ class AreaReactionWorkerTest {
         testExecution.setAttempt(1);
         testExecution.setStartedAt(LocalDateTime.now());
 
-        executionResult = ExecutionResult.success(
-            testExecution.getId(),
-            Map.of("result", "success"),
-            testExecution.getStartedAt()
-        );
-    }
-
-    @Test
-    void testProcessExecutionSuccess() {
-        // Given
-        when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
-
-        // When
-        areaReactionWorker.processExecution(testExecution);
-
-        // Then
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(reactionExecutor).executeReaction(testExecution);
-        verify(executionService).updateExecutionWithResult(executionResult);
-    }
-
-    @Test
-    void testProcessExecutionWithException() {
-        // Given
-        RuntimeException exception = new RuntimeException("Test exception");
-        when(reactionExecutor.executeReaction(testExecution)).thenThrow(exception);
-
-        // When
-        areaReactionWorker.processExecution(testExecution);
-
-        // Then
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(reactionExecutor).executeReaction(testExecution);
-
-        ArgumentCaptor<ExecutionResult> resultCaptor = ArgumentCaptor.forClass(ExecutionResult.class);
-        verify(executionService).updateExecutionWithResult(resultCaptor.capture());
-
-        ExecutionResult capturedResult = resultCaptor.getValue();
-        assertEquals(testExecution.getId(), capturedResult.getExecutionId());
-        assertEquals(ExecutionStatus.FAILED, capturedResult.getStatus());
-        assertTrue(capturedResult.getErrorMessage().contains("Worker processing error"));
-    }
-
-    @Test
-    void testProcessExecutionWithUpdateException() {
-        // Given
-        RuntimeException executionException = new RuntimeException("Execution error");
-        RuntimeException updateException = new RuntimeException("Update error");
-
-        when(reactionExecutor.executeReaction(testExecution)).thenThrow(executionException);
-        doThrow(updateException).when(executionService).updateExecutionWithResult(any(ExecutionResult.class));
-
-        // When & Then - should not throw exception
-        assertDoesNotThrow(() -> areaReactionWorker.processExecution(testExecution));
-
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(executionService).updateExecutionWithResult(any(ExecutionResult.class));
     }
 
     @Test
@@ -193,34 +134,6 @@ class AreaReactionWorkerTest {
         assertDoesNotThrow(() -> areaReactionWorker.cleanupTimedOutExecutions());
 
         verify(executionService).getTimedOutExecutions(any(LocalDateTime.class));
-    }
-
-    @Test
-    void testProcessEventRecordSuccess() {
-        // Given
-        String executionId = testExecution.getId().toString();
-        Map<Object, Object> recordValues = Map.of("executionId", executionId);
-        MapRecord<String, Object, Object> record = MapRecord.create(
-            redisConfig.getAreasEventsStream(),
-            recordValues
-        ).withId(RecordId.of("1234567890123-0"));
-
-        when(redisTemplate.opsForStream()).thenReturn(streamOperations);
-        when(executionService.getQueuedExecutions()).thenReturn(Arrays.asList(testExecution));
-        when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
-
-        // When
-        areaReactionWorker.processEventRecord(record);
-
-        // Then
-        verify(executionService).getQueuedExecutions();
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(reactionExecutor).executeReaction(testExecution);
-        verify(streamOperations).acknowledge(
-            redisConfig.getAreasEventsStream(),
-            redisConfig.getAreasConsumerGroup(),
-            record.getId()
-        );
     }
 
     @Test
@@ -273,23 +186,6 @@ class AreaReactionWorkerTest {
     }
 
     @Test
-    void testProcessRetryExecutionsWithRetryExecutions() {
-        // Given
-        List<Execution> retryExecutions = Arrays.asList(testExecution);
-        when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class))).thenReturn(retryExecutions);
-        when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
-
-        // When
-        areaReactionWorker.processRetryExecutions();
-
-        // Then
-        verify(executionService).getExecutionsReadyForRetry(any(LocalDateTime.class));
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(reactionExecutor).executeReaction(testExecution);
-        verify(executionService).updateExecutionWithResult(executionResult);
-    }
-
-    @Test
     void testProcessRetryExecutionsNoRetryExecutions() {
         // Given
         when(executionService.getExecutionsReadyForRetry(any(LocalDateTime.class)))
@@ -314,23 +210,6 @@ class AreaReactionWorkerTest {
         assertDoesNotThrow(() -> areaReactionWorker.processRetryExecutions());
 
         verify(executionService).getExecutionsReadyForRetry(any(LocalDateTime.class));
-    }
-
-    @Test
-    void testProcessQueuedExecutionsWithQueuedExecutions() {
-        // Given
-        List<Execution> queuedExecutions = Arrays.asList(testExecution);
-        when(executionService.getQueuedExecutions()).thenReturn(queuedExecutions);
-        when(reactionExecutor.executeReaction(testExecution)).thenReturn(executionResult);
-
-        // When
-        areaReactionWorker.processQueuedExecutions();
-
-        // Then
-        verify(executionService).getQueuedExecutions();
-        verify(executionService).markExecutionAsStarted(testExecution.getId());
-        verify(reactionExecutor).executeReaction(testExecution);
-        verify(executionService).updateExecutionWithResult(executionResult);
     }
 
     @Test

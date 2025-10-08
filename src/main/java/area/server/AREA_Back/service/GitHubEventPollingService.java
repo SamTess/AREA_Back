@@ -9,10 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service for checking GitHub events (polling-based implementation)
@@ -28,14 +31,19 @@ public class GitHubEventPollingService {
     private final GitHubActionService gitHubActionService;
     private final ActionInstanceRepository actionInstanceRepository;
     private final ActivationModeRepository activationModeRepository;
+    private final ExecutionTriggerService executionTriggerService;
 
-    @Scheduled(fixedRate = 300000)
+    private final Map<UUID, LocalDateTime> lastPollTimes = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedRate = 10000)
     public void pollGitHubEvents() {
-        log.debug("Starting GitHub events polling cycle");
+        log.info("Starting GitHub events polling cycle");
 
         try {
             List<ActionInstance> githubActionInstances = actionInstanceRepository
                 .findActiveGitHubActionInstances();
+
+            log.info("Found {} GitHub action instances to check", githubActionInstances.size());
 
             for (ActionInstance actionInstance : githubActionInstances) {
                 try {
@@ -46,14 +54,15 @@ public class GitHubEventPollingService {
                 }
             }
 
-            log.debug("Completed GitHub events polling cycle, processed { } instances",
+            log.info("Completed GitHub events polling cycle, processed {} instances",
                      githubActionInstances.size());
 
         } catch (Exception e) {
-            log.error("Failed to complete GitHub events polling cycle: { }", e.getMessage(), e);
+            log.error("Failed to complete GitHub events polling cycle: {}", e.getMessage(), e);
         }
     }
 
+    @Transactional
     private void processActionInstance(ActionInstance actionInstance) {
         if (!actionInstance.getEnabled()) {
             return;
@@ -68,7 +77,16 @@ public class GitHubEventPollingService {
 
         ActivationMode activationMode = activationModes.get(0);
 
+        if (!shouldPollNow(activationMode)) {
+            log.debug("Skipping poll for action instance {} - interval not elapsed",
+                     actionInstance.getId());
+            return;
+        }
+
         LocalDateTime lastCheck = calculateLastCheckTime(activationMode);
+
+        log.info("Polling GitHub events for action instance {} with interval {} seconds",
+                 actionInstance.getId(), getPollingInterval(activationMode));
 
         try {
             List<Map<String, Object>> events = gitHubActionService.checkGitHubEvents(
@@ -79,24 +97,54 @@ public class GitHubEventPollingService {
             );
 
             if (!events.isEmpty()) {
-                log.info("Found { } new GitHub events for action instance { }",
+                log.info("Found {} new GitHub events for action instance {}",
                         events.size(), actionInstance.getId());
 
-                // TODO : Trigger the linked reactions for each event
-                // This would involve creating executions and adding them to the execution queue
                 for (Map<String, Object> event : events) {
-                    log.debug("GitHub event: { }", event);
-                    // Here you would:
-                    // 1. Create an Execution entity
-                    // 2. Set the input payload to the event data
-                    // 3. Queue it for processing by the worker
+                    log.debug("Processing GitHub event: {}", event);
+
+                    try {
+                        executionTriggerService.triggerAreaExecution(
+                            actionInstance,
+                            ActivationModeType.POLL,
+                            event
+                        );
+
+                        log.debug("Successfully triggered execution for GitHub event from action instance {}",
+                                actionInstance.getId());
+
+                    } catch (Exception e) {
+                        log.error("Failed to trigger execution for GitHub event from action instance {}: {}",
+                                actionInstance.getId(), e.getMessage(), e);
+                    }
                 }
             }
 
         } catch (Exception e) {
-            log.error("Failed to check GitHub events for action instance { }: { }",
+            log.error("Failed to check GitHub events for action instance {}: {}",
                      actionInstance.getId(), e.getMessage(), e);
+        } finally {
+            lastPollTimes.put(actionInstance.getId(), LocalDateTime.now());
         }
+    }
+
+    private boolean shouldPollNow(ActivationMode activationMode) {
+        UUID actionInstanceId = activationMode.getActionInstance().getId();
+        LocalDateTime lastPoll = lastPollTimes.get(actionInstanceId);
+
+        if (lastPoll == null) {
+            return true;
+        }
+
+        int intervalSeconds = getPollingInterval(activationMode);
+        LocalDateTime nextPollTime = lastPoll.plusSeconds(intervalSeconds);
+
+        return LocalDateTime.now().isAfter(nextPollTime);
+    }
+
+    private int getPollingInterval(ActivationMode activationMode) {
+        Map<String, Object> config = activationMode.getConfig();
+        return (Integer) config.getOrDefault("interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {

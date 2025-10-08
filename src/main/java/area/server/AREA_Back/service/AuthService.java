@@ -158,6 +158,15 @@ public class AuthService {
         return mapToUserResponse(user);
     }
 
+    public User getCurrentUserEntity(HttpServletRequest request) {
+        UUID userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return null;
+        }
+
+        return userRepository.findById(userId).orElse(null);
+    }
+
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         UUID userId = getUserIdFromRequest(request);
         String accessToken = getTokenFromCookie(request, AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME);

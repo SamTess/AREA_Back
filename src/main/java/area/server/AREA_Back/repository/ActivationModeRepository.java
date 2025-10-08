@@ -35,6 +35,14 @@ public interface ActivationModeRepository extends JpaRepository<ActivationMode, 
     List<ActivationMode> findByTypeAndEnabled(ActivationModeType type, Boolean enabled);
 
     /**
+     * Find enabled activation modes by type with ActionInstance eagerly loaded
+     */
+    @Query("SELECT am FROM ActivationMode am "
+           + "JOIN FETCH am.actionInstance ai "
+           + "WHERE am.type = :type AND am.enabled = :enabled AND ai.enabled = true")
+    List<ActivationMode> findByTypeAndEnabledWithActionInstance(ActivationModeType type, Boolean enabled);
+
+    /**
      * Find all enabled activation modes
      */
     @Query("SELECT am FROM ActivationMode am WHERE am.enabled = true")

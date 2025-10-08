@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -160,10 +161,12 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> getAuthStatus(HttpServletRequest request) {
         try {
             boolean isAuthenticated = authService.isAuthenticated(request);
-            return ResponseEntity.ok(Map.of(
-                "authenticated", isAuthenticated,
-                "timestamp", System.currentTimeMillis()
-            ));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("authenticated", isAuthenticated);
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error checking auth status", e);
             return ResponseEntity.ok(Map.of(
@@ -174,9 +177,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Global exception handler for authentication-related exceptions
-     */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         log.error("Authentication runtime exception", e);
@@ -184,9 +184,6 @@ public class AuthController {
             .body(Map.of("error", e.getMessage()));
     }
 
-    /**
-     * Global exception handler for validation exceptions
-     */
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(
             org.springframework.web.bind.MethodArgumentNotValidException e) {

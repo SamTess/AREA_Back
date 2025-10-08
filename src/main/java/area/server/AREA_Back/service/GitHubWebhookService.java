@@ -1,5 +1,8 @@
 package area.server.AREA_Back.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,42 @@ public class GitHubWebhookService {
 
     private static final int SIGNATURE_PREFIX_LENGTH = 10;
 
+    private final MeterRegistry meterRegistry;
+
+    private Counter webhookCounter;
+    private Counter issuesEventCounter;
+    private Counter pullRequestEventCounter;
+    private Counter pushEventCounter;
+    private Counter pingEventCounter;
+    private Counter webhookProcessingFailures;
+
+    @PostConstruct
+    public void initMetrics() {
+        webhookCounter = Counter.builder("github.webhook.processed")
+                .description("Total number of GitHub webhooks processed")
+                .register(meterRegistry);
+
+        issuesEventCounter = Counter.builder("github.webhook.issues")
+                .description("Total number of GitHub issues events processed")
+                .register(meterRegistry);
+
+        pullRequestEventCounter = Counter.builder("github.webhook.pull_requests")
+                .description("Total number of GitHub pull request events processed")
+                .register(meterRegistry);
+
+        pushEventCounter = Counter.builder("github.webhook.push")
+                .description("Total number of GitHub push events processed")
+                .register(meterRegistry);
+
+        pingEventCounter = Counter.builder("github.webhook.ping")
+                .description("Total number of GitHub ping events processed")
+                .register(meterRegistry);
+
+        webhookProcessingFailures = Counter.builder("github.webhook.failures")
+                .description("Total number of GitHub webhook processing failures")
+                .register(meterRegistry);
+    }
+
     /**
      * Process a GitHub webhook event
      *
@@ -32,6 +71,7 @@ public class GitHubWebhookService {
      */
     public Map<String, Object> processWebhook(UUID userId, String eventType,
         String signature, Map<String, Object> payload) {
+        webhookCounter.increment();
         log.info("Processing GitHub webhook for user { }, event type: { }", userId, eventType);
 
         Map<String, Object> result = new HashMap<>();
@@ -55,15 +95,19 @@ public class GitHubWebhookService {
             }
             switch (safeEventType) {
                 case "issues":
+                    issuesEventCounter.increment();
                     result.putAll(processIssuesEvent(userId, payload));
                     break;
                 case "pull_request":
+                    pullRequestEventCounter.increment();
                     result.putAll(processPullRequestEvent(userId, payload));
                     break;
                 case "push":
+                    pushEventCounter.increment();
                     result.putAll(processPushEvent(userId, payload));
                     break;
                 case "ping":
+                    pingEventCounter.increment();
                     result.putAll(processPingEvent(payload));
                     break;
                 default:
@@ -74,6 +118,7 @@ public class GitHubWebhookService {
             return result;
 
         } catch (Exception e) {
+            webhookProcessingFailures.increment();
             log.error("Error processing GitHub webhook: { }", e.getMessage(), e);
             result.put("status", "error");
             result.put("error", e.getMessage());
@@ -177,5 +222,9 @@ public class GitHubWebhookService {
         log.info("GitHub ping event processed successfully");
 
         return result;
+    }
+
+    public void init() {
+        webhookCounter = meterRegistry.counter("webhook.counter");
     }
 }

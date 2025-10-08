@@ -4,17 +4,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 /**
  * Tests for the token encryption service
  */
 class TokenEncryptionServiceTest {
 
+    private MeterRegistry meterRegistry;
+
     private TokenEncryptionService tokenEncryptionService;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         // Initialize with an empty key to trigger automatic generation
-        tokenEncryptionService = new TokenEncryptionService("");
+        tokenEncryptionService = new TokenEncryptionService("", meterRegistry);
+        // Initialize metrics manually since @PostConstruct is not called in unit tests
+        tokenEncryptionService.initMetrics();
     }
 
     @Test
@@ -89,7 +97,9 @@ class TokenEncryptionServiceTest {
     @Test
     void testWithProvidedKey() {
         String providedKey = TokenEncryptionService.generateNewKeyAsBase64();
-        TokenEncryptionService serviceWithKey = new TokenEncryptionService(providedKey);
+        TokenEncryptionService serviceWithKey = new TokenEncryptionService(providedKey, meterRegistry);
+        // Initialize metrics manually since @PostConstruct is not called in unit tests
+        serviceWithKey.initMetrics();
 
         String originalToken = "test_with_provided_key";
         String encrypted = serviceWithKey.encryptToken(originalToken);

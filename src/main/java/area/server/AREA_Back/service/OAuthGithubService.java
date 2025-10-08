@@ -27,6 +27,10 @@ import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 
+import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Slf4j
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-id")
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.github.client-secret")
@@ -45,11 +49,20 @@ public class OAuthGithubService extends OAuthService {
     @Autowired
     private UserRepository userRepository;
 
+    private final MeterRegistry meterRegistry;
+
+    private Counter oauthLoginSuccessCounter;
+    private Counter oauthLoginFailureCounter;
+    private Counter authenticateCalls;
+    private Counter tokenExchangeCalls;
+    private Counter tokenExchangeFailures;
+
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
         JwtService jwtService,
+        MeterRegistry meterRegistry,
         RedisTokenService redisTokenService,
         PasswordEncoder passwordEncoder
     ) {
@@ -64,19 +77,51 @@ public class OAuthGithubService extends OAuthService {
             jwtService
         );
         this.redirectBaseUrl = redirectBaseUrl;
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    private void initMetrics() {
+        this.oauthLoginSuccessCounter = Counter.builder("oauth.github.login.success")
+            .description("Number of successful GitHub OAuth logins")
+            .register(meterRegistry);
+
+        this.oauthLoginFailureCounter = Counter.builder("oauth.github.login.failure")
+            .description("Number of failed GitHub OAuth logins")
+            .register(meterRegistry);
+
+        this.authenticateCalls = Counter.builder("oauth.github.authenticate.calls")
+            .description("Total number of GitHub OAuth authenticate calls")
+            .register(meterRegistry);
+
+        this.tokenExchangeCalls = Counter.builder("oauth.github.token_exchange.calls")
+            .description("Total number of GitHub token exchange calls")
+            .register(meterRegistry);
+
+        this.tokenExchangeFailures = Counter.builder("oauth.github.token_exchange.failures")
+            .description("Total number of GitHub token exchange failures")
+            .register(meterRegistry);
         this.redisTokenService = redisTokenService;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response) {
-        String githubAccessToken = exchangeCodeForToken(request.getAuthorizationCode());
-        UserProfileData profileData = fetchUserProfile(githubAccessToken);
-        if (profileData.email == null || profileData.email.isEmpty()) {
-            throw new RuntimeException("GitHub account email is required for authentication");
+        authenticateCalls.increment();
+        try {
+            String githubAccessToken = exchangeCodeForToken(request.getAuthorizationCode());
+            UserProfileData profileData = fetchUserProfile(githubAccessToken);
+            if (profileData.email == null || profileData.email.isEmpty()) {
+                oauthLoginFailureCounter.increment();
+                throw new RuntimeException("GitHub account email is required for authentication");
+            }
+            UserOAuthIdentity oauth = handleUserAuthentication(profileData, githubAccessToken);
+            oauthLoginSuccessCounter.increment();
+            return generateAuthResponse(oauth, response);
+        } catch (Exception e) {
+            oauthLoginFailureCounter.increment();
+            throw e;
         }
-        UserOAuthIdentity oauth = handleUserAuthentication(profileData, githubAccessToken);
-        return generateAuthResponse(oauth, response);
     }
 
     public UserOAuthIdentity linkToExistingUser(User existingUser, String authorizationCode) {
@@ -131,36 +176,44 @@ public class OAuthGithubService extends OAuthService {
     }
 
     private String exchangeCodeForToken(String authorizationCode) {
-        String tokenUrl = "https://github.com/login/oauth/access_token";
+        tokenExchangeCalls.increment();
+        try {
+            String tokenUrl = "https://github.com/login/oauth/access_token";
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
 
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", this.clientId);
-        body.add("client_secret", this.clientSecret);
-        body.add("code", authorizationCode);
-        body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("client_id", this.clientId);
+            body.add("client_secret", this.clientSecret);
+            body.add("code", authorizationCode);
+            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
 
-        HttpEntity<MultiValueMap<String, String>> githubRequest = new HttpEntity<>(body, headers);
+            HttpEntity<MultiValueMap<String, String>> githubRequest = new HttpEntity<>(body, headers);
 
-        ResponseEntity<java.util.Map<String, Object>> tokenResponse = restTemplate.exchange(
-            tokenUrl,
-            HttpMethod.POST,
-            githubRequest,
-            new ParameterizedTypeReference<java.util.Map<String, Object>>() { }
-        );
+            ResponseEntity<java.util.Map<String, Object>> tokenResponse = restTemplate.exchange(
+                tokenUrl,
+                HttpMethod.POST,
+                githubRequest,
+                new ParameterizedTypeReference<java.util.Map<String, Object>>() { }
+            );
 
-        if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
-            throw new RuntimeException("Failed to exchange token with GitHub");
+            if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
+                tokenExchangeFailures.increment();
+                throw new RuntimeException("Failed to exchange token with GitHub");
+            }
+
+            Object githubAccessTokenObj = tokenResponse.getBody().get("access_token");
+            if (githubAccessTokenObj == null) {
+                tokenExchangeFailures.increment();
+                throw new RuntimeException("No access_token in GitHub response");
+            }
+            return githubAccessTokenObj.toString();
+        } catch (Exception e) {
+            tokenExchangeFailures.increment();
+            throw e;
         }
-
-        Object githubAccessTokenObj = tokenResponse.getBody().get("access_token");
-        if (githubAccessTokenObj == null) {
-            throw new RuntimeException("No access_token in GitHub response");
-        }
-        return githubAccessTokenObj.toString();
     }
 
     private static class UserProfileData {

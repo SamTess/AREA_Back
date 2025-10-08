@@ -5,6 +5,9 @@ import area.server.AREA_Back.entity.ActivationMode;
 import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.repository.ActionInstanceRepository;
 import area.server.AREA_Back.repository.ActivationModeRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,12 +34,33 @@ public class GitHubEventPollingService {
     private final GitHubActionService gitHubActionService;
     private final ActionInstanceRepository actionInstanceRepository;
     private final ActivationModeRepository activationModeRepository;
+    private final MeterRegistry meterRegistry;
+
+    private Counter pollingCycles;
+    private Counter eventsFound;
+    private Counter pollingFailures;
+
+    @PostConstruct
+    public void initMetrics() {
+        pollingCycles = Counter.builder("github.polling.cycles")
+                .description("Total number of GitHub polling cycles executed")
+                .register(meterRegistry);
+
+        eventsFound = Counter.builder("github.polling.events_found")
+                .description("Total number of GitHub events found during polling")
+                .register(meterRegistry);
+
+        pollingFailures = Counter.builder("github.polling.failures")
+                .description("Total number of GitHub polling failures")
+                .register(meterRegistry);
+    }
     private final ExecutionTriggerService executionTriggerService;
 
     private final Map<UUID, LocalDateTime> lastPollTimes = new ConcurrentHashMap<>();
 
     @Scheduled(fixedRate = 10000)
     public void pollGitHubEvents() {
+        pollingCycles.increment();
         log.info("Starting GitHub events polling cycle");
 
         try {
@@ -49,6 +73,7 @@ public class GitHubEventPollingService {
                 try {
                     processActionInstance(actionInstance);
                 } catch (Exception e) {
+                    pollingFailures.increment();
                     log.error("Failed to process GitHub action instance { }: { }",
                              actionInstance.getId(), e.getMessage(), e);
                 }
@@ -58,7 +83,8 @@ public class GitHubEventPollingService {
                      githubActionInstances.size());
 
         } catch (Exception e) {
-            log.error("Failed to complete GitHub events polling cycle: {}", e.getMessage(), e);
+            pollingFailures.increment();
+            log.error("Failed to complete GitHub events polling cycle: { }", e.getMessage(), e);
         }
     }
 
@@ -97,7 +123,8 @@ public class GitHubEventPollingService {
             );
 
             if (!events.isEmpty()) {
-                log.info("Found {} new GitHub events for action instance {}",
+                eventsFound.increment(events.size());
+                log.info("Found { } new GitHub events for action instance { }",
                         events.size(), actionInstance.getId());
 
                 for (Map<String, Object> event : events) {

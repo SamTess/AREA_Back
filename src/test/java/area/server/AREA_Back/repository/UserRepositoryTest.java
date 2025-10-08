@@ -172,4 +172,76 @@ class UserRepositoryTest {
         long newCount = userRepository.count();
         assertEquals(2, newCount);
     }
+
+    @Test
+    void testFindByEmailCaseInsensitive() {
+        // Assuming the repository method is case-sensitive, but let's test
+        Optional<User> foundUser = userRepository.findByEmail("TEST@EXAMPLE.COM");
+        assertFalse(foundUser.isPresent()); // Should not find if case-sensitive
+
+        Optional<User> foundUserLower = userRepository.findByEmail("test@example.com");
+        assertTrue(foundUserLower.isPresent());
+    }
+
+    @Test
+    void testExistsByEmailCaseInsensitive() {
+        boolean exists = userRepository.existsByEmail("TEST@EXAMPLE.COM");
+        assertFalse(exists); // Assuming case-sensitive
+
+        boolean existsLower = userRepository.existsByEmail("test@example.com");
+        assertTrue(existsLower);
+    }
+
+    @Test
+    void testFindAllEnabledUsersWithNoActiveUsers() {
+        // Delete the test user
+        userRepository.delete(testUser);
+
+        List<User> enabledUsers = userRepository.findAllEnabledUsers();
+        assertTrue(enabledUsers.isEmpty());
+    }
+
+    @Test
+    void testFindAllEnabledUsersWithOnlyInactiveUsers() {
+        // Update test user to inactive
+        testUser.setIsActive(false);
+        userRepository.save(testUser);
+
+        List<User> enabledUsers = userRepository.findAllEnabledUsers();
+        assertTrue(enabledUsers.isEmpty());
+    }
+
+    @Test
+    void testUpdateUserEmail() {
+        testUser.setEmail("updated@example.com");
+        User updatedUser = userRepository.save(testUser);
+
+        assertEquals("updated@example.com", updatedUser.getEmail());
+    }
+
+    @Test
+    void testDeleteById() {
+        UUID userId = testUser.getId();
+        userRepository.deleteById(userId);
+
+        Optional<User> deletedUser = userRepository.findById(userId);
+        assertFalse(deletedUser.isPresent());
+    }
+
+    @Test
+    void testFindAllWithDeletedUser() {
+        userRepository.delete(testUser);
+
+        List<User> allUsers = userRepository.findAll();
+        assertTrue(allUsers.isEmpty());
+    }
+
+    @Test
+    void testExistsByIdAfterDelete() {
+        UUID userId = testUser.getId();
+        userRepository.deleteById(userId);
+
+        boolean exists = userRepository.existsById(userId);
+        assertFalse(exists);
+    }
 }

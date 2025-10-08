@@ -7,6 +7,9 @@ import area.server.AREA_Back.entity.ActivationMode;
 import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.ExecutionRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,20 @@ import java.util.UUID;
 public class ExecutionService {
 
     private final ExecutionRepository executionRepository;
+    private final MeterRegistry meterRegistry;
+
+    private Counter executionsCreated;
+    private Counter executionsUpdated;
+    private Counter executionsStarted;
+    private Counter executionsCanceled;
+
+    @PostConstruct
+    public void init() {
+        executionsCreated = meterRegistry.counter("execution_created_total");
+        executionsUpdated = meterRegistry.counter("execution_updated_total");
+        executionsStarted = meterRegistry.counter("execution_started_total");
+        executionsCanceled = meterRegistry.counter("execution_canceled_total");
+    }
 
     @Transactional
     public Execution createExecution(ActionInstance actionInstance,
@@ -39,6 +56,7 @@ public class ExecutionService {
         execution.setInputPayload(inputPayload);
         execution.setCorrelationId(correlationId);
 
+        executionsCreated.increment();
         return executionRepository.save(execution);
     }
 
@@ -82,6 +100,7 @@ public class ExecutionService {
         log.info("Updated execution { } with status { }, attempt { }",
                 execution.getId(), execution.getStatus(), execution.getAttempt());
 
+        executionsUpdated.increment();
         return executionRepository.save(execution);
     }
 
@@ -96,6 +115,7 @@ public class ExecutionService {
         execution.setStatus(ExecutionStatus.RUNNING);
         execution.setStartedAt(LocalDateTime.now());
 
+        executionsStarted.increment();
         return executionRepository.save(execution);
     }
 
@@ -127,6 +147,7 @@ public class ExecutionService {
         }
 
         log.info("Canceled execution { } with reason: { }", executionId, reason);
+        executionsCanceled.increment();
         return executionRepository.save(execution);
     }
 

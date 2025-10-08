@@ -77,10 +77,10 @@ public class OAuthLinkController {
 
             String errorMessage = e.getMessage();
             if (errorMessage.contains("already linked to another user")) {
-                return ResponseEntity.status(HTTP_CONFLICT) // Conflict
+                return ResponseEntity.status(HTTP_CONFLICT)
                     .body(OAuthLinkErrorResponse.accountAlreadyLinked(getServiceDisplayName(provider)));
             } else if (errorMessage.contains("email is required")) {
-                return ResponseEntity.status(HTTP_BAD_REQUEST) // Bad Request
+                return ResponseEntity.status(HTTP_BAD_REQUEST)
                     .body(OAuthLinkErrorResponse.emailRequired(getServiceDisplayName(provider)));
             } else {
                 return ResponseEntity.status(HTTP_INTERNAL_SERVER_ERROR)

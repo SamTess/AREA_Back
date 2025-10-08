@@ -138,4 +138,78 @@ class UserTest {
         assertEquals(id, user2.getId());
         assertEquals(email, user2.getEmail());
     }
+
+    @Test
+    void testUserWithSpecialCharactersInEmail() {
+        user.setEmail("test+tag@example.com");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testUserWithNullAvatarUrl() {
+        user.setAvatarUrl(null);
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testUserWithEmptyAvatarUrl() {
+        user.setAvatarUrl("");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testUserWithFutureCreatedAt() {
+        user.setCreatedAt(LocalDateTime.now().plusDays(1));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testUserWithPastLastLoginAt() {
+        user.setLastLoginAt(LocalDateTime.now().minusDays(1));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testUserNotEqualsWithDifferentId() {
+        User user1 = new User();
+        user1.setId(UUID.randomUUID());
+        user1.setEmail("test@example.com");
+
+        User user2 = new User();
+        user2.setId(UUID.randomUUID());
+        user2.setEmail("test@example.com");
+
+        assertFalse(user1.equals(user2));
+    }
+
+    @Test
+    void testUserNotEqualsWithDifferentEmail() {
+        UUID id = UUID.randomUUID();
+        User user1 = new User();
+        user1.setId(id);
+        user1.setEmail("test1@example.com");
+
+        User user2 = new User();
+        user2.setId(id);
+        user2.setEmail("test2@example.com");
+
+        assertFalse(user1.equals(user2));
+    }
+
+    @Test
+    void testUserEqualsWithNull() {
+        assertFalse(user.equals(null));
+    }
+
+    @Test
+    void testUserHashCodeConsistency() {
+        int hash1 = user.hashCode();
+        int hash2 = user.hashCode();
+        assertEquals(hash1, hash2);
+    }
 }

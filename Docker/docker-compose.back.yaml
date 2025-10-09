@@ -2,7 +2,6 @@ services:
   postgres:
     image: 'postgres:15'
     container_name: area-postgres
-    env_file: ../.env
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -25,7 +24,6 @@ services:
       context: ./redis
       dockerfile: Dockerfile
     container_name: area-redis
-    env_file: ../.env
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_SSL=${REDIS_SSL:-false}
@@ -57,7 +55,6 @@ services:
       context: ..
       dockerfile: Docker/Dockerfile
     container_name: area-backend
-    env_file: ../.env
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME}
     ports:
@@ -80,7 +77,6 @@ services:
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: area-postgres-exporter
-    env_file: ../.env
     environment:
       DATA_SOURCE_NAME: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=disable
     ports:
@@ -94,7 +90,6 @@ services:
   redis_exporter:
     image: oliver006/redis_exporter:latest
     container_name: area-redis-exporter
-    env_file: ../.env
     environment:
       REDIS_ADDR: rediss://redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}

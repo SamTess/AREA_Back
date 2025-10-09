@@ -77,6 +77,7 @@ class AuthControllerTest {
             "test@example.com",
             true,
             false,
+            true, // isVerified
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"

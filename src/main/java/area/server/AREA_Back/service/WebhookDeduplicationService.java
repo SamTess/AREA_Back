@@ -2,10 +2,15 @@ package area.server.AREA_Back.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,12 +24,9 @@ public class WebhookDeduplicationService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String WEBHOOK_DEDUP_PREFIX = "webhook:dedup:";
-    private static final Duration DEFAULT_TTL = Duration.ofHours(1); // 1 hour TTL
-    // GitHub resends within 24h, but 30 min should be enough
+    private static final Duration DEFAULT_TTL = Duration.ofHours(1);
     private static final Duration GITHUB_TTL = Duration.ofMinutes(30);
-    // Slack typically resends within minutes
     private static final Duration SLACK_TTL = Duration.ofMinutes(5);
-    // Generic TTL for other providers
     private static final Duration GENERIC_TTL = Duration.ofMinutes(15);
 
     /**
@@ -55,7 +57,6 @@ public class WebhookDeduplicationService {
             return duplicate;
         } catch (Exception e) {
             log.error("Error checking event duplication for {}: {}", eventId, e.getMessage());
-            // If Redis is down, assume it's not a duplicate to avoid blocking webhooks
             return false;
         }
     }
@@ -92,7 +93,6 @@ public class WebhookDeduplicationService {
         }
 
         try {
-            // Store a simple marker with expiration
             redisTemplate.opsForValue().set(key, System.currentTimeMillis(), ttl);
             log.debug("Marked event {} as processed for provider {} with TTL {}",
                      eventId, provider, ttl);
@@ -137,7 +137,6 @@ public class WebhookDeduplicationService {
         }
 
         try {
-            // Use SET NX EX to atomically set the key only if it doesn't exist
             Boolean wasSet = redisTemplate.opsForValue().setIfAbsent(key, System.currentTimeMillis(), ttl);
             boolean isNew = Boolean.TRUE.equals(wasSet);
 
@@ -147,10 +146,9 @@ public class WebhookDeduplicationService {
                 log.debug("Duplicate event {} detected for provider {}", eventId, provider);
             }
 
-            return !isNew; // Return true if duplicate (key already existed)
+            return !isNew;
         } catch (Exception e) {
             log.error("Error in atomic check-and-mark for event {}: {}", eventId, e.getMessage());
-            // If Redis operation fails, assume it's not a duplicate to avoid blocking
             return false;
         }
     }
@@ -202,16 +200,36 @@ public class WebhookDeduplicationService {
     /**
      * Clears all deduplication entries for a specific provider
      * Useful for maintenance or testing
+     * SECURITY: Uses SCAN instead of KEYS to avoid blocking Redis
      *
      * @param provider The webhook provider
      */
     public void clearProviderEvents(String provider) {
         try {
             String pattern = WEBHOOK_DEDUP_PREFIX + provider + ":*";
-            var keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.info("Cleared {} deduplication entries for provider {}", keys.size(), provider);
+            Set<String> keysToDelete = new HashSet<>();
+            ScanOptions options = ScanOptions.scanOptions()
+                .match(pattern)
+                .count(100)
+                .build();
+            redisTemplate.execute((RedisCallback<Object>) connection -> {
+                Cursor<byte[]> cursor = connection.scan(options);
+                while (cursor.hasNext()) {
+                    keysToDelete.add(new String(cursor.next()));
+                }
+                try {
+                    cursor.close();
+                } catch (Exception e) {
+                    log.warn("Error closing cursor: {}", e.getMessage());
+                }
+                return null;
+            });
+            if (!keysToDelete.isEmpty()) {
+                redisTemplate.delete(keysToDelete);
+                log.info("Cleared {} deduplication entries for provider {}",
+                         keysToDelete.size(), provider);
+            } else {
+                log.debug("No deduplication entries found for provider {}", provider);
             }
         } catch (Exception e) {
             log.error("Error clearing events for provider {}: {}", provider, e.getMessage());

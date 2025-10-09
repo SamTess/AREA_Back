@@ -21,17 +21,34 @@ services:
       - area-network
 
   redis:
-    image: 'redis:latest'
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
     container_name: area-redis
-    ports:
-      - '6379:6379'
+    env_file: ../.env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_SSL=${REDIS_SSL:-false}
     volumes:
       - redis_data:/data
+      - redis_certs:/usr/local/etc/redis/certs
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [
+        "CMD-SHELL",
+        "if [ \"$REDIS_SSL\" = \"true\" ]; \
+        then redis-cli --tls \
+          --cert /usr/local/etc/redis/certs/redis-cert.pem \
+          --key /usr/local/etc/redis/certs/redis-key.pem \
+          --cacert /usr/local/etc/redis/certs/ca-cert.pem \
+          --no-auth-warning -a \"$REDIS_PASSWORD\" ping 2>/dev/null | grep PONG; \
+        else \
+          redis-cli --no-auth-warning -a \"$REDIS_PASSWORD\" ping 2>/dev/null | grep PONG; \
+        fi"
+      ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
     networks:
       - area-network
 
@@ -77,16 +94,37 @@ services:
   redis_exporter:
     image: oliver006/redis_exporter:latest
     container_name: area-redis-exporter
+    env_file: ../.env
     environment:
-      REDIS_ADDR: redis:6379
-      REDIS_PASSWORD: ""
+      REDIS_ADDR: rediss://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      REDIS_EXPORTER_TLS_CLIENT_KEY_FILE: /certs/redis-key.pem
+      REDIS_EXPORTER_TLS_CLIENT_CERT_FILE: /certs/redis-cert.pem
+      REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/ca-cert.pem
+      REDIS_EXPORTER_SKIP_TLS_VERIFICATION: "true"  # ! Dev only - set to false in prod
+
+      REDIS_EXPORTER_IS_CLUSTER: "false"
+      REDIS_EXPORTER_CHECK_KEYS: ""
+      REDIS_EXPORTER_DEBUG: "false"
+
+      REDIS_EXPORTER_SET_CLIENT_NAME: "true"
+      REDIS_EXPORTER_CONNECTION_TIMEOUT: "15s"
+
+    volumes:
+      - redis_certs:/certs:ro
+
     ports:
       - "9121:9121"
+
     depends_on:
       redis:
         condition: service_healthy
+
     networks:
       - area-network
+
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
@@ -94,7 +132,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -103,11 +141,11 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-    restart: unless-stopped
     depends_on:
       - area-backend
     networks:
       - area-network
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -116,17 +154,21 @@ services:
       - "8082:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      - GF_SECURITY_ADMIN_USER=${ADMIN_USERNAME:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
-    restart: unless-stopped
+      - GF_SERVER_ROOT_URL=http://localhost:8082
+      - GF_SECURITY_COOKIE_SECURE=false
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=false
     depends_on:
       - prometheus
     networks:
       - area-network
+    restart: unless-stopped
 
   loki:
     image: grafana/loki:latest
@@ -145,15 +187,15 @@ services:
     container_name: area-promtail
     privileged: true
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./promtail-config.yml:/etc/promtail/config.yml
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
-    restart: unless-stopped
     networks:
       - area-network
+    restart: unless-stopped
 
 networks:
   area-network:
@@ -162,6 +204,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  redis_certs:
   prometheus_data:
   grafana_data:
   loki_data:

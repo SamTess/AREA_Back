@@ -756,6 +756,30 @@ secrets:
 - Security advisory monitoring
 - Dependency license compliance
 
+#### 9. Email Verification Attacks
+**Threat**: Attacks targeting the email verification and password reset system.
+
+**Mitigations**:
+- Time-limited verification tokens (24 hours)
+- Single-use tokens that expire after use
+- Rate limiting on password reset requests
+- Generic responses to prevent email enumeration
+- Secure token generation with cryptographically strong random values
+- HTTPS-only token transmission
+- Account lockout after failed verification attempts
+
+#### 10. Password Reset Attacks
+**Threat**: Unauthorized password resets through token interception or prediction.
+
+**Mitigations**:
+- Very short token expiry (15 minutes for reset tokens)
+- Single-use tokens invalidated immediately after use
+- Secure token storage and transmission
+- Rate limiting on reset requests per email/IP
+- Session invalidation after password change
+- Email confirmation before allowing reset
+- Strong password requirements enforcement
+
 ## Security Best Practices
 
 ### Development Security Practices

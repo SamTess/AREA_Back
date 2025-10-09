@@ -20,6 +20,15 @@ A Spring Boot backend application for the AREA project (Action REAction), provid
 
 AREA Backend is a microservice-based application built with Spring Boot that allows users to create automated workflows by connecting different services. The application provides REST APIs for managing users, services, and areas (automated workflows).
 
+### Key Features
+
+- **User Management**: Registration, authentication, and email verification
+- **Service Integration**: Connect with external services (GitHub, Slack, etc.)
+- **Workflow Automation**: Create custom automation rules (AREAs)
+- **Email Notifications**: SMTP and Resend API support for notifications
+- **Security**: JWT authentication, OAuth2 integration, and secure password reset
+- **API Documentation**: Interactive OpenAPI/Swagger documentation
+
 ## Prerequisites
 
 Before running this application, make sure you have the following installed:
@@ -226,10 +235,13 @@ Database migrations are located in `src/main/resources/db/migration/` and are au
 
 Detailed documentation is available in the `docs/` directory:
 
-- [Unit Testing Guide](docs/unit-testing-guide.md)
-- [Checkstyle Guide](docs/checkstyle-guide.md)
-- [Data Migration Guide](docs/data-migration-guide.md)
-- [Services Cache Implementation](docs/services-cache-implementation.md)
+- [API Documentation](docs/technical/06-api-documentation.md) - Complete API reference
+- [User Email Verification Guide](docs/user-email-verification-guide.md) - Email verification and password reset
+- [Email Configuration Guide](docs/email-configuration-guide.md) - SMTP and Resend setup
+- [Unit Testing Guide](docs/unit-testing-guide.md) - Testing best practices
+- [Checkstyle Guide](docs/checkstyle-guide.md) - Code style standards
+- [Data Migration Guide](docs/data-migration-guide.md) - Database migrations
+- [Services Cache Implementation](docs/services-cache-implementation.md) - Caching strategy
 
 ## Dependencies
 

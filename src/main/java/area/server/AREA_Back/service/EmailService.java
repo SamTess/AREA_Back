@@ -32,7 +32,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final MeterRegistry meterRegistry;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     @Value("${app.email.from}")
     private String smtpFromEmail;
@@ -109,7 +109,7 @@ public class EmailService {
             return true;
         }
 
-        if (resendEnabled && !resendApiKey.isEmpty()) {
+        if (resendEnabled && resendApiKey != null && !resendApiKey.isEmpty()) {
             log.warn("SMTP failed for email to: {}, attempting Resend fallback", to);
             resendFallbackCounter.increment();
             return sendEmailViaResend(to, subject, text);

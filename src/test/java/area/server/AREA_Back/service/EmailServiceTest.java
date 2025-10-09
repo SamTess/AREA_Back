@@ -70,8 +70,7 @@ class EmailServiceTest {
         ReflectionTestUtils.setField(emailService, "resendApiKey", "test-api-key");
         ReflectionTestUtils.setField(emailService, "resendFromEmail", "noreply@resend.com");
         ReflectionTestUtils.setField(emailService, "resendEnabled", true);
-        // Inject the mock RestTemplate since EmailService creates its own instance
-        ReflectionTestUtils.setField(emailService, "restTemplate", restTemplate);
+        // RestTemplate is now injected via constructor by @InjectMocks
 
         // Mock the Counter.Builder chain
         Counter.Builder emailSentBuilder = mock(Counter.Builder.class);

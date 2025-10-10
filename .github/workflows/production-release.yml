@@ -87,8 +87,14 @@ jobs:
         run: |
           mkdir -p production-release
 
+          # Fail if no JAR files are found
+          if ! ls build/libs/*.jar 1> /dev/null 2>&1; then
+            echo "ERROR: No JAR files found in build/libs/. Failing workflow."
+            exit 1
+          fi
+
           # Copy JAR file
-          cp build/libs/*.jar production-release/ 2>/dev/null || echo "No JAR files found"
+          cp build/libs/*.jar production-release/
 
           # Copy configuration files
           cp build.gradle production-release/ 2>/dev/null || echo "No build.gradle found"

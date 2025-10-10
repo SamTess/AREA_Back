@@ -65,7 +65,7 @@ public class ServiceAccountService {
         serviceAccount.setScopes(scopes);
         serviceAccount.setLastRefreshAt(LocalDateTime.now());
         serviceAccount.setRevokedAt(null);
-        
+
         Integer currentVersion = serviceAccount.getTokenVersion();
         if (currentVersion != null) {
             serviceAccount.setTokenVersion(currentVersion + 1);
@@ -88,7 +88,7 @@ public class ServiceAccountService {
                     .orElseThrow(() -> new IllegalArgumentException("Service not found: " + serviceKey));
 
             return serviceAccountRepository.findByUserAndService(user, service)
-                    .filter(account -> account.getRevokedAt() == null); // Only return active accounts
+                    .filter(account -> account.getRevokedAt() == null);
         } catch (Exception e) {
             log.error("Error getting service account for user {} and service {}: {}",
                      userId, serviceKey, e.getMessage());
@@ -142,8 +142,8 @@ public class ServiceAccountService {
      */
     public boolean hasValidToken(UUID userId, String serviceKey) {
         return getServiceAccount(userId, serviceKey)
-                .map(account -> account.getAccessTokenEnc() != null 
-                              && (account.getExpiresAt() == null 
+                .map(account -> account.getAccessTokenEnc() != null
+                              && (account.getExpiresAt() == null
                               || account.getExpiresAt().isAfter(LocalDateTime.now())))
                 .orElse(false);
     }

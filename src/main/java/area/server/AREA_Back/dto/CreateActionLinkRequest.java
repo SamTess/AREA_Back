@@ -23,7 +23,7 @@ public class CreateActionLinkRequest {
     private UUID targetActionInstanceId;
 
     @JsonProperty("linkType")
-    private String linkType = "chain"; // chain, conditional, parallel, sequential
+    private String linkType = "chain"; //* chain, conditional, parallel, sequential
 
     @JsonProperty("mapping")
     private Map<String, Object> mapping;

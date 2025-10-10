@@ -36,7 +36,7 @@ public class CreateAreaWithActionsAndLinksRequest {
     private List<ActionConnectionRequest> connections;
 
     @JsonProperty("layoutMode")
-    private String layoutMode = "linear"; // "linear" or "free"
+    private String layoutMode = "linear"; //* "linear" or "free"
 
     @Data
     @NoArgsConstructor

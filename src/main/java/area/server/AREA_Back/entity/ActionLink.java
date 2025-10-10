@@ -45,7 +45,7 @@ public class ActionLink {
     private Map<String, Object> condition;
 
     @Column(name = "link_type", nullable = false)
-    private String linkType = "chain"; // chain, conditional, parallel, sequential
+    private String linkType = "chain"; //* chain, conditional, parallel, sequential
 
     @Column(name = "\"order\"", nullable = false)
     private Integer order = 0;

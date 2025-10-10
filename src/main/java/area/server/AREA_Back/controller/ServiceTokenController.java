@@ -180,7 +180,7 @@ public class ServiceTokenController {
         dto.setHasAccessToken(serviceAccount.getAccessTokenEnc() != null);
         dto.setHasRefreshToken(serviceAccount.getRefreshTokenEnc() != null);
         dto.setExpiresAt(serviceAccount.getExpiresAt());
-        dto.setExpired(serviceAccount.getExpiresAt() != null 
+        dto.setExpired(serviceAccount.getExpiresAt() != null
                 && serviceAccount.getExpiresAt().isBefore(LocalDateTime.now()));
         dto.setScopes(serviceAccount.getScopes());
         dto.setTokenVersion(serviceAccount.getTokenVersion());

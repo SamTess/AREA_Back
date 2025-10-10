@@ -61,7 +61,7 @@ public class CronSchedulerService {
             try {
                 scheduleActivationMode(activationMode);
             } catch (Exception e) {
-                log.error("Failed to schedule CRON activation mode {}: {}", 
+                log.error("Failed to schedule CRON activation mode {}: {}",
                          activationMode.getId(), e.getMessage(), e);
             }
         }
@@ -83,13 +83,10 @@ public class CronSchedulerService {
         }
 
         try {
-            // Validate CRON expression
             CronExpression.parse(cronExpression);
 
-            // Cancel existing task if any
             cancelScheduledTask(activationMode.getId());
 
-            // Schedule new task
             ScheduledFuture<?> scheduledTask = taskScheduler.schedule(
                 () -> executeCronTask(activationMode),
                 triggerContext -> {
@@ -97,7 +94,7 @@ public class CronSchedulerService {
                     LocalDateTime now = LocalDateTime.now();
                     if (triggerContext.lastCompletion() != null) {
                         LocalDateTime lastCompletion = LocalDateTime.ofInstant(
-                            triggerContext.lastCompletion(), 
+                            triggerContext.lastCompletion(),
                             java.time.ZoneId.systemDefault()
                         );
                         return cron.next(lastCompletion).atZone(java.time.ZoneId.systemDefault()).toInstant();
@@ -108,12 +105,12 @@ public class CronSchedulerService {
             );
 
             scheduledTasks.put(activationMode.getId(), scheduledTask);
-            
-            log.info("Scheduled CRON task for activation mode {} with expression: {}", 
+
+            log.info("Scheduled CRON task for activation mode {} with expression: {}",
                     activationMode.getId(), cronExpression);
 
         } catch (Exception e) {
-            log.error("Failed to schedule CRON task for activation mode {}: {}", 
+            log.error("Failed to schedule CRON task for activation mode {}: {}",
                      activationMode.getId(), e.getMessage(), e);
             throw new IllegalArgumentException("Invalid CRON expression: " + cronExpression, e);
         }

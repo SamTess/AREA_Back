@@ -449,7 +449,7 @@ public class AreaService {
         } else {
             String layoutMode = request.getLayoutMode();
             if ("linear".equals(layoutMode)) {
-                createLinearActionLinks(savedArea, request.getActions(), 
+                createLinearActionLinks(savedArea, request.getActions(),
                         request.getReactions(), serviceIdMapping);
             }
         }
@@ -460,13 +460,13 @@ public class AreaService {
         } else {
             connectionCount = 0;
         }
-        
-        log.info("Successfully created AREA with ID: {} and {} links", 
+
+        log.info("Successfully created AREA with ID: {} and {} links",
                 savedArea.getId(), connectionCount);
         return convertToResponse(savedArea);
     }
 
-    private Map<String, UUID> createActionInstancesWithMapping(Area area, 
+    private Map<String, UUID> createActionInstancesWithMapping(Area area,
             List<AreaActionRequest> actions, List<AreaReactionRequest> reactions) {
         Map<String, UUID> serviceIdMapping = new HashMap<>();
 
@@ -541,8 +541,8 @@ public class AreaService {
         return serviceIdMapping;
     }
 
-    private void createActionLinks(Area area, 
-            List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections, 
+    private void createActionLinks(Area area,
+            List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections,
             Map<String, UUID> serviceIdMapping) {
         for (CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest connection : connections) {
             UUID sourceActionId = serviceIdMapping.get(connection.getSourceServiceId());
@@ -562,7 +562,7 @@ public class AreaService {
                     actionLinkService.createActionLink(linkRequest, area.getId());
                     log.debug("Created link: {} -> {}", sourceActionId, targetActionId);
                 } catch (Exception e) {
-                    log.error("Failed to create action link from {} to {}: {}", 
+                    log.error("Failed to create action link from {} to {}: {}",
                             sourceActionId, targetActionId, e.getMessage());
                 }
             } else {
@@ -572,7 +572,7 @@ public class AreaService {
         }
     }
 
-    private void createLinearActionLinks(Area area, List<AreaActionRequest> actions, 
+    private void createLinearActionLinks(Area area, List<AreaActionRequest> actions,
             List<AreaReactionRequest> reactions, Map<String, UUID> serviceIdMapping) {
         List<String> serviceOrder = new ArrayList<>();
 
@@ -603,7 +603,7 @@ public class AreaService {
                     actionLinkService.createActionLink(linkRequest, area.getId());
                     log.debug("Created linear link {}: {} -> {}", i, sourceActionId, targetActionId);
                 } catch (Exception e) {
-                    log.error("Failed to create linear action link from {} to {}: {}", 
+                    log.error("Failed to create linear action link from {} to {}: {}",
                             sourceActionId, targetActionId, e.getMessage());
                 }
             }

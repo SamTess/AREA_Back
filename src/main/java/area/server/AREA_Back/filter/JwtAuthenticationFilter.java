@@ -102,18 +102,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPublicEndpoint(final String path) {
         return path.equals("/api/auth/login")
                || path.equals("/api/auth/register")
-               || path.equals("/api/auth/logout")
-               || path.equals("/api/auth/refresh")
-               || path.startsWith("/api/debug/")
+               || path.equals("/api/auth/forgot-password")
+               || path.equals("/api/auth/reset-password")
+               || path.equals("/api/auth/verify")
                || path.startsWith("/api/oauth/")
-               || path.equals("/api/services/catalog")
-               || path.equals("/api/services/catalog/enabled")
                || path.startsWith("/swagger-ui/")
                || path.startsWith("/v3/api-docs/")
                || path.equals("/swagger-ui.html")
                || path.startsWith("/api/about")
                || path.startsWith("/actuator/")
                || path.startsWith("/webjars/")
-               || path.startsWith("/favicon.ico");
+               || path.equals("/favicon.ico");
     }
 }

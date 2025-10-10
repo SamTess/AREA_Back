@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class GitHubEventPollingService {
 
-    private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300; // 5 minutes
+    private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300;
 
     private final GitHubActionService gitHubActionService;
     private final ActionInstanceRepository actionInstanceRepository;

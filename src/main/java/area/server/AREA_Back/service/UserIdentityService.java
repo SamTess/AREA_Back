@@ -85,9 +85,9 @@ public class UserIdentityService {
     }
 
     public enum UserCreationType {
-        LOCAL,      // User created account with email/password
-        OAUTH,      // User created account via OAuth
-        BOTH,       // User has both local and OAuth identities
-        UNKNOWN     // No identities found (shouldn't happen)
+        LOCAL,
+        OAUTH,
+        BOTH,
+        UNKNOWN
     }
 }

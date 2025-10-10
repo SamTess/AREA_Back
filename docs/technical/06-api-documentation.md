@@ -165,6 +165,73 @@ Cookie: authToken=jwt-access-token
 }
 ```
 
+### Verify Email
+```http
+GET /api/auth/verify?token=verification_token_here
+```
+
+**Response (200 OK):**
+```json
+{
+    "message": "Email verified successfully",
+    "user": {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "email": "user@example.com",
+        "isActive": true,
+        "isAdmin": false
+    }
+}
+```
+
+**Response (400 Bad Request - Invalid/Expired Token):**
+```json
+{
+    "message": "Invalid or expired verification token"
+}
+```
+
+### Forgot Password
+```http
+POST /api/auth/forgot-password
+Content-Type: application/json
+
+{
+    "email": "user@example.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+    "message": "If an account with this email exists, a password reset link has been sent"
+}
+```
+
+### Reset Password
+```http
+POST /api/auth/reset-password
+Content-Type: application/json
+
+{
+    "token": "reset_token_here",
+    "newPassword": "newSecurePassword123"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+    "message": "Password reset successfully"
+}
+```
+
+**Response (400 Bad Request - Invalid/Expired Token):**
+```json
+{
+    "message": "Invalid or expired reset token"
+}
+```
+
 ## Area Management Endpoints
 
 ### Create Basic Area

@@ -15,13 +15,13 @@ public class AreaEventMessage {
     private UUID actionInstanceId;
     private UUID areaId;
     private UUID executionId;
-    private String eventType;  // "webhook", "poll", "cron", "manual", "chain"
+    private String eventType;  //*  "webhook", "poll", "cron", "manual", "chain"
     private Map<String, Object> payload;
     private UUID correlationId;
-    private String source;  // "webhook", "poller", "scheduler", "api"
+    private String source;  //* "webhook", "poller", "scheduler", "api"
     private LocalDateTime timestamp;
     private Map<String, String> metadata;
-    private Integer priority = 0;  // 0 = normal, higher = more priority
+    private Integer priority = 0;  //* 0 = normal, higher = more priority
 
     public static AreaEventMessage fromExecution(final UUID executionId, final UUID actionInstanceId,
                                                  final UUID areaId, final Map<String, Object> payload) {

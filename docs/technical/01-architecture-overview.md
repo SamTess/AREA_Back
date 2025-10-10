@@ -116,6 +116,7 @@ src/
 │   │   ├── service/                          # Business logic services
 │   │   │   ├── AreaService.java              # AREA operations
 │   │   │   ├── AuthService.java              # Authentication logic
+│   │   │   ├── EmailService.java             # Email sending service
 │   │   │   ├── JwtService.java               # JWT operations
 │   │   │   ├── OAuthService.java             # OAuth base service
 │   │   │   ├── RedisEventService.java        # Event processing
@@ -193,7 +194,25 @@ Client → AuthController → AuthService → JwtService → RedisTokenService �
                                JWT Cookies ← Response
 ```
 
-### 2. AREA Creation Flow
+### 2. Email Verification Flow
+```
+Client → AuthController → AuthService → EmailService → SMTP/Resend API
+     ↓                        ↓
+Email Sent ← Verification Token Stored in Database
+     ↓
+Client → AuthController → AuthService → Database → Account Activated
+```
+
+### 3. Password Reset Flow
+```
+Client → AuthController → AuthService → EmailService → SMTP/Resend API
+     ↓                        ↓
+Email Sent ← Reset Token Stored in Database
+     ↓
+Client → AuthController → AuthService → Database → Password Updated
+```
+
+### 4. AREA Creation Flow
 ```
 Client → AreaController → AreaService → JsonSchemaValidationService
                                     ↓
@@ -202,7 +221,7 @@ Client → AreaController → AreaService → JsonSchemaValidationService
                             CronSchedulerService → Background Workers
 ```
 
-### 3. Automation Execution Flow
+### 5. Automation Execution Flow
 ```
 External Trigger → WebhookController → RedisEventService → Redis Stream
                                                               ↓
@@ -218,6 +237,8 @@ External Trigger → WebhookController → RedisEventService → Redis Stream
 - **Access tokens** (15 minutes) and **refresh tokens** (7 days)
 - **Redis-based token validation** and blacklisting
 - **OAuth2 integration** for social login
+- **Email verification** for account activation
+- **Secure password reset** with time-limited tokens
 
 ### Data Protection
 - **BCrypt password hashing**

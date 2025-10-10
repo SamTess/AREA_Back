@@ -38,13 +38,13 @@ public class WebhookSignatureValidator {
         }
 
         try {
-            String expectedSignature = GITHUB_SIGNATURE_PREFIX 
+            String expectedSignature = GITHUB_SIGNATURE_PREFIX
                 + calculateHmacSha256(payload, secret);
-            
+
             boolean isValid = secureEquals(signature, expectedSignature);
             log.debug("GitHub signature validation result: {}", isValid);
             return isValid;
-            
+
         } catch (Exception e) {
             log.error("Error validating GitHub signature: {}", e.getMessage());
             return false;
@@ -61,7 +61,7 @@ public class WebhookSignatureValidator {
      * @param timestamp The timestamp from X-Slack-Request-Timestamp header
      * @return true if signature is valid
      */
-    public boolean validateSlackSignature(final byte[] payload, final String signature, 
+    public boolean validateSlackSignature(final byte[] payload, final String signature,
             final String secret, final String timestamp) {
         if (signature == null || !signature.startsWith(SLACK_SIGNATURE_PREFIX)) {
             log.warn("Invalid Slack signature format");
@@ -71,13 +71,13 @@ public class WebhookSignatureValidator {
         try {
             // Slack uses timestamp to prevent replay attacks
             String baseString = "v0:" + timestamp + ":" + new String(payload, StandardCharsets.UTF_8);
-            String expectedSignature = SLACK_SIGNATURE_PREFIX 
+            String expectedSignature = SLACK_SIGNATURE_PREFIX
                 + calculateHmacSha256(baseString.getBytes(StandardCharsets.UTF_8), secret);
-            
+
             boolean isValid = secureEquals(signature, expectedSignature);
             log.debug("Slack signature validation result: {}", isValid);
             return isValid;
-            
+
         } catch (Exception e) {
             log.error("Error validating Slack signature: {}", e.getMessage());
             return false;
@@ -98,7 +98,7 @@ public class WebhookSignatureValidator {
             boolean isValid = secureEquals(signature, expectedSignature);
             log.debug("HMAC-SHA256 signature validation result: {}", isValid);
             return isValid;
-            
+
         } catch (Exception e) {
             log.error("Error validating HMAC-SHA256 signature: {}", e.getMessage());
             return false;
@@ -132,7 +132,7 @@ public class WebhookSignatureValidator {
             boolean isValid = secureEquals(signature, expectedSignature);
             log.debug("JWT signature validation result: {}", isValid);
             return isValid;
-            
+
         } catch (Exception e) {
             log.error("Error validating JWT signature: {}", e.getMessage());
             return false;
@@ -149,7 +149,7 @@ public class WebhookSignatureValidator {
      * @param timestamp Optional timestamp for providers that require it
      * @return true if signature is valid
      */
-    public boolean validateSignature(final String provider, final byte[] payload, final String signature, 
+    public boolean validateSignature(final String provider, final byte[] payload, final String signature,
                                    final String secret, final String timestamp) {
         if (secret == null || secret.trim().isEmpty()) {
             log.warn("No secret provided for signature validation");
@@ -172,7 +172,7 @@ public class WebhookSignatureValidator {
     /**
      * Calculates HMAC-SHA256 hash
      */
-    private String calculateHmacSha256(final byte[] data, final String secret) 
+    private String calculateHmacSha256(final byte[] data, final String secret)
             throws NoSuchAlgorithmException, InvalidKeyException {
         Mac mac = Mac.getInstance(HMAC_SHA256);
         SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256);

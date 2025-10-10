@@ -67,9 +67,7 @@ public class ExecutionService {
                                                       UUID correlationId) {
         Execution execution = new Execution();
         execution.setActionInstance(actionInstance);
-        // We set activation mode to null for this simplified version
-        // In a full implementation, you might want to create a temporary ActivationMode
-        execution.setActivationMode(null);
+        execution.setActivationMode(null); //! temp needs to change
         execution.setArea(actionInstance.getArea());
         execution.setStatus(ExecutionStatus.QUEUED);
         execution.setAttempt(0);

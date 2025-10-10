@@ -81,7 +81,6 @@ public class WebhookController {
                 ));
             }
 
-            // Process webhook event
             List<Execution> executions;
             if (userId != null) {
                 executions = eventProcessingService.processWebhookEventForUser(service, action, payload, userId);
@@ -90,7 +89,7 @@ public class WebhookController {
             }
 
             long processingTime = System.currentTimeMillis() - startTime;
-            log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms", 
+            log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms",
                     service, action, executions.size(), processingTime);
 
             return ResponseEntity.ok(Map.of(

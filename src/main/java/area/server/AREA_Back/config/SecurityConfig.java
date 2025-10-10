@@ -1,5 +1,6 @@
 package area.server.AREA_Back.config;
 
+import area.server.AREA_Back.filter.EmailVerificationFilter;
 import area.server.AREA_Back.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final EmailVerificationFilter emailVerificationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,8 +35,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",   // Development frontend
-            "https://yourdomain.com"   // Production domain
+            "http://localhost:3000",
+            "https://yourdomain.com"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
@@ -58,14 +60,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF for REST APIs (reconfigure for production if necessary)
             .csrf(csrf -> csrf.disable())
 
-            // CORS configuration
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints (no authentication required)
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/oauth/**").permitAll()
@@ -76,7 +75,8 @@ public class SecurityConfig {
                 .requestMatchers("/favicon.ico").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(emailVerificationFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

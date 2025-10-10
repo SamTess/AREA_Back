@@ -65,19 +65,19 @@ public class ActionLinkService {
         actionLink.setTargetActionInstance(targetAction);
         actionLink.setArea(area);
         actionLink.setLinkType(request.getLinkType());
-        
+
         if (request.getMapping() != null) {
             actionLink.setMapping(request.getMapping());
         } else {
             actionLink.setMapping(new HashMap<>());
         }
-        
+
         if (request.getCondition() != null) {
             actionLink.setCondition(request.getCondition());
         } else {
             actionLink.setCondition(new HashMap<>());
         }
-        
+
         actionLink.setOrder(request.getOrder());
 
         ActionLink savedLink = actionLinkRepository.save(actionLink);
@@ -99,13 +99,13 @@ public class ActionLinkService {
                     ActionInstance sourceAction = actionInstanceRepository
                             .findById(linkData.getSourceActionInstanceId())
                             .orElseThrow(() -> new RuntimeException(
-                                    "Source action not found with id: " 
+                                    "Source action not found with id: "
                                     + linkData.getSourceActionInstanceId()));
 
                     ActionInstance targetAction = actionInstanceRepository
                             .findById(linkData.getTargetActionInstanceId())
                             .orElseThrow(() -> new RuntimeException(
-                                    "Target action not found with id: " 
+                                    "Target action not found with id: "
                                     + linkData.getTargetActionInstanceId()));
 
                     ActionLink actionLink = new ActionLink();
@@ -113,19 +113,19 @@ public class ActionLinkService {
                     actionLink.setTargetActionInstance(targetAction);
                     actionLink.setArea(area);
                     actionLink.setLinkType(linkData.getLinkType());
-                    
+
                     if (linkData.getMapping() != null) {
                         actionLink.setMapping(linkData.getMapping());
                     } else {
                         actionLink.setMapping(new HashMap<>());
                     }
-                    
+
                     if (linkData.getCondition() != null) {
                         actionLink.setCondition(linkData.getCondition());
                     } else {
                         actionLink.setCondition(new HashMap<>());
                     }
-                    
+
                     actionLink.setOrder(linkData.getOrder());
 
                     return actionLink;

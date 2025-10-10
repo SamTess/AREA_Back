@@ -276,8 +276,14 @@ jobs:
         run: |
           mkdir -p staging-release
 
+          # Ensure at least one JAR file exists before copying
+          if ! ls build/libs/*.jar 1> /dev/null 2>&1; then
+            echo "ERROR: No JAR files found in build/libs/. Failing workflow."
+            exit 1
+          fi
+
           # Copy JAR file
-          cp build/libs/*.jar staging-release/ 2>/dev/null || echo "No JAR files found"
+          cp build/libs/*.jar staging-release/
 
           # Copy configuration files
           cp build.gradle staging-release/ 2>/dev/null || echo "No build.gradle found"

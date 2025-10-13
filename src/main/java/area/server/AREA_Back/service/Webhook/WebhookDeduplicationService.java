@@ -201,7 +201,7 @@ public class WebhookDeduplicationService {
     /**
      * Clears all deduplication entries for a specific provider
      * Useful for maintenance or testing
-     * SECURITY: Uses SCAN instead of KEYS to avoid blocking Redis
+     * SECURITY: Uses scan instead of KEYS to avoid blocking Redis
      *
      * @param provider The webhook provider
      */

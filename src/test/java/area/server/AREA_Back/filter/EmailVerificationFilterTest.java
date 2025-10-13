@@ -20,7 +20,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +58,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenUserIsNotAuthenticated() throws Exception {
+    void shouldAllowAccessWhenUserIsNotAuthenticated() throws Exception {
         // Given
         SecurityContextHolder.getContext().setAuthentication(null);
         request.setRequestURI("/api/users");
@@ -71,7 +73,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenUserIsVerified() throws Exception {
+    void shouldAllowAccessWhenUserIsVerified() throws Exception {
         // Given
         testIdentity.setIsEmailVerified(true);
         setupAuthenticatedUser();
@@ -91,7 +93,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenNonVerifiedUserAccessesAllowedEndpoint() throws Exception {
+    void shouldAllowAccessWhenNonVerifiedUserAccessesAllowedEndpoint() throws Exception {
         // Given
         setupAuthenticatedUser();
 
@@ -110,7 +112,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccess_WhenNonVerifiedUserAccessesRestrictedEndpoint() throws Exception {
+    void shouldDenyAccessWhenNonVerifiedUserAccessesRestrictedEndpoint() throws Exception {
         // Given
         setupAuthenticatedUser();
 
@@ -131,7 +133,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccess_WhenUserNotFound() throws Exception {
+    void shouldDenyAccessWhenUserNotFound() throws Exception {
         // Given
         setupAuthenticatedUser();
 
@@ -150,7 +152,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenLocalIdentityNotFound() throws Exception {
+    void shouldAllowAccessWhenLocalIdentityNotFound() throws Exception {
         // Given - OAuth2 user without local identity
         setupAuthenticatedUser();
 

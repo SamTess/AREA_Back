@@ -120,8 +120,7 @@ public class OAuthGithubService extends OAuthService {
             log.info("Successfully exchanged code for GitHub access token");
 
             UserProfileData profileData = fetchUserProfile(githubAccessToken);
-            log.info("Fetched GitHub user profile: id={}, email={}, login={}",
-                profileData.userIdentifier, profileData.email, profileData.login);
+            log.info("Fetched GitHub user profile");
 
             if (profileData.email == null || profileData.email.isEmpty()) {
                 profileData.email = "github-" + profileData.userIdentifier + "@oauth.placeholder";

@@ -124,7 +124,7 @@ public class OAuthGithubService extends OAuthService {
                 profileData.userIdentifier, profileData.email, profileData.login);
 
             if (profileData.email == null || profileData.email.isEmpty()) {
-                profileData.email = profileData.userIdentifier + "@github.oauth";
+                profileData.email = "github-" + profileData.userIdentifier + "@oauth.placeholder";
                 log.warn("GitHub user {} has no email; using placeholder {}", profileData.userIdentifier, profileData.email);
             }
 

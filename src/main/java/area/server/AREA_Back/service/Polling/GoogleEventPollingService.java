@@ -169,12 +169,12 @@ public class GoogleEventPollingService {
 
     private int getPollingInterval(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        return (Integer) config.getOrDefault("interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
+        return (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        Integer intervalSeconds = (Integer) config.getOrDefault("interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
+        Integer intervalSeconds = (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
 
         return LocalDateTime.now().minusSeconds(intervalSeconds);
     }

@@ -47,8 +47,13 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
             return;
         }
 
+        String userIdStr = authentication.getName();
+        if (userIdStr == null || "anonymousUser".equals(userIdStr)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
-            String userIdStr = authentication.getName();
             UUID userId = UUID.fromString(userIdStr);
 
             User user = userRepository.findById(userId).orElse(null);
@@ -63,8 +68,8 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
                 .orElse(null);
 
             if (localIdentity == null) {
-                log.warn("No local identity found for user: {}", userId);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                log.debug("User {} authenticated via OAuth2, no email verification required", userId);
+                filterChain.doFilter(request, response);
                 return;
             }
 

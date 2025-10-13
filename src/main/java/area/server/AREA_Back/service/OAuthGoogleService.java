@@ -73,6 +73,14 @@ public class OAuthGoogleService extends OAuthService {
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"
                 + "&scope=openid%20email%20profile"
+                + "%20https://www.googleapis.com/auth/gmail.readonly"
+                + "%20https://www.googleapis.com/auth/gmail.send"
+                + "%20https://www.googleapis.com/auth/gmail.modify"
+                + "%20https://www.googleapis.com/auth/calendar"
+                + "%20https://www.googleapis.com/auth/calendar.events"
+                + "%20https://www.googleapis.com/auth/drive"
+                + "%20https://www.googleapis.com/auth/drive.file"
+                + "%20https://www.googleapis.com/auth/spreadsheets"
                 + "&access_type=offline"
                 + "&prompt=consent",
             googleClientId,

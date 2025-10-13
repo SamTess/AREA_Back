@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area;
 
 import area.server.AREA_Back.dto.AreaActionRequest;
 import area.server.AREA_Back.dto.AreaReactionRequest;
@@ -19,6 +19,7 @@ import area.server.AREA_Back.repository.ActivationModeRepository;
 import area.server.AREA_Back.repository.AreaRepository;
 import area.server.AREA_Back.repository.ServiceAccountRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.JsonSchemaValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

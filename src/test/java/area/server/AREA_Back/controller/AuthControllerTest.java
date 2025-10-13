@@ -5,7 +5,8 @@ import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.TokenRefreshRequest;
 import area.server.AREA_Back.dto.UserResponse;
-import area.server.AREA_Back.service.AuthService;
+import area.server.AREA_Back.service.Auth.AuthService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

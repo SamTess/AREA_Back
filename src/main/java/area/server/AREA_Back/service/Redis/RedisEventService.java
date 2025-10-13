@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Redis;
 
 import area.server.AREA_Back.config.RedisConfig;
 import area.server.AREA_Back.dto.AreaEventMessage;

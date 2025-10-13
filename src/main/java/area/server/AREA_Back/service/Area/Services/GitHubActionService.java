@@ -1,8 +1,10 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area.Services;
 
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Auth.ServiceAccountService;
+import area.server.AREA_Back.service.Auth.TokenEncryptionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;

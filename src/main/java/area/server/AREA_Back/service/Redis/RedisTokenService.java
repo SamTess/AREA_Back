@@ -1,6 +1,7 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Redis;
 
 import area.server.AREA_Back.constants.AuthTokenConstants;
+import area.server.AREA_Back.service.Auth.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

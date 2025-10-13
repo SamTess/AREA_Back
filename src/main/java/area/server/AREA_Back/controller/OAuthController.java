@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.OAuthProvider;
-import area.server.AREA_Back.service.OAuthService;
+import area.server.AREA_Back.service.Auth.OAuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 

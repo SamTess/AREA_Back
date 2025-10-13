@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area;
 
 import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;

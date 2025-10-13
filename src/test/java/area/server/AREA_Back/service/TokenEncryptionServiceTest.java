@@ -1,6 +1,9 @@
 package area.server.AREA_Back.service;
 
 import org.junit.jupiter.api.Test;
+
+import area.server.AREA_Back.service.Auth.TokenEncryptionService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 

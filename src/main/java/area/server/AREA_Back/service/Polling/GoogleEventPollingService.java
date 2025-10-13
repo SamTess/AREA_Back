@@ -1,10 +1,12 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Polling;
 
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActivationMode;
 import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.repository.ActionInstanceRepository;
 import area.server.AREA_Back.repository.ActivationModeRepository;
+import area.server.AREA_Back.service.Area.ExecutionTriggerService;
+import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -20,71 +22,67 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Service for checking GitHub events (polling-based implementation)
- * This service runs periodically to check for new GitHub events
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GitHubEventPollingService {
+public class GoogleEventPollingService {
 
     private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300;
 
-    private final GitHubActionService gitHubActionService;
+    private final GoogleActionService googleActionService;
     private final ActionInstanceRepository actionInstanceRepository;
     private final ActivationModeRepository activationModeRepository;
     private final MeterRegistry meterRegistry;
+    private final ExecutionTriggerService executionTriggerService;
 
     private Counter pollingCycles;
     private Counter eventsFound;
     private Counter pollingFailures;
 
-    @PostConstruct
-    public void initMetrics() {
-        pollingCycles = Counter.builder("github.polling.cycles")
-                .description("Total number of GitHub polling cycles executed")
-                .register(meterRegistry);
-
-        eventsFound = Counter.builder("github.polling.events_found")
-                .description("Total number of GitHub events found during polling")
-                .register(meterRegistry);
-
-        pollingFailures = Counter.builder("github.polling.failures")
-                .description("Total number of GitHub polling failures")
-                .register(meterRegistry);
-    }
-    private final ExecutionTriggerService executionTriggerService;
-
     private final Map<UUID, LocalDateTime> lastPollTimes = new ConcurrentHashMap<>();
 
+    @PostConstruct
+    public void initMetrics() {
+        pollingCycles = Counter.builder("google_polling_cycles")
+            .description("Total number of Google polling cycles executed")
+            .register(meterRegistry);
+
+        eventsFound = Counter.builder("google_events_found")
+            .description("Total number of Google events found")
+            .register(meterRegistry);
+
+        pollingFailures = Counter.builder("google_polling_failures")
+            .description("Total number of Google polling failures")
+            .register(meterRegistry);
+    }
+
     @Scheduled(fixedRate = 10000)
-    public void pollGitHubEvents() {
+    public void pollGoogleEvents() {
         pollingCycles.increment();
-        log.info("Starting GitHub events polling cycle");
+        log.info("Starting Google events polling cycle");
 
         try {
-            List<ActionInstance> githubActionInstances = actionInstanceRepository
-                .findActiveGitHubActionInstances();
+            List<ActionInstance> googleActionInstances = actionInstanceRepository
+                .findActiveGoogleActionInstances();
 
-            log.info("Found {} GitHub action instances to check", githubActionInstances.size());
+            log.info("Found {} Google action instances to check", googleActionInstances.size());
 
-            for (ActionInstance actionInstance : githubActionInstances) {
+            for (ActionInstance actionInstance : googleActionInstances) {
                 try {
                     processActionInstance(actionInstance);
                 } catch (Exception e) {
                     pollingFailures.increment();
-                    log.error("Failed to process GitHub action instance { }: { }",
+                    log.error("Failed to process Google action instance {}: {}",
                              actionInstance.getId(), e.getMessage(), e);
                 }
             }
 
-            log.info("Completed GitHub events polling cycle, processed {} instances",
-                     githubActionInstances.size());
+            log.info("Completed Google events polling cycle, processed {} instances",
+                     googleActionInstances.size());
 
         } catch (Exception e) {
             pollingFailures.increment();
-            log.error("Failed to complete GitHub events polling cycle: { }", e.getMessage(), e);
+            log.error("Failed to execute Google polling cycle: {}", e.getMessage(), e);
         }
     }
 
@@ -111,11 +109,11 @@ public class GitHubEventPollingService {
 
         LocalDateTime lastCheck = calculateLastCheckTime(activationMode);
 
-        log.info("Polling GitHub events for action instance {} with interval {} seconds",
+        log.info("Polling Google events for action instance {} with interval {} seconds",
                  actionInstance.getId(), getPollingInterval(activationMode));
 
         try {
-            List<Map<String, Object>> events = gitHubActionService.checkGitHubEvents(
+            List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
                 actionInstance.getActionDefinition().getKey(),
                 actionInstance.getParams(),
                 actionInstance.getUser().getId(),
@@ -124,11 +122,11 @@ public class GitHubEventPollingService {
 
             if (!events.isEmpty()) {
                 eventsFound.increment(events.size());
-                log.info("Found { } new GitHub events for action instance { }",
+                log.info("Found {} new Google events for action instance {}",
                         events.size(), actionInstance.getId());
 
                 for (Map<String, Object> event : events) {
-                    log.debug("Processing GitHub event: {}", event);
+                    log.debug("Processing Google event: {}", event);
 
                     try {
                         executionTriggerService.triggerAreaExecution(
@@ -137,18 +135,18 @@ public class GitHubEventPollingService {
                             event
                         );
 
-                        log.debug("Successfully triggered execution for GitHub event from action instance {}",
+                        log.debug("Successfully triggered execution for Google event from action instance {}",
                                 actionInstance.getId());
 
                     } catch (Exception e) {
-                        log.error("Failed to trigger execution for GitHub event from action instance {}: {}",
+                        log.error("Failed to trigger execution for Google event from action instance {}: {}",
                                 actionInstance.getId(), e.getMessage(), e);
                     }
                 }
             }
 
         } catch (Exception e) {
-            log.error("Failed to check GitHub events for action instance {}: {}",
+            log.error("Failed to check Google events for action instance {}: {}",
                      actionInstance.getId(), e.getMessage(), e);
         } finally {
             lastPollTimes.put(actionInstance.getId(), LocalDateTime.now());

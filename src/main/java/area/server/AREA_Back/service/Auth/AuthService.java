@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Auth;
 
 import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.constants.AuthTokenConstants;
@@ -12,6 +12,7 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Redis.RedisTokenService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;

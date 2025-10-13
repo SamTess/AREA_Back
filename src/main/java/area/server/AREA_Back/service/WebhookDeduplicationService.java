@@ -28,6 +28,7 @@ public class WebhookDeduplicationService {
     private static final Duration GITHUB_TTL = Duration.ofMinutes(30);
     private static final Duration SLACK_TTL = Duration.ofMinutes(5);
     private static final Duration GENERIC_TTL = Duration.ofMinutes(15);
+    private static final int SCAN_COUNT = 100;
 
     /**
      * Checks if an event has already been processed (is a duplicate)
@@ -210,7 +211,7 @@ public class WebhookDeduplicationService {
             Set<String> keysToDelete = new HashSet<>();
             ScanOptions options = ScanOptions.scanOptions()
                 .match(pattern)
-                .count(100)
+                .count(SCAN_COUNT)
                 .build();
             redisTemplate.execute((RedisCallback<Object>) connection -> {
                 Cursor<byte[]> cursor = connection.scan(options);

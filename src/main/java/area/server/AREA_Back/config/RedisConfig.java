@@ -98,8 +98,8 @@ public class RedisConfig {
 
             clientConfigBuilder
                 .useSsl()
-                .disablePeerVerification()  // !! Big security flaw, replace in production with letsencrypt or a valid certificate
-                .and()
+                .disablePeerVerification()  // !! Big security flaw, replace in production
+                .and()                      // with letsencrypt or a valid certificate
                 .clientOptions(clientOptions);
         } else {
             log.warn("TLS/SSL is DISABLED for Redis. Enable it in production by setting REDIS_SSL=true");

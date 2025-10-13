@@ -1,6 +1,5 @@
 package area.server.AREA_Back.config;
 
-import area.server.AREA_Back.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

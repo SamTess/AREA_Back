@@ -12,6 +12,9 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class RestTemplateConfig {
 
+    private static final int CONNECT_TIMEOUT_MS = 10000;
+    private static final int READ_TIMEOUT_MS = 30000;
+
     /**
      * Creates a RestTemplate bean with proper configuration
      * for HTTP client timeouts and connection management
@@ -21,8 +24,8 @@ public class RestTemplateConfig {
         return builder
                 .requestFactory(() -> {
                     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-                    factory.setConnectTimeout(10000);
-                    factory.setReadTimeout(30000);
+                    factory.setConnectTimeout(CONNECT_TIMEOUT_MS);
+                    factory.setReadTimeout(READ_TIMEOUT_MS);
                     return factory;
                 })
                 .build();

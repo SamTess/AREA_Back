@@ -4,6 +4,9 @@ import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.ActionInstance;
+import area.server.AREA_Back.service.GitHubActionService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -38,11 +42,14 @@ public class ReactionExecutor {
     private static final long MILLIS_TO_SECONDS = 1000;
 
     private final RetryManager retryManager;
+    private final GitHubActionService gitHubActionService;
+    private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         LocalDateTime startTime = LocalDateTime.now();
         try {
-            log.info("Starting execution of reaction for execution {} (attempt {})",
+            log.info("Starting execution of reaction for execution { } (attempt { })",
                     execution.getId(), execution.getAttempt() + 1);
 
             ActionInstance actionInstance = execution.getActionInstance();
@@ -56,17 +63,21 @@ public class ReactionExecutor {
                 actionDefinition.getService().getKey(),
                 actionDefinition.getKey(),
                 execution.getInputPayload(),
-                actionInstance.getParams()
+                actionInstance.getParams(),
+                execution
             );
 
-            log.info("Successfully executed reaction for execution {} in {}ms",
+            log.info("Successfully executed reaction for execution { } in { }ms",
                     execution.getId(),
                     java.time.Duration.between(startTime, LocalDateTime.now()).toMillis());
 
+            sample.stop(Timer.builder("area_reaction_execution_duration")
+                    .tag("status", "success")
+                    .register(meterRegistry));
             return ExecutionResult.success(execution.getId(), result, startTime);
 
         } catch (Exception e) {
-            log.error("Failed to execute reaction for execution {}: {}",
+            log.error("Failed to execute reaction for execution { }: { }",
                      execution.getId(), e.getMessage(), e);
 
             boolean shouldRetry = retryManager.shouldRetry(execution.getAttempt(), e);
@@ -77,6 +88,9 @@ public class ReactionExecutor {
 
             Map<String, Object> errorDetails = createErrorDetails(e, execution);
 
+            sample.stop(Timer.builder("area_reaction_execution_duration")
+                    .tag("status", "failure")
+                    .register(meterRegistry));
             return ExecutionResult.failure(
                 execution.getId(),
                 e.getMessage(),
@@ -90,7 +104,8 @@ public class ReactionExecutor {
 
     private Map<String, Object> executeReactionByService(final String serviceKey, final String actionKey,
                                                         final Map<String, Object> inputPayload,
-                                                        final Map<String, Object> actionParams) {
+                                                        final Map<String, Object> actionParams,
+                                                        final Execution execution) {
         Map<String, Object> result = new HashMap<>();
 
         result.put("service", serviceKey);
@@ -105,6 +120,9 @@ public class ReactionExecutor {
                 break;
             case "slack":
                 result.putAll(executeSlackAction(actionKey, inputPayload, actionParams));
+                break;
+            case "github":
+                result.putAll(executeGitHubAction(actionKey, inputPayload, actionParams, execution));
                 break;
             case "webhook":
                 result.putAll(executeWebhookAction(actionKey, inputPayload, actionParams));
@@ -202,6 +220,21 @@ public class ReactionExecutor {
             "status", "executed",
             "result", "success"
         );
+    }
+
+    private Map<String, Object> executeGitHubAction(final String actionKey, final Map<String, Object> input,
+                                                   final Map<String, Object> params, final Execution execution) {
+        try {
+            UUID userId = execution.getActionInstance().getUser().getId();
+            Map<String, Object> result = gitHubActionService.executeGitHubAction(actionKey, input, params, userId);
+            result.put("type", "github");
+            result.put("executedAt", LocalDateTime.now());
+            result.put("executionId", execution.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to execute GitHub action { }: { }", actionKey, e.getMessage(), e);
+            throw new RuntimeException("GitHub action execution failed: " + e.getMessage(), e);
+        }
     }
 
     private Map<String, Object> createErrorDetails(final Exception e, final Execution execution) {

@@ -22,6 +22,7 @@ class UserResponseTest {
         userResponse.setEmail("test@example.com");
         userResponse.setIsActive(true);
         userResponse.setIsAdmin(false);
+        userResponse.setIsVerified(true);
         userResponse.setCreatedAt(LocalDateTime.now());
         userResponse.setLastLoginAt(LocalDateTime.now().plusDays(1));
         userResponse.setAvatarUrl("https://example.com/avatar.jpg");
@@ -33,6 +34,7 @@ class UserResponseTest {
         String email = "newtest@example.com";
         Boolean isActive = false;
         Boolean isAdmin = true;
+        Boolean isVerified = false;
         LocalDateTime createdAt = LocalDateTime.now();
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(2);
         String avatarUrl = "https://newexample.com/avatar.jpg";
@@ -41,6 +43,7 @@ class UserResponseTest {
         userResponse.setEmail(email);
         userResponse.setIsActive(isActive);
         userResponse.setIsAdmin(isAdmin);
+        userResponse.setIsVerified(isVerified);
         userResponse.setCreatedAt(createdAt);
         userResponse.setLastLoginAt(lastLoginAt);
         userResponse.setAvatarUrl(avatarUrl);
@@ -49,6 +52,7 @@ class UserResponseTest {
         assertEquals(email, userResponse.getEmail());
         assertEquals(isActive, userResponse.getIsActive());
         assertEquals(isAdmin, userResponse.getIsAdmin());
+        assertEquals(isVerified, userResponse.getIsVerified());
         assertEquals(createdAt, userResponse.getCreatedAt());
         assertEquals(lastLoginAt, userResponse.getLastLoginAt());
         assertEquals(avatarUrl, userResponse.getAvatarUrl());
@@ -86,17 +90,19 @@ class UserResponseTest {
         String email = "constructor@example.com";
         Boolean isActive = true;
         Boolean isAdmin = false;
+        Boolean isVerified = true;
         LocalDateTime createdAt = LocalDateTime.now();
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(1);
         String avatarUrl = "https://constructor.com/avatar.jpg";
 
-        UserResponse response2 = new UserResponse(id, email, isActive, isAdmin,
+        UserResponse response2 = new UserResponse(id, email, isActive, isAdmin, isVerified,
                                                  createdAt, lastLoginAt, avatarUrl);
 
         assertEquals(id, response2.getId());
         assertEquals(email, response2.getEmail());
         assertEquals(isActive, response2.getIsActive());
         assertEquals(isAdmin, response2.getIsAdmin());
+        assertEquals(isVerified, response2.getIsVerified());
         assertEquals(createdAt, response2.getCreatedAt());
         assertEquals(lastLoginAt, response2.getLastLoginAt());
         assertEquals(avatarUrl, response2.getAvatarUrl());

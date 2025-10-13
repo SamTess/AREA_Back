@@ -4,8 +4,12 @@ import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActivationMode;
+import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.ExecutionRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,20 @@ import java.util.UUID;
 public class ExecutionService {
 
     private final ExecutionRepository executionRepository;
+    private final MeterRegistry meterRegistry;
+
+    private Counter executionsCreated;
+    private Counter executionsUpdated;
+    private Counter executionsStarted;
+    private Counter executionsCanceled;
+
+    @PostConstruct
+    public void init() {
+        executionsCreated = meterRegistry.counter("execution_created_total");
+        executionsUpdated = meterRegistry.counter("execution_updated_total");
+        executionsStarted = meterRegistry.counter("execution_started_total");
+        executionsCanceled = meterRegistry.counter("execution_canceled_total");
+    }
 
     @Transactional
     public Execution createExecution(ActionInstance actionInstance,
@@ -32,6 +50,24 @@ public class ExecutionService {
         Execution execution = new Execution();
         execution.setActionInstance(actionInstance);
         execution.setActivationMode(activationMode);
+        execution.setArea(actionInstance.getArea());
+        execution.setStatus(ExecutionStatus.QUEUED);
+        execution.setAttempt(0);
+        execution.setInputPayload(inputPayload);
+        execution.setCorrelationId(correlationId);
+
+        executionsCreated.increment();
+        return executionRepository.save(execution);
+    }
+
+    @Transactional
+    public Execution createExecutionWithActivationType(ActionInstance actionInstance,
+                                                      ActivationModeType activationModeType,
+                                                      Map<String, Object> inputPayload,
+                                                      UUID correlationId) {
+        Execution execution = new Execution();
+        execution.setActionInstance(actionInstance);
+        execution.setActivationMode(null); //! temp needs to change
         execution.setArea(actionInstance.getArea());
         execution.setStatus(ExecutionStatus.QUEUED);
         execution.setAttempt(0);
@@ -59,9 +95,10 @@ public class ExecutionService {
             execution.setAttempt(execution.getAttempt() + 1);
         }
 
-        log.info("Updated execution {} with status {}, attempt {}",
+        log.info("Updated execution { } with status { }, attempt { }",
                 execution.getId(), execution.getStatus(), execution.getAttempt());
 
+        executionsUpdated.increment();
         return executionRepository.save(execution);
     }
 
@@ -76,6 +113,7 @@ public class ExecutionService {
         execution.setStatus(ExecutionStatus.RUNNING);
         execution.setStartedAt(LocalDateTime.now());
 
+        executionsStarted.increment();
         return executionRepository.save(execution);
     }
 
@@ -106,7 +144,8 @@ public class ExecutionService {
             execution.setError(Map.of("reason", reason, "canceledAt", LocalDateTime.now().toString()));
         }
 
-        log.info("Canceled execution {} with reason: {}", executionId, reason);
+        log.info("Canceled execution { } with reason: { }", executionId, reason);
+        executionsCanceled.increment();
         return executionRepository.save(execution);
     }
 

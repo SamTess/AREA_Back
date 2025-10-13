@@ -2,6 +2,8 @@ package area.server.AREA_Back.repository;
 
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,6 +24,11 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
      * Find areas by user ID
      */
     List<Area> findByUserId(UUID userId);
+
+    /**
+     * Find areas by user ID with pagination
+     */
+    Page<Area> findByUserId(UUID userId, Pageable pageable);
 
     /**
      * Find enabled areas by user

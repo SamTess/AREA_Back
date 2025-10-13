@@ -1,8 +1,10 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.dto.AuthResponse;
+import area.server.AREA_Back.dto.ForgotPasswordRequest;
 import area.server.AREA_Back.dto.LocalLoginRequest;
 import area.server.AREA_Back.dto.RegisterRequest;
+import area.server.AREA_Back.dto.ResetPasswordRequest;
 import area.server.AREA_Back.dto.TokenRefreshRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.service.AuthService;
@@ -19,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -41,11 +44,11 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         try {
-            log.info("Registration request for email: {}", request.getEmail());
+            log.info("Registration request for email: { }", request.getEmail());
             AuthResponse authResponse = authService.register(request, response);
             return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
         } catch (RuntimeException e) {
-            log.error("Registration failed for email: {}", request.getEmail(), e);
+            log.error("Registration failed for email: { }", request.getEmail(), e);
             return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new AuthResponse(e.getMessage(), null));
         } catch (Exception e) {
@@ -66,11 +69,11 @@ public class AuthController {
             @Valid @RequestBody LocalLoginRequest request,
             HttpServletResponse response) {
         try {
-            log.info("Login request for email: {}", request.getEmail());
+            log.info("Login request for email: { }", request.getEmail());
             AuthResponse authResponse = authService.login(request, response);
             return ResponseEntity.ok(authResponse);
         } catch (RuntimeException e) {
-            log.warn("Login failed for email: {}", request.getEmail(), e);
+            log.warn("Login failed for email: { }", request.getEmail(), e);
 
             HttpStatus status = HttpStatus.UNAUTHORIZED;
             if (e.getMessage().contains("locked")) {
@@ -160,10 +163,12 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> getAuthStatus(HttpServletRequest request) {
         try {
             boolean isAuthenticated = authService.isAuthenticated(request);
-            return ResponseEntity.ok(Map.of(
-                "authenticated", isAuthenticated,
-                "timestamp", System.currentTimeMillis()
-            ));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("authenticated", isAuthenticated);
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error checking auth status", e);
             return ResponseEntity.ok(Map.of(
@@ -174,9 +179,72 @@ public class AuthController {
         }
     }
 
-    /**
-     * Global exception handler for authentication-related exceptions
-     */
+    @Operation(summary = "Verify email", description = "Verify user email using verification token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Email verified successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    @GetMapping("/verify")
+    public ResponseEntity<AuthResponse> verifyEmail(@RequestParam String token) {
+        try {
+            log.info("Email verification request with token");
+            AuthResponse authResponse = authService.verifyEmail(token);
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            log.warn("Email verification failed", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new AuthResponse(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Unexpected error during email verification", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new AuthResponse("Email verification failed", null));
+        }
+    }
+
+    @Operation(summary = "Forgot password", description = "Request password reset email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Password reset email sent (if account exists)"),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    @PostMapping("/forgot-password")
+    public ResponseEntity<AuthResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            log.info("Forgot password request for email: {}", request.getEmail());
+            AuthResponse authResponse = authService.forgotPassword(request);
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            log.warn("Forgot password failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new AuthResponse(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Unexpected error during forgot password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new AuthResponse("Failed to process password reset request", null));
+        }
+    }
+
+    @Operation(summary = "Reset password", description = "Reset password using reset token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            log.info("Password reset request with token");
+            AuthResponse authResponse = authService.resetPassword(request);
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            log.warn("Password reset failed", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new AuthResponse(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Unexpected error during password reset", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new AuthResponse("Password reset failed", null));
+        }
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         log.error("Authentication runtime exception", e);
@@ -184,9 +252,6 @@ public class AuthController {
             .body(Map.of("error", e.getMessage()));
     }
 
-    /**
-     * Global exception handler for validation exceptions
-     */
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(
             org.springframework.web.bind.MethodArgumentNotValidException e) {

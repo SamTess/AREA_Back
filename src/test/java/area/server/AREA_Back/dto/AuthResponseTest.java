@@ -24,6 +24,7 @@ class AuthResponseTest {
             "test@example.com",
             true,
             false,
+            true, // isVerified
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"
@@ -65,6 +66,7 @@ class AuthResponseTest {
             "getter@example.com",
             false,
             true,
+            false, // isVerified
             LocalDateTime.now().minusDays(1),
             null,
             null
@@ -92,6 +94,7 @@ class AuthResponseTest {
             "constructor@example.com",
             true,
             false,
+            true, // isVerified
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/constructor-avatar.jpg"

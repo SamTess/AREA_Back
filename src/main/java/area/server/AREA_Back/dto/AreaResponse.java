@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -17,6 +19,8 @@ public class AreaResponse {
     private Boolean enabled;
     private UUID userId;
     private String userEmail;
+    private List<Map<String, Object>> actions;
+    private List<Map<String, Object>> reactions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

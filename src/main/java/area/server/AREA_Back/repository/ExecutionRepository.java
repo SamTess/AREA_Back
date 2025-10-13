@@ -88,4 +88,15 @@ public interface ExecutionRepository extends JpaRepository<Execution, UUID> {
           + "e.queuedAt > :since ORDER BY e.queuedAt DESC")
     List<Execution> findRecentExecutionsByActionInstance(@Param("actionInstance") ActionInstance actionInstance,
                                                         @Param("since") LocalDateTime since);
+
+    /**
+     * Find execution by ID with all relations loaded (for processing)
+     */
+    @Query("SELECT e FROM Execution e "
+           + "JOIN FETCH e.actionInstance ai "
+           + "JOIN FETCH ai.actionDefinition ad "
+           + "JOIN FETCH ad.service s "
+           + "JOIN FETCH ai.user u "
+           + "WHERE e.id = :id")
+    java.util.Optional<Execution> findByIdWithActionInstance(@Param("id") UUID id);
 }

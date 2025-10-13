@@ -77,6 +77,7 @@ class AuthControllerTest {
             "test@example.com",
             true,
             false,
+            true, // isVerified
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"
@@ -195,6 +196,51 @@ class AuthControllerTest {
             assertEquals("Email already registered", response.getBody().getMessage());
             assertNull(response.getBody().getUser());
         }
+
+        @Test
+        void registerShouldHandleEmptyEmail() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("", "password123", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleShortPassword() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "123", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleInvalidEmailFormat() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("invalid-email", "password123", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Nested
@@ -310,6 +356,36 @@ class AuthControllerTest {
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message").value("Unexpected error"))
                     .andExpect(jsonPath("$.user").isEmpty());
+        }
+
+        @Test
+        void loginShouldHandleEmptyEmail() throws Exception {
+            // Given
+            LocalLoginRequest request = new LocalLoginRequest("", "password123");
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void loginShouldHandleEmptyPassword() throws Exception {
+            // Given
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "");
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -575,6 +651,24 @@ class AuthControllerTest {
             assertNotNull(details);
             assertEquals("Email is required", details.get("email"));
             assertEquals("Password must be at least 8 characters", details.get("password"));
+        }
+
+        @Test
+        void handleValidationExceptionShouldHandleEmptyFieldErrors() {
+            // Given
+            BindingResult bindingResult = mock(BindingResult.class);
+            when(bindingResult.getFieldErrors()).thenReturn(List.of());
+
+            MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
+            when(exception.getBindingResult()).thenReturn(bindingResult);
+
+            // When
+            ResponseEntity<Map<String, Object>> response = authController.handleValidationException(exception);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Validation failed", response.getBody().get("error"));
         }
     }
 }

@@ -2,10 +2,10 @@ package area.server.AREA_Back.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -15,8 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
+
+    private MeterRegistry meterRegistry;
 
     private JwtService jwtService;
     private UUID testUserId;
@@ -24,7 +25,8 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
+        meterRegistry = new SimpleMeterRegistry();
+        jwtService = new JwtService(meterRegistry);
 
         // Set test values using reflection (since @Value is not available in unit tests)
         ReflectionTestUtils.setField(jwtService, "accessTokenSecret",
@@ -33,6 +35,9 @@ class JwtServiceTest {
                 "dGVzdC1yZWZyZXNoLXNlY3JldC1mb3Itand0LXRlc3RpbmctMTIzNDU2Nzg5MA==");
         ReflectionTestUtils.setField(jwtService, "accessTokenExpiresIn", "15m");
         ReflectionTestUtils.setField(jwtService, "refreshTokenExpiresIn", "7d");
+
+        // Initialize metrics manually since @PostConstruct is not called in unit tests
+        jwtService.initMetrics();
 
         testUserId = UUID.randomUUID();
         testEmail = "test@example.com";

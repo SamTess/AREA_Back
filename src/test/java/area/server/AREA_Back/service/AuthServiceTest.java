@@ -1,20 +1,21 @@
 package area.server.AREA_Back.service;
 
 import area.server.AREA_Back.dto.AuthResponse;
-import area.server.AREA_Back.dto.LocalLoginRequest;
-import area.server.AREA_Back.dto.RegisterRequest;
+import area.server.AREA_Back.dto.ForgotPasswordRequest;
+import area.server.AREA_Back.dto.ResetPasswordRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
-import jakarta.servlet.http.Cookie;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,17 +24,10 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -54,476 +48,313 @@ class AuthServiceTest {
     private RedisTokenService redisTokenService;
 
     @Mock
+    private EmailService emailService;
+
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
     private HttpServletResponse response;
 
+    @Mock
+    private Counter registerSuccessCounter;
+
+    @Mock
+    private Counter registerFailureCounter;
+
+    @Mock
+    private Counter loginSuccessCounter;
+
+    @Mock
+    private Counter loginFailureCounter;
+
+    @Mock
+    private Counter emailVerificationSuccessCounter;
+
+    @Mock
+    private Counter emailVerificationFailureCounter;
+
+    @Mock
+    private Counter passwordResetRequestCounter;
+
+    @Mock
+    private Counter passwordResetSuccessCounter;
+
+    @Mock
+    private Counter passwordResetFailureCounter;
+
+    @InjectMocks
     private AuthService authService;
 
-    private UUID testUserId;
-    private String testEmail;
-    private String testPassword;
-    private String testAccessToken;
-    private String testRefreshToken;
     private User testUser;
-    private UserLocalIdentity testLocalIdentity;
+    private UserLocalIdentity testIdentity;
+    private UUID userId;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(
-            userRepository,
-            userLocalIdentityRepository,
-            passwordEncoder,
-            jwtService,
-            redisTokenService
-        );
-
-        testUserId = UUID.randomUUID();
-        testEmail = "test@example.com";
-        testPassword = "password123";
-        testAccessToken = "test.access.token";
-        testRefreshToken = "test.refresh.token";
+        userId = UUID.randomUUID();
 
         testUser = new User();
-        testUser.setId(testUserId);
-        testUser.setEmail(testEmail);
+        testUser.setId(userId);
+        testUser.setEmail("test@example.com");
         testUser.setIsActive(true);
         testUser.setIsAdmin(false);
         testUser.setCreatedAt(LocalDateTime.now());
+        testUser.setLastLoginAt(LocalDateTime.now());
+        testUser.setAvatarUrl("https://example.com/avatar.jpg");
 
-        testLocalIdentity = new UserLocalIdentity();
-        testLocalIdentity.setUser(testUser);
-        testLocalIdentity.setEmail(testEmail);
-        testLocalIdentity.setPasswordHash("hashedPassword");
-        testLocalIdentity.setIsEmailVerified(false);
-        testLocalIdentity.setFailedLoginAttempts(0);
-        testLocalIdentity.setCreatedAt(LocalDateTime.now());
-        testLocalIdentity.setUpdatedAt(LocalDateTime.now());
+        testIdentity = new UserLocalIdentity();
+        testIdentity.setId(UUID.randomUUID());
+        testIdentity.setUser(testUser);
+        testIdentity.setEmail("test@example.com");
+        testIdentity.setPasswordHash("hashedPassword");
+        testIdentity.setIsEmailVerified(false);
+        testIdentity.setEmailVerificationToken("verification-token");
+        testIdentity.setEmailVerificationExpiresAt(LocalDateTime.now().plusMinutes(1440));
+        testIdentity.setFailedLoginAttempts(0);
+        testIdentity.setCreatedAt(LocalDateTime.now());
+        testIdentity.setUpdatedAt(LocalDateTime.now());
+
+        // Mock counters with lenient() since not all tests use all counters
+        lenient().when(meterRegistry.counter("auth.register.success")).thenReturn(registerSuccessCounter);
+        lenient().when(meterRegistry.counter("auth.register.failure")).thenReturn(registerFailureCounter);
+        lenient().when(meterRegistry.counter("auth.login.success")).thenReturn(loginSuccessCounter);
+        lenient().when(meterRegistry.counter("auth.login.failure")).thenReturn(loginFailureCounter);
+        lenient().when(meterRegistry.counter("auth.email.verification.success")).thenReturn(emailVerificationSuccessCounter);
+        lenient().when(meterRegistry.counter("auth.email.verification.failure")).thenReturn(emailVerificationFailureCounter);
+        lenient().when(meterRegistry.counter("auth.password.reset.request")).thenReturn(passwordResetRequestCounter);
+        lenient().when(meterRegistry.counter("auth.password.reset.success")).thenReturn(passwordResetSuccessCounter);
+        lenient().when(meterRegistry.counter("auth.password.reset.failure")).thenReturn(passwordResetFailureCounter);
+
+        // Set up field values
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "emailVerificationTokenExpiryMinutes", 1440);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "passwordResetTokenExpiryMinutes", 15);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "emailVerificationSubject", "Verify Your Account");
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "passwordResetSubject", "Reset Your Password");
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "frontendUrl", "http://localhost:3000");
+        
+        // Inject the counters directly since @PostConstruct is not called in unit tests
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "registerSuccessCounter", registerSuccessCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "registerFailureCounter", registerFailureCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "loginSuccessCounter", loginSuccessCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "loginFailureCounter", loginFailureCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "emailVerificationSuccessCounter", emailVerificationSuccessCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "emailVerificationFailureCounter", emailVerificationFailureCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "passwordResetRequestCounter", passwordResetRequestCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "passwordResetSuccessCounter", passwordResetSuccessCounter);
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "passwordResetFailureCounter", passwordResetFailureCounter);
     }
 
     @Test
-    void registerShouldCreateUserAndReturnAuthResponseWhenValidRequest() {
+    void verifyEmail_ShouldVerifyUser_WhenTokenIsValid() {
         // Given
-        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, "avatar.jpg");
-
-        when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(passwordEncoder.encode(testPassword)).thenReturn("hashedPassword");
-        when(jwtService.generateAccessToken(testUserId, testEmail)).thenReturn(testAccessToken);
-        when(jwtService.generateRefreshToken(testUserId, testEmail)).thenReturn(testRefreshToken);
+        String token = "valid-token";
+        when(userLocalIdentityRepository.findByEmailVerificationToken(token))
+            .thenReturn(Optional.of(testIdentity));
+        when(userLocalIdentityRepository.save(any(UserLocalIdentity.class)))
+            .thenReturn(testIdentity);
 
         // When
-        AuthResponse authResponse = authService.register(registerRequest, response);
+        AuthResponse response = authService.verifyEmail(token);
 
         // Then
-        assertNotNull(authResponse);
-        assertEquals("User registered successfully", authResponse.getMessage());
-        assertNotNull(authResponse.getUser());
-        assertEquals(testEmail, authResponse.getUser().getEmail());
+        assertNotNull(response);
+        assertEquals("Email verified successfully", response.getMessage());
+        assertNotNull(response.getUser());
+        assertEquals(testUser.getEmail(), response.getUser().getEmail());
 
-        // Verify user creation
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository, times(2)).save(userCaptor.capture()); // Once for creation, once for last login update
-        User savedUser = userCaptor.getAllValues().get(0);
-        assertEquals(testEmail, savedUser.getEmail());
-        assertTrue(savedUser.getIsActive());
-        assertFalse(savedUser.getIsAdmin());
+        verify(userLocalIdentityRepository).findByEmailVerificationToken(token);
+        verify(userLocalIdentityRepository).save(testIdentity);
+        verify(emailVerificationSuccessCounter).increment();
 
-        // Verify local identity creation
-        verify(userLocalIdentityRepository).save(any(UserLocalIdentity.class));
-        verify(passwordEncoder).encode(testPassword);
-
-        // Verify token operations
-        verify(jwtService).generateAccessToken(testUserId, testEmail);
-        verify(jwtService).generateRefreshToken(testUserId, testEmail);
-        verify(redisTokenService).storeAccessToken(testAccessToken, testUserId);
-        verify(redisTokenService).storeRefreshToken(testUserId, testRefreshToken);
-
-        // Verify cookies are set
-        verify(response, times(2)).addCookie(any(Cookie.class));
+        assertTrue(testIdentity.getIsEmailVerified());
+        assertNull(testIdentity.getEmailVerificationToken());
+        assertNull(testIdentity.getEmailVerificationExpiresAt());
     }
 
     @Test
-    void registerShouldThrowExceptionWhenEmailAlreadyExists() {
+    void verifyEmail_ShouldThrowException_WhenTokenIsInvalid() {
         // Given
-        RegisterRequest registerRequest = new RegisterRequest(testEmail, testPassword, null);
-        when(userLocalIdentityRepository.existsByEmail(testEmail)).thenReturn(true);
+        String token = "invalid-token";
+        when(userLocalIdentityRepository.findByEmailVerificationToken(token))
+            .thenReturn(Optional.empty());
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.register(registerRequest, response));
-        assertEquals("Email already registered", exception.getMessage());
+            () -> authService.verifyEmail(token));
+        assertEquals("Invalid verification token", exception.getMessage());
 
-        verify(userRepository, never()).save(any());
-        verify(userLocalIdentityRepository, never()).save(any());
+        verify(emailVerificationFailureCounter).increment();
     }
 
     @Test
-    void loginShouldReturnAuthResponseWhenValidCredentials() {
+    void verifyEmail_ShouldThrowException_WhenTokenIsExpired() {
         // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
+        String token = "expired-token";
+        testIdentity.setEmailVerificationExpiresAt(LocalDateTime.now().minusMinutes(1));
+        when(userLocalIdentityRepository.findByEmailVerificationToken(token))
+            .thenReturn(Optional.of(testIdentity));
 
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
-        when(passwordEncoder.matches(testPassword, "hashedPassword")).thenReturn(true);
-        when(jwtService.generateAccessToken(testUserId, testEmail)).thenReturn(testAccessToken);
-        when(jwtService.generateRefreshToken(testUserId, testEmail)).thenReturn(testRefreshToken);
+        // When & Then
+        RuntimeException exception = assertThrows(RuntimeException.class,
+            () -> authService.verifyEmail(token));
+        assertEquals("Verification token has expired", exception.getMessage());
+
+        verify(emailVerificationFailureCounter).increment();
+    }
+
+    @Test
+    void verifyEmail_ShouldThrowException_WhenEmailAlreadyVerified() {
+        // Given
+        String token = "already-verified-token";
+        testIdentity.setIsEmailVerified(true);
+        when(userLocalIdentityRepository.findByEmailVerificationToken(token))
+            .thenReturn(Optional.of(testIdentity));
+
+        // When & Then
+        RuntimeException exception = assertThrows(RuntimeException.class,
+            () -> authService.verifyEmail(token));
+        assertEquals("Email is already verified", exception.getMessage());
+
+        verify(emailVerificationFailureCounter).increment();
+    }
+
+    @Test
+    void forgotPassword_ShouldSendResetEmail_WhenUserExists() {
+        // Given
+        ForgotPasswordRequest request = new ForgotPasswordRequest("test@example.com");
+        when(userLocalIdentityRepository.findByEmail("test@example.com"))
+            .thenReturn(Optional.of(testIdentity));
+        when(emailService.sendPasswordResetEmail(anyString(), anyString(), anyString()))
+            .thenReturn(true);
+        when(userLocalIdentityRepository.save(any(UserLocalIdentity.class)))
+            .thenReturn(testIdentity);
 
         // When
-        AuthResponse authResponse = authService.login(loginRequest, response);
+        AuthResponse response = authService.forgotPassword(request);
 
         // Then
-        assertNotNull(authResponse);
-        assertEquals("Login successful", authResponse.getMessage());
-        assertNotNull(authResponse.getUser());
-        assertEquals(testEmail, authResponse.getUser().getEmail());
+        assertNotNull(response);
+        assertEquals("If an account with this email exists, a password reset link has been sent.", response.getMessage());
 
-        // Verify password check
-        verify(passwordEncoder).matches(testPassword, "hashedPassword");
+        verify(userLocalIdentityRepository).findByEmail("test@example.com");
+        verify(emailService).sendPasswordResetEmail(anyString(), anyString(), anyString());
+        verify(userLocalIdentityRepository).save(testIdentity);
+        verify(passwordResetRequestCounter).increment();
 
-        // Verify failed attempts reset
-        verify(userLocalIdentityRepository).resetFailedLoginAttempts(testEmail);
-
-        // Verify token operations
-        verify(jwtService).generateAccessToken(testUserId, testEmail);
-        verify(jwtService).generateRefreshToken(testUserId, testEmail);
-        verify(redisTokenService).storeAccessToken(testAccessToken, testUserId);
-        verify(redisTokenService).storeRefreshToken(testUserId, testRefreshToken);
-
-        // Verify last login update
-        verify(userRepository).save(testUser);
-
-        // Verify cookies are set
-        verify(response, times(2)).addCookie(any(Cookie.class));
+        assertNotNull(testIdentity.getPasswordResetToken());
+        assertNotNull(testIdentity.getPasswordResetExpiresAt());
     }
 
     @Test
-    void loginShouldThrowExceptionWhenEmailNotFound() {
+    void forgotPassword_ShouldNotSendEmail_WhenUserDoesNotExist() {
         // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.empty());
+        ForgotPasswordRequest request = new ForgotPasswordRequest("nonexistent@example.com");
+        when(userLocalIdentityRepository.findByEmail("nonexistent@example.com"))
+            .thenReturn(Optional.empty());
+
+        // When
+        AuthResponse response = authService.forgotPassword(request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("If an account with this email exists, a password reset link has been sent.", response.getMessage());
+
+        verify(userLocalIdentityRepository).findByEmail("nonexistent@example.com");
+        verify(emailService, never()).sendPasswordResetEmail(anyString(), anyString(), anyString());
+        verify(passwordResetRequestCounter).increment();
+    }
+
+    @Test
+    void resetPassword_ShouldResetPassword_WhenTokenIsValid() {
+        // Given
+        ResetPasswordRequest request = new ResetPasswordRequest("valid-reset-token", "NewPassword123!");
+        testIdentity.setPasswordResetToken("valid-reset-token");
+        testIdentity.setPasswordResetExpiresAt(LocalDateTime.now().plusMinutes(10));
+
+        when(userLocalIdentityRepository.findByPasswordResetToken("valid-reset-token"))
+            .thenReturn(Optional.of(testIdentity));
+        when(passwordEncoder.encode("NewPassword123!")).thenReturn("hashedNewPassword");
+        when(userLocalIdentityRepository.save(any(UserLocalIdentity.class)))
+            .thenReturn(testIdentity);
+
+        // When
+        AuthResponse response = authService.resetPassword(request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("Password reset successfully", response.getMessage());
+
+        verify(userLocalIdentityRepository).findByPasswordResetToken("valid-reset-token");
+        verify(passwordEncoder).encode("NewPassword123!");
+        verify(userLocalIdentityRepository).save(testIdentity);
+        verify(passwordResetSuccessCounter).increment();
+
+        assertEquals("hashedNewPassword", testIdentity.getPasswordHash());
+        assertNull(testIdentity.getPasswordResetToken());
+        assertNull(testIdentity.getPasswordResetExpiresAt());
+        assertEquals(0, testIdentity.getFailedLoginAttempts());
+        assertNull(testIdentity.getLockedUntil());
+    }
+
+    @Test
+    void resetPassword_ShouldThrowException_WhenTokenIsInvalid() {
+        // Given
+        ResetPasswordRequest request = new ResetPasswordRequest("invalid-token", "NewPassword123!");
+        when(userLocalIdentityRepository.findByPasswordResetToken("invalid-token"))
+            .thenReturn(Optional.empty());
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(loginRequest, response));
-        assertEquals("Invalid credentials", exception.getMessage());
+            () -> authService.resetPassword(request));
+        assertEquals("Invalid reset token", exception.getMessage());
 
-        verify(passwordEncoder, never()).matches(any(), any());
-        verify(jwtService, never()).generateAccessToken(any(), any());
+        verify(passwordResetFailureCounter).increment();
     }
 
     @Test
-    void loginShouldThrowExceptionWhenAccountIsLocked() {
+    void resetPassword_ShouldThrowException_WhenTokenIsExpired() {
         // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
-        testLocalIdentity.setLockedUntil(LocalDateTime.now().plusMinutes(10));
+        ResetPasswordRequest request = new ResetPasswordRequest("expired-token", "NewPassword123!");
+        testIdentity.setPasswordResetToken("expired-token");
+        testIdentity.setPasswordResetExpiresAt(LocalDateTime.now().minusMinutes(1));
 
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
+        when(userLocalIdentityRepository.findByPasswordResetToken("expired-token"))
+            .thenReturn(Optional.of(testIdentity));
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(loginRequest, response));
-        assertEquals("Account is temporarily locked due to failed login attempts", exception.getMessage());
+            () -> authService.resetPassword(request));
+        assertEquals("Reset token has expired", exception.getMessage());
 
-        verify(passwordEncoder, never()).matches(any(), any());
+        verify(passwordResetFailureCounter).increment();
     }
 
     @Test
-    void loginShouldThrowExceptionWhenUserIsInactive() {
+    void getCurrentUser_ShouldReturnUserWithVerificationStatus() {
         // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, testPassword);
-        testUser.setIsActive(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
+        // Mock JWT token extraction
+        when(jwtService.extractUserIdFromAccessToken(anyString())).thenReturn(userId);
+        when(jwtService.isAccessTokenValid(anyString(), eq(userId))).thenReturn(true);
+        when(redisTokenService.isAccessTokenValid(anyString())).thenReturn(true);
 
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(loginRequest, response));
-        assertEquals("Account is inactive", exception.getMessage());
-
-        verify(passwordEncoder, never()).matches(any(), any());
-    }
-
-    @Test
-    void loginShouldIncrementFailedAttemptsWhenWrongPassword() {
-        // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, "wrongPassword");
-
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
-        when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(loginRequest, response));
-        assertEquals("Invalid credentials", exception.getMessage());
-
-        verify(userLocalIdentityRepository).incrementFailedLoginAttempts(testEmail);
-        verify(jwtService, never()).generateAccessToken(any(), any());
-    }
-
-    @Test
-    void loginShouldLockAccountWhenTooManyFailedAttempts() {
-        // Given
-        LocalLoginRequest loginRequest = new LocalLoginRequest(testEmail, "wrongPassword");
-        testLocalIdentity.setFailedLoginAttempts(4); // 5th attempt will lock
-
-        when(userLocalIdentityRepository.findByEmail(testEmail)).thenReturn(Optional.of(testLocalIdentity));
-        when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.login(loginRequest, response));
-        assertEquals("Invalid credentials", exception.getMessage());
-
-        verify(userLocalIdentityRepository).incrementFailedLoginAttempts(testEmail);
-        verify(userLocalIdentityRepository).lockAccount(eq(testEmail), any(LocalDateTime.class));
-    }
-
-    @Test
-    void getCurrentUserShouldReturnUserResponseWhenAuthenticated() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenReturn(testUserId);
-        when(jwtService.isAccessTokenValid(testAccessToken, testUserId)).thenReturn(true);
-        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        // Mock cookie with correct cookie name from AuthTokenConstants
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("authToken", "test-token");
+        when(request.getCookies()).thenReturn(new jakarta.servlet.http.Cookie[]{cookie});
 
         // When
         UserResponse userResponse = authService.getCurrentUser(request);
 
         // Then
         assertNotNull(userResponse);
-        assertEquals(testUserId, userResponse.getId());
-        assertEquals(testEmail, userResponse.getEmail());
-    }
-
-    @Test
-    void getCurrentUserShouldThrowExceptionWhenNotAuthenticated() {
-        // Given
-        when(request.getCookies()).thenReturn(null);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.getCurrentUser(request));
-        assertEquals("User not authenticated", exception.getMessage());
-    }
-
-    @Test
-    void getCurrentUserShouldThrowExceptionWhenUserNotFound() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenReturn(testUserId);
-        when(jwtService.isAccessTokenValid(testAccessToken, testUserId)).thenReturn(true);
-        when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.getCurrentUser(request));
-        assertEquals("User not found", exception.getMessage());
-    }
-
-    @Test
-    void logoutShouldClearTokensAndCookiesWhenAuthenticated() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenReturn(testUserId);
-        when(jwtService.isAccessTokenValid(testAccessToken, testUserId)).thenReturn(true);
-
-        // When
-        authService.logout(request, response);
-
-        // Then
-        verify(redisTokenService).deleteAllTokensForUser(testUserId, testAccessToken);
-        verify(response, times(2)).addCookie(any(Cookie.class)); // Clear cookies
-    }
-
-    @Test
-    void logoutShouldStillClearCookiesWhenNotAuthenticated() {
-        // Given
-        when(request.getCookies()).thenReturn(null);
-
-        // When
-        authService.logout(request, response);
-
-        // Then
-        verify(redisTokenService, never()).deleteAllTokensForUser(any(), any());
-        verify(response, times(2)).addCookie(any(Cookie.class)); // Still clear cookies
-    }
-
-    @Test
-    void refreshTokenShouldGenerateNewTokensWhenValidRefreshToken() {
-        // Given
-        Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(jwtService.extractUserIdFromRefreshToken(testRefreshToken)).thenReturn(testUserId);
-        when(jwtService.isRefreshTokenValid(testRefreshToken, testUserId)).thenReturn(true);
-        when(redisTokenService.isRefreshTokenValid(testUserId, testRefreshToken)).thenReturn(true);
-        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-        when(jwtService.generateAccessToken(testUserId, testEmail)).thenReturn("new.access.token");
-        when(jwtService.generateRefreshToken(testUserId, testEmail)).thenReturn("new.refresh.token");
-
-        // When
-        AuthResponse authResponse = authService.refreshToken(request, response);
-
-        // Then
-        assertNotNull(authResponse);
-        assertEquals("Tokens refreshed successfully", authResponse.getMessage());
-        assertNotNull(authResponse.getUser());
-
-        verify(redisTokenService).storeAccessToken("new.access.token", testUserId);
-        verify(redisTokenService).rotateRefreshToken(testUserId, "new.refresh.token");
-        verify(response, times(2)).addCookie(any(Cookie.class)); // Set new cookies
-    }
-
-    @Test
-    void refreshTokenShouldThrowExceptionWhenNoRefreshToken() {
-        // Given
-        when(request.getCookies()).thenReturn(null);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.refreshToken(request, response));
-        assertEquals("Refresh token not found", exception.getMessage());
-    }
-
-    @Test
-    void refreshTokenShouldThrowExceptionWhenInvalidRefreshToken() {
-        // Given
-        Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(jwtService.extractUserIdFromRefreshToken(testRefreshToken)).thenReturn(testUserId);
-        when(jwtService.isRefreshTokenValid(testRefreshToken, testUserId)).thenReturn(false);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.refreshToken(request, response));
-        assertEquals("Invalid refresh token", exception.getMessage());
-    }
-
-    @Test
-    void refreshTokenShouldThrowExceptionWhenTokenNotInRedis() {
-        // Given
-        Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(jwtService.extractUserIdFromRefreshToken(testRefreshToken)).thenReturn(testUserId);
-        when(jwtService.isRefreshTokenValid(testRefreshToken, testUserId)).thenReturn(true);
-        when(redisTokenService.isRefreshTokenValid(testUserId, testRefreshToken)).thenReturn(false);
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.refreshToken(request, response));
-        assertEquals("Refresh token not found or expired", exception.getMessage());
-    }
-
-    @Test
-    void refreshTokenShouldThrowExceptionWhenUserInactive() {
-        // Given
-        Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
-        testUser.setIsActive(false);
-
-        when(request.getCookies()).thenReturn(cookies);
-        when(jwtService.extractUserIdFromRefreshToken(testRefreshToken)).thenReturn(testUserId);
-        when(jwtService.isRefreshTokenValid(testRefreshToken, testUserId)).thenReturn(true);
-        when(redisTokenService.isRefreshTokenValid(testUserId, testRefreshToken)).thenReturn(true);
-        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.refreshToken(request, response));
-        assertEquals("User account is inactive", exception.getMessage());
-    }
-
-    @Test
-    void refreshTokenShouldThrowExceptionWhenUserNotFound() {
-        // Given
-        Cookie[] cookies = {new Cookie("refresh_token", testRefreshToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(jwtService.extractUserIdFromRefreshToken(testRefreshToken)).thenReturn(testUserId);
-        when(jwtService.isRefreshTokenValid(testRefreshToken, testUserId)).thenReturn(true);
-        when(redisTokenService.isRefreshTokenValid(testUserId, testRefreshToken)).thenReturn(true);
-        when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
-
-        // When & Then
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> authService.refreshToken(request, response));
-        assertEquals("User not found", exception.getMessage());
-    }
-
-    @Test
-    void isAuthenticatedShouldReturnTrueWhenValidToken() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenReturn(testUserId);
-        when(jwtService.isAccessTokenValid(testAccessToken, testUserId)).thenReturn(true);
-
-        // When
-        boolean result = authService.isAuthenticated(request);
-
-        // Then
-        assertTrue(result);
-    }
-
-    @Test
-    void isAuthenticatedShouldReturnFalseWhenNoToken() {
-        // Given
-        when(request.getCookies()).thenReturn(null);
-
-        // When
-        boolean result = authService.isAuthenticated(request);
-
-        // Then
-        assertFalse(result);
-    }
-
-    @Test
-    void isAuthenticatedShouldReturnFalseWhenTokenNotInRedis() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(false);
-
-        // When
-        boolean result = authService.isAuthenticated(request);
-
-        // Then
-        assertFalse(result);
-    }
-
-    @Test
-    void isAuthenticatedShouldReturnFalseWhenJwtInvalid() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenReturn(testUserId);
-        when(jwtService.isAccessTokenValid(testAccessToken, testUserId)).thenReturn(false);
-
-        // When
-        boolean result = authService.isAuthenticated(request);
-
-        // Then
-        assertFalse(result);
-    }
-
-    @Test
-    void isAuthenticatedShouldReturnFalseWhenJwtExtractionFails() {
-        // Given
-        Cookie[] cookies = {new Cookie("access_token", testAccessToken)};
-        when(request.getCookies()).thenReturn(cookies);
-        when(redisTokenService.isAccessTokenValid(testAccessToken)).thenReturn(true);
-        when(jwtService.extractUserIdFromAccessToken(testAccessToken)).thenThrow(new RuntimeException("Invalid JWT"));
-
-        // When
-        boolean result = authService.isAuthenticated(request);
-
-        // Then
-        assertFalse(result);
+        assertEquals(testUser.getId(), userResponse.getId());
+        assertEquals(testUser.getEmail(), userResponse.getEmail());
+        assertEquals(testIdentity.getIsEmailVerified(), userResponse.getIsVerified());
     }
 }

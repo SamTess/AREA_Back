@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.constants.AuthTokenConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -16,12 +17,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Service
 @Slf4j
 public class JwtService {
 
     private static final int MIN_KEY_LENGTH_BYTES = 32;
     private static final int BITS_PER_BYTE = 8;
+    private static final int LOG_TOKEN_PREFIX_LENGTH = 20;
 
     @Value("${JWT_ACCESS_SECRET:}")
     private String accessTokenSecret;
@@ -29,30 +35,74 @@ public class JwtService {
     @Value("${JWT_REFRESH_SECRET:}")
     private String refreshTokenSecret;
 
-    @Value("${ACCESS_TOKEN_EXPIRES_IN:15m}")
+    @Value("${ACCESS_TOKEN_EXPIRES_IN:24h}")
     private String accessTokenExpiresIn;
 
     @Value("${REFRESH_TOKEN_EXPIRES_IN:7d}")
     private String refreshTokenExpiresIn;
 
-    public String generateAccessToken(UUID userId, String email) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("email", email);
-        claims.put("type", "access");
-        return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
+    private final MeterRegistry meterRegistry;
+
+    private Counter generateAccessTokenCalls;
+    private Counter generateRefreshTokenCalls;
+    private Counter accessTokenValidationCalls;
+    private Counter refreshTokenValidationCalls;
+    private Counter tokenValidationFailures;
+
+    public JwtService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
-    public String generateRefreshToken(UUID userId, String email) {
+    @PostConstruct
+    public void initMetrics() {
+        generateAccessTokenCalls = Counter.builder("jwt.generate_access.calls")
+                .description("Total number of access token generation calls")
+                .register(meterRegistry);
+
+        generateRefreshTokenCalls = Counter.builder("jwt.generate_refresh.calls")
+                .description("Total number of refresh token generation calls")
+                .register(meterRegistry);
+
+        accessTokenValidationCalls = Counter.builder("jwt.validate_access.calls")
+                .description("Total number of access token validation calls")
+                .register(meterRegistry);
+
+        refreshTokenValidationCalls = Counter.builder("jwt.validate_refresh.calls")
+                .description("Total number of refresh token validation calls")
+                .register(meterRegistry);
+
+        tokenValidationFailures = Counter.builder("jwt.validation_failures")
+                .description("Total number of JWT validation failures")
+                .register(meterRegistry);
+    }
+
+    public String generateAccessToken(UUID userId, String email) {
+        generateAccessTokenCalls.increment();
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
-        claims.put("type", "refresh");
+        claims.put("type", AuthTokenConstants.ACCESS_TOKEN_TYPE);
+        return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
+    }
+    public String generateRefreshToken(UUID userId, String email) {
+        generateRefreshTokenCalls.increment();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", email);
+        claims.put("type", AuthTokenConstants.REFRESH_TOKEN_TYPE);
         return generateToken(claims, userId.toString(), getRefreshTokenExpiration(), getRefreshTokenSigningKey());
     }
 
     public UUID extractUserIdFromAccessToken(String token) {
-        Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
-        String userId = claims.getSubject();
-        return UUID.fromString(userId);
+        try {
+            log.debug("Extracting user ID from access token (prefix: { }...)",
+                token.substring(0, Math.min(LOG_TOKEN_PREFIX_LENGTH, token.length())));
+            Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
+            String userId = claims.getSubject();
+            log.debug("Extracted user ID: { }", userId);
+            return UUID.fromString(userId);
+        } catch (Exception e) {
+            log.error("Failed to extract user ID from access token: { }", e.getMessage(), e);
+            throw e;
+        }
     }
 
     public UUID extractUserIdFromRefreshToken(String token) {
@@ -72,20 +122,24 @@ public class JwtService {
     }
 
     public boolean isAccessTokenValid(String token, UUID userId) {
+        accessTokenValidationCalls.increment();
         try {
             final UUID tokenUserId = extractUserIdFromAccessToken(token);
             return tokenUserId.equals(userId) && !isTokenExpired(token, getAccessTokenSigningKey());
         } catch (Exception e) {
+            tokenValidationFailures.increment();
             log.debug("Access token validation failed", e);
             return false;
         }
     }
 
     public boolean isRefreshTokenValid(String token, UUID userId) {
+        refreshTokenValidationCalls.increment();
         try {
             final UUID tokenUserId = extractUserIdFromRefreshToken(token);
             return tokenUserId.equals(userId) && !isTokenExpired(token, getRefreshTokenSigningKey());
         } catch (Exception e) {
+            tokenValidationFailures.increment();
             log.debug("Refresh token validation failed", e);
             return false;
         }
@@ -124,11 +178,17 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token, SecretKey signingKey) {
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            log.debug("Parsing JWT token with signing key");
+            return Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception e) {
+            log.error("Failed to parse JWT token: { }", e.getMessage(), e);
+            throw e;
+        }
     }
 
     private boolean isTokenExpired(String token, SecretKey signingKey) {
@@ -141,6 +201,9 @@ public class JwtService {
     }
 
     private SecretKey getAccessTokenSigningKey() {
+        log.debug("Getting access token signing key, secret configured: { }",
+            accessTokenSecret != null && !accessTokenSecret.trim().isEmpty());
+
         if (accessTokenSecret == null || accessTokenSecret.trim().isEmpty()) {
             log.warn("No access token secret provided, generating a secure key");
             return Jwts.SIG.HS256.key().build();
@@ -149,13 +212,14 @@ public class JwtService {
         try {
             byte[] keyBytes = Decoders.BASE64.decode(accessTokenSecret);
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Access token secret is too short ({} bits), generating secure key",
+                log.warn("Access token secret is too short ({ } bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
+            log.debug("Using configured access token secret ({ } bytes)", keyBytes.length);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid access token secret format, generating secure key: {}", e.getMessage());
+            log.warn("Invalid access token secret format, generating secure key: { }", e.getMessage());
             return Jwts.SIG.HS256.key().build();
         }
     }
@@ -169,13 +233,13 @@ public class JwtService {
         try {
             byte[] keyBytes = Decoders.BASE64.decode(refreshTokenSecret);
             if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Refresh token secret is too short ({} bits), generating secure key",
+                log.warn("Refresh token secret is too short ({ } bits), generating secure key",
                         keyBytes.length * BITS_PER_BYTE);
                 return Jwts.SIG.HS256.key().build();
             }
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid refresh token secret format, generating secure key: {}", e.getMessage());
+            log.warn("Invalid refresh token secret format, generating secure key: { }", e.getMessage());
             return Jwts.SIG.HS256.key().build();
         }
     }

@@ -3,13 +3,14 @@ package area.server.AREA_Back.service;
 import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -36,7 +37,8 @@ class ServiceCacheServiceTest {
     @Mock
     private CacheManager cacheManager;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
+
     private ServiceCacheService serviceCacheService;
 
     private Service testService1;
@@ -45,6 +47,13 @@ class ServiceCacheServiceTest {
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        serviceCacheService = new ServiceCacheService(meterRegistry);
+        // Inject the mocked repository
+        ReflectionTestUtils.setField(serviceCacheService, "serviceRepository", serviceRepository);
+        // Initialize metrics
+        ReflectionTestUtils.invokeMethod(serviceCacheService, "init");
+
         testService1 = new Service();
         testService1.setId(UUID.randomUUID());
         testService1.setKey("test-service-1");

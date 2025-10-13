@@ -2,9 +2,11 @@ package area.server.AREA_Back.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.concurrent.Executor;
 
@@ -21,6 +23,8 @@ public class AsyncConfig {
     private static final int REACTION_MAX_POOL_SIZE = 6;
     private static final int REACTION_QUEUE_CAPACITY = 50;
     private static final int REACTION_AWAIT_TERMINATION_SECONDS = 20;
+    private static final int SCHEDULER_POOL_SIZE = 10;
+    private static final int SCHEDULER_AWAIT_TERMINATION_SECONDS = 30;
 
     @Bean(name = "areaWorkerExecutor")
     public Executor areaWorkerExecutor() {
@@ -46,5 +50,16 @@ public class AsyncConfig {
         executor.setAwaitTerminationSeconds(REACTION_AWAIT_TERMINATION_SECONDS);
         executor.initialize();
         return executor;
+    }
+
+    @Bean(name = "taskScheduler")
+    public TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(SCHEDULER_POOL_SIZE);
+        scheduler.setThreadNamePrefix("CRON-Scheduler-");
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(SCHEDULER_AWAIT_TERMINATION_SECONDS);
+        scheduler.initialize();
+        return scheduler;
     }
 }

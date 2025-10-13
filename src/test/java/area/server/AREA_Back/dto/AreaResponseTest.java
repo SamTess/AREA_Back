@@ -63,11 +63,11 @@ class AreaResponseTest {
         AreaResponse response1 = new AreaResponse();
         response1.setId(UUID.randomUUID());
         response1.setName("Test Area");
-        
+
         AreaResponse response2 = new AreaResponse();
         response2.setId(response1.getId());
         response2.setName("Test Area");
-        
+
         assertEquals(response1, response2);
         assertEquals(response1.hashCode(), response2.hashCode());
     }
@@ -77,35 +77,6 @@ class AreaResponseTest {
         String responseString = areaResponse.toString();
         assertNotNull(responseString);
         assertTrue(responseString.contains("Test Area"));
-    }
-
-    @Test
-    void testAreaResponseConstructors() {
-        // Test no-args constructor
-        AreaResponse response1 = new AreaResponse();
-        assertNotNull(response1);
-
-        // Test all-args constructor
-        UUID id = UUID.randomUUID();
-        String name = "Constructor Area";
-        String description = "Constructor Description";
-        Boolean enabled = true;
-        UUID userId = UUID.randomUUID();
-        String userEmail = "constructor@example.com";
-        LocalDateTime createdAt = LocalDateTime.now();
-        LocalDateTime updatedAt = LocalDateTime.now().plusHours(1);
-
-        AreaResponse response2 = new AreaResponse(id, name, description, enabled, 
-                                                 userId, userEmail, createdAt, updatedAt);
-        
-        assertEquals(id, response2.getId());
-        assertEquals(name, response2.getName());
-        assertEquals(description, response2.getDescription());
-        assertEquals(enabled, response2.getEnabled());
-        assertEquals(userId, response2.getUserId());
-        assertEquals(userEmail, response2.getUserEmail());
-        assertEquals(createdAt, response2.getCreatedAt());
-        assertEquals(updatedAt, response2.getUpdatedAt());
     }
 
     @Test

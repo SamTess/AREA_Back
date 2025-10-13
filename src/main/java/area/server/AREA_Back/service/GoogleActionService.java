@@ -237,8 +237,9 @@ public class GoogleActionService {
             return Collections.emptyList();
         }
 
+        final int maxMessages = 10;
         return messages.stream()
-            .limit(10)
+            .limit(maxMessages)
             .map(msg -> fetchGmailMessage(token, (String) msg.get("id")))
             .toList();
     }
@@ -269,21 +270,41 @@ public class GoogleActionService {
             String name = (String) header.get("name");
             String value = (String) header.get("value");
             switch (name.toLowerCase()) {
-                case "from" -> event.put("from", value);
-                case "to" -> event.put("to", List.of(value.split(",")));
-                case "subject" -> event.put("subject", value);
-                case "date" -> event.put("received_at", value);
+                case "from":
+                    event.put("from", value);
+                    break;
+                case "to":
+                    event.put("to", List.of(value.split(",")));
+                    break;
+                case "subject":
+                    event.put("subject", value);
+                    break;
+                case "date":
+                    event.put("received_at", value);
+                    break;
+                default:
+                    // Ignore other headers
+                    break;
             }
         }
 
         @SuppressWarnings("unchecked")
         List<String> labelIds = (List<String>) message.get("labelIds");
-        event.put("labels", labelIds != null ? labelIds : List.of());
+        List<String> labels;
+        if (labelIds != null) {
+            labels = labelIds;
+        } else {
+            labels = List.of();
+        }
+        event.put("labels", labels);
 
         return event;
     }
 
-    private Map<String, Object> createCalendarEvent(String token, Map<String, Object> input, Map<String, Object> params) {
+    private Map<String, Object> createCalendarEvent(
+            String token,
+            Map<String, Object> input,
+            Map<String, Object> params) {
         String calendarId = getOptionalParam(params, "calendar_id", String.class, "primary");
         String summary = getRequiredParam(params, "summary", String.class);
         String description = getOptionalParam(params, "description", String.class, "");
@@ -331,7 +352,10 @@ public class GoogleActionService {
         return result;
     }
 
-    private Map<String, Object> deleteCalendarEvent(String token, Map<String, Object> input, Map<String, Object> params) {
+    private Map<String, Object> deleteCalendarEvent(
+            String token,
+            Map<String, Object> input,
+            Map<String, Object> params) {
         String calendarId = getOptionalParam(params, "calendar_id", String.class, "primary");
         String eventId = getRequiredParam(params, "event_id", String.class);
 
@@ -360,9 +384,13 @@ public class GoogleActionService {
                                                               Map<String, Object> params,
                                                               LocalDateTime lastCheck) {
         String calendarId = getOptionalParam(params, "calendar_id", String.class, "primary");
-        String timeMin = ZonedDateTime.now().minusMinutes(5).format(DateTimeFormatter.ISO_INSTANT);
+        final int minutesBack = 5;
+        String timeMin = ZonedDateTime.now()
+            .minusMinutes(minutesBack)
+            .format(DateTimeFormatter.ISO_INSTANT);
 
-        String url = CALENDAR_API + "/calendars/" + calendarId + "/events?timeMin=" + timeMin + "&orderBy=startTime&singleEvents=true";
+        String url = CALENDAR_API + "/calendars/" + calendarId + "/events?timeMin="
+            + timeMin + "&orderBy=startTime&singleEvents=true";
 
         HttpHeaders headers = createGoogleHeaders(token);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -385,8 +413,9 @@ public class GoogleActionService {
             return Collections.emptyList();
         }
 
+        final int maxEvents = 10;
         return items.stream()
-            .limit(10)
+            .limit(maxEvents)
             .map(event -> parseCalendarEvent(event))
             .toList();
     }
@@ -395,13 +424,20 @@ public class GoogleActionService {
                                                                    Map<String, Object> params,
                                                                    LocalDateTime lastCheck) {
         String calendarId = getOptionalParam(params, "calendar_id", String.class, "primary");
-        Integer minutesBefore = getOptionalParam(params, "minutes_before", Integer.class, 15);
+        final int defaultMinutes = 15;
+        Integer minutesBefore = getOptionalParam(
+            params,
+            "minutes_before",
+            Integer.class,
+            defaultMinutes
+        );
 
         ZonedDateTime now = ZonedDateTime.now();
         String timeMin = now.format(DateTimeFormatter.ISO_INSTANT);
         String timeMax = now.plusMinutes(minutesBefore).format(DateTimeFormatter.ISO_INSTANT);
 
-        String url = CALENDAR_API + "/calendars/" + calendarId + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&orderBy=startTime&singleEvents=true";
+        String url = CALENDAR_API + "/calendars/" + calendarId + "/events?timeMin=" + timeMin
+            + "&timeMax=" + timeMax + "&orderBy=startTime&singleEvents=true";
 
         HttpHeaders headers = createGoogleHeaders(token);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -658,7 +694,8 @@ public class GoogleActionService {
         List<String> values = getRequiredParam(params, "values", List.class);
 
         String range = sheetName + "!A:Z";
-        String url = SHEETS_API + "/spreadsheets/" + spreadsheetId + "/values/" + range + ":append?valueInputOption=USER_ENTERED";
+        String url = SHEETS_API + "/spreadsheets/" + spreadsheetId + "/values/" + range
+            + ":append?valueInputOption=USER_ENTERED";
 
         Map<String, Object> requestBody = Map.of(
             "values", List.of(values)
@@ -694,7 +731,8 @@ public class GoogleActionService {
         String value = getRequiredParam(params, "value", String.class);
 
         String range = sheetName + "!" + cell;
-        String url = SHEETS_API + "/spreadsheets/" + spreadsheetId + "/values/" + range + "?valueInputOption=USER_ENTERED";
+        String url = SHEETS_API + "/spreadsheets/" + spreadsheetId + "/values/" + range
+            + "?valueInputOption=USER_ENTERED";
 
         Map<String, Object> requestBody = Map.of(
             "values", List.of(List.of(value))
@@ -824,8 +862,18 @@ public class GoogleActionService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getOptionalParam(Map<String, Object> params, String key, Class<T> type, T defaultValue) {
+    private <T> T getOptionalParam(
+            Map<String, Object> params,
+            String key,
+            Class<T> type,
+            T defaultValue) {
         Object value = params.get(key);
-        return value != null ? (T) value : defaultValue;
+        T result;
+        if (value != null) {
+            result = (T) value;
+        } else {
+            result = defaultValue;
+        }
+        return result;
     }
 }

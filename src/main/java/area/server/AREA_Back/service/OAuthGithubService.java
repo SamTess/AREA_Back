@@ -59,7 +59,6 @@ public class OAuthGithubService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
-    // CHECKSTYLE:OFF ParameterNumber
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
@@ -70,7 +69,6 @@ public class OAuthGithubService extends OAuthService {
         PasswordEncoder passwordEncoder,
         AuthService authService
     ) {
-        // CHECKSTYLE:OFF LineLength
         super(
             "github",
             "GitHub",
@@ -81,12 +79,10 @@ public class OAuthGithubService extends OAuthService {
             githubClientSecret,
             jwtService
         );
-        // CHECKSTYLE:ON LineLength
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;
         this.authService = authService;
     }
-    // CHECKSTYLE:ON ParameterNumber
 
     @PostConstruct
     private void initMetrics() {

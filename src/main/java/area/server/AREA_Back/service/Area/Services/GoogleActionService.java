@@ -1,7 +1,9 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area.Services;
 
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Auth.ServiceAccountService;
+import area.server.AREA_Back.service.Auth.TokenEncryptionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
@@ -205,16 +207,21 @@ public class GoogleActionService {
         String subjectContains = getOptionalParam(params, "subject_contains", String.class, null);
 
         StringBuilder query = new StringBuilder("in:" + label);
-        query.append(" after:").append(lastCheck.toEpochSecond(java.time.ZoneOffset.UTC));
+
+        String afterDate = lastCheck.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        query.append(" after:").append(afterDate);
 
         if (from != null && !from.isEmpty()) {
             query.append(" from:").append(from);
         }
         if (subjectContains != null && !subjectContains.isEmpty()) {
-            query.append(" subject:").append(subjectContains);
+            query.append(" subject:(").append(subjectContains).append(")");
         }
 
-        String url = GMAIL_API + "/users/me/messages?q=" + query;
+        String url = GMAIL_API + "/users/me/messages?q=" + java.net.URLEncoder.encode(
+            query.toString(),
+            java.nio.charset.StandardCharsets.UTF_8
+        );
 
         HttpHeaders headers = createGoogleHeaders(token);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -534,8 +541,7 @@ public class GoogleActionService {
         String mimeType = getOptionalParam(params, "mime_type", String.class, "text/plain");
         String parentFolderId = getOptionalParam(params, "parent_folder_id", String.class, null);
 
-        // Note: This is a simplified implementation. Real file upload would use multipart/related
-        String url = DRIVE_API + "/files";
+        String url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
 
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", name);
@@ -545,8 +551,23 @@ public class GoogleActionService {
             metadata.put("parents", List.of(parentFolderId));
         }
 
-        HttpHeaders headers = createGoogleHeaders(token);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(metadata, headers);
+        String boundary = "boundary_" + System.currentTimeMillis();
+        StringBuilder multipartBody = new StringBuilder();
+
+        multipartBody.append("--").append(boundary).append("\r\n");
+        multipartBody.append("Content-Type: application/json; charset=UTF-8\r\n\r\n");
+        multipartBody.append(mapToJson(metadata)).append("\r\n");
+
+        multipartBody.append("--").append(boundary).append("\r\n");
+        multipartBody.append("Content-Type: ").append(mimeType).append("\r\n\r\n");
+        multipartBody.append(content).append("\r\n");
+        multipartBody.append("--").append(boundary).append("--");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.parseMediaType("multipart/related; boundary=" + boundary));
+
+        HttpEntity<String> request = new HttpEntity<>(multipartBody.toString(), headers);
 
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
             url, HttpMethod.POST, request,
@@ -562,7 +583,9 @@ public class GoogleActionService {
         result.put("file_id", responseBody.get("id"));
         result.put("name", responseBody.get("name"));
         result.put("web_view_link", responseBody.get("webViewLink"));
+        result.put("web_content_link", responseBody.get("webContentLink"));
         result.put("created_at", responseBody.get("createdTime"));
+        result.put("size", responseBody.get("size"));
 
         return result;
     }
@@ -665,7 +688,70 @@ public class GoogleActionService {
     private List<Map<String, Object>> checkModifiedDriveFiles(String token,
                                                                Map<String, Object> params,
                                                                LocalDateTime lastCheck) {
-        return checkNewDriveFiles(token, params, lastCheck);
+        String folderId = getOptionalParam(params, "folder_id", String.class, null);
+        String fileType = getOptionalParam(params, "file_type", String.class, "any");
+
+        StringBuilder query = new StringBuilder("trashed=false");
+
+        String modifiedTime = lastCheck.format(DateTimeFormatter.ISO_INSTANT);
+        query.append(" and modifiedTime > '").append(modifiedTime).append("'");
+
+        if (folderId != null && !folderId.isEmpty()) {
+            query.append(" and '").append(folderId).append("' in parents");
+        }
+
+        if (!"any".equals(fileType)) {
+            String mimeType = switch (fileType) {
+                case "document" -> "application/vnd.google-apps.document";
+                case "spreadsheet" -> "application/vnd.google-apps.spreadsheet";
+                case "presentation" -> "application/vnd.google-apps.presentation";
+                case "folder" -> "application/vnd.google-apps.folder";
+                case "pdf" -> "application/pdf";
+                case "image" -> "image/";
+                default -> null;
+            };
+
+            if (mimeType != null) {
+                if (mimeType.endsWith("/")) {
+                    query.append(" and mimeType contains '").append(mimeType).append("'");
+                } else {
+                    query.append(" and mimeType='").append(mimeType).append("'");
+                }
+            }
+        }
+
+        String url = DRIVE_API + "/files?q=" + query + "&orderBy=modifiedTime desc&pageSize=10"
+            + "&fields=files(id,name,mimeType,webViewLink,createdTime,modifiedTime,owners,version)";
+
+        HttpHeaders headers = createGoogleHeaders(token);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+            url, HttpMethod.GET, request,
+            new ParameterizedTypeReference<>() { }
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.warn("Failed to fetch modified Drive files: {}", response.getStatusCode());
+            return Collections.emptyList();
+        }
+
+        Map<String, Object> responseBody = response.getBody();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> files = (List<Map<String, Object>>) responseBody.get("files");
+
+        if (files == null) {
+            return Collections.emptyList();
+        }
+
+        return files.stream()
+            .map(file -> {
+                Map<String, Object> result = parseDriveFile(file);
+                result.put("version", file.get("version"));
+                result.put("event_type", "modified");
+                return result;
+            })
+            .toList();
     }
 
     private Map<String, Object> parseDriveFile(Map<String, Object> file) {
@@ -801,9 +887,61 @@ public class GoogleActionService {
     private List<Map<String, Object>> checkNewSheetRows(String token,
                                                          Map<String, Object> params,
                                                          LocalDateTime lastCheck) {
-        // This is a simplified implementation
-        // In practice, you'd need to store the last row count and compare
-        return Collections.emptyList();
+        String spreadsheetId = getRequiredParam(params, "spreadsheet_id", String.class);
+        String sheetName = getOptionalParam(params, "sheet_name", String.class, "Sheet1");
+        Integer lastKnownRowCount = getOptionalParam(params, "last_row_count", Integer.class, 0);
+
+        String range = sheetName + "!A:Z";
+        String url = SHEETS_API + "/spreadsheets/" + spreadsheetId + "/values/" + range;
+
+        HttpHeaders headers = createGoogleHeaders(token);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+            url, HttpMethod.GET, request,
+            new ParameterizedTypeReference<>() { }
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.warn("Failed to fetch Sheet data: {}", response.getStatusCode());
+            return Collections.emptyList();
+        }
+
+        Map<String, Object> responseBody = response.getBody();
+        @SuppressWarnings("unchecked")
+        List<List<Object>> values = (List<List<Object>>) responseBody.get("values");
+
+        if (values == null || values.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        int currentRowCount = values.size();
+
+        // If no rows were added since last check
+        if (currentRowCount <= lastKnownRowCount) {
+            return Collections.emptyList();
+        }
+
+        // Get only the new rows
+        List<Map<String, Object>> newRows = new ArrayList<>();
+        for (int i = lastKnownRowCount; i < currentRowCount; i++) {
+            Map<String, Object> rowEvent = new HashMap<>();
+            rowEvent.put("spreadsheet_id", spreadsheetId);
+            rowEvent.put("sheet_name", sheetName);
+            rowEvent.put("row_number", i + 1);
+            rowEvent.put("row_data", values.get(i));
+            rowEvent.put("detected_at", LocalDateTime.now().toString());
+            rowEvent.put("current_row_count", currentRowCount);
+            newRows.add(rowEvent);
+        }
+
+        // Limit to avoid too many events at once
+        final int maxNewRows = 20;
+        if (newRows.size() > maxNewRows) {
+            return newRows.stream().limit(maxNewRows).toList();
+        }
+
+        return newRows;
     }
 
     private String getGoogleToken(UUID userId) {
@@ -875,5 +1013,96 @@ public class GoogleActionService {
             result = defaultValue;
         }
         return result;
+    }
+
+    /**
+     * Simple JSON conversion for metadata objects.
+     * Converts a Map to JSON string format for Google API requests.
+     *
+     * @param map The map to convert to JSON
+     * @return JSON string representation
+     */
+    private String mapToJson(Map<String, Object> map) {
+        StringBuilder json = new StringBuilder("{");
+        boolean first = true;
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (!first) {
+                json.append(",");
+            }
+            first = false;
+
+            json.append("\"").append(entry.getKey()).append("\":");
+
+            Object value = entry.getValue();
+            if (value == null) {
+                json.append("null");
+            } else if (value instanceof String) {
+                json.append("\"").append(escapeJson((String) value)).append("\"");
+            } else if (value instanceof Number || value instanceof Boolean) {
+                json.append(value);
+            } else if (value instanceof List) {
+                json.append(listToJson((List<?>) value));
+            } else if (value instanceof Map) {
+                json.append(mapToJson((Map<String, Object>) value));
+            } else {
+                json.append("\"").append(escapeJson(value.toString())).append("\"");
+            }
+        }
+
+        json.append("}");
+        return json.toString();
+    }
+
+    /**
+     * Convert a List to JSON array format.
+     *
+     * @param list The list to convert
+     * @return JSON array string
+     */
+    private String listToJson(List<?> list) {
+        StringBuilder json = new StringBuilder("[");
+        boolean first = true;
+
+        for (Object item : list) {
+            if (!first) {
+                json.append(",");
+            }
+            first = false;
+
+            if (item == null) {
+                json.append("null");
+            } else if (item instanceof String) {
+                json.append("\"").append(escapeJson((String) item)).append("\"");
+            } else if (item instanceof Number || item instanceof Boolean) {
+                json.append(item);
+            } else if (item instanceof List) {
+                json.append(listToJson((List<?>) item));
+            } else if (item instanceof Map) {
+                json.append(mapToJson((Map<String, Object>) item));
+            } else {
+                json.append("\"").append(escapeJson(item.toString())).append("\"");
+            }
+        }
+
+        json.append("]");
+        return json.toString();
+    }
+
+    /**
+     * Escape special characters in JSON strings.
+     *
+     * @param str The string to escape
+     * @return Escaped string
+     */
+    private String escapeJson(String str) {
+        if (str == null) {
+            return "";
+        }
+        return str.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
     }
 }

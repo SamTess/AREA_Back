@@ -3,7 +3,7 @@ package area.server.AREA_Back.controller;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.OAuthProvider;
-import area.server.AREA_Back.service.OAuthService;
+import area.server.AREA_Back.service.Auth.OAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

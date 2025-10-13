@@ -2,6 +2,9 @@ package area.server.AREA_Back.service;
 
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Area.Services.GitHubActionService;
+import area.server.AREA_Back.service.Auth.ServiceAccountService;
+import area.server.AREA_Back.service.Auth.TokenEncryptionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

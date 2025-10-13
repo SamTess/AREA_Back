@@ -1,10 +1,11 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area;
 
 import area.server.AREA_Back.dto.AreaEventMessage;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.repository.ActionLinkRepository;
+import area.server.AREA_Back.service.Redis.RedisEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

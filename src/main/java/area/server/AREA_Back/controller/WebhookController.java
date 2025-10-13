@@ -1,10 +1,10 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.entity.Execution;
-import area.server.AREA_Back.service.GitHubWebhookService;
-import area.server.AREA_Back.service.WebhookDeduplicationService;
-import area.server.AREA_Back.service.WebhookEventProcessingService;
-import area.server.AREA_Back.service.WebhookSignatureValidator;
+import area.server.AREA_Back.service.Webhook.GitHubWebhookService;
+import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
+import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
+import area.server.AREA_Back.service.Webhook.WebhookSignatureValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

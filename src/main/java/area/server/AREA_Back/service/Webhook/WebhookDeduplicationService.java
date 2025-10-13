@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Webhook;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

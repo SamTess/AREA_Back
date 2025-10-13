@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Auth;
 
 import java.util.Optional;
 
@@ -24,6 +24,7 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Redis.RedisTokenService;
 import jakarta.servlet.http.HttpServletResponse;
 
 import jakarta.annotation.PostConstruct;

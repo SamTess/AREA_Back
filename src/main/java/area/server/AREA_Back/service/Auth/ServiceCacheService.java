@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Auth;
 
 import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;

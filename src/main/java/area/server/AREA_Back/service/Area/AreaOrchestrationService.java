@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Area;
 
 import area.server.AREA_Back.entity.ActivationMode;
 import area.server.AREA_Back.entity.Area;
@@ -6,6 +6,7 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ActivationModeType;
 import area.server.AREA_Back.repository.ActivationModeRepository;
 import area.server.AREA_Back.repository.AreaRepository;
+import area.server.AREA_Back.service.CronSchedulerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

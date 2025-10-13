@@ -4,7 +4,7 @@ import area.server.AREA_Back.dto.CreateServiceRequest;
 import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
-import area.server.AREA_Back.service.ServiceCacheService;
+import area.server.AREA_Back.service.Auth.ServiceCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

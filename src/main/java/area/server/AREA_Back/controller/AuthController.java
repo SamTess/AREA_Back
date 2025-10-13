@@ -7,7 +7,7 @@ import area.server.AREA_Back.dto.RegisterRequest;
 import area.server.AREA_Back.dto.ResetPasswordRequest;
 import area.server.AREA_Back.dto.TokenRefreshRequest;
 import area.server.AREA_Back.dto.UserResponse;
-import area.server.AREA_Back.service.AuthService;
+import area.server.AREA_Back.service.Auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

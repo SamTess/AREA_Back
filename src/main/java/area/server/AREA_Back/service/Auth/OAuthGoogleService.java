@@ -1,4 +1,4 @@
-package area.server.AREA_Back.service;
+package area.server.AREA_Back.service.Auth;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -27,6 +27,7 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.service.Redis.RedisTokenService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;

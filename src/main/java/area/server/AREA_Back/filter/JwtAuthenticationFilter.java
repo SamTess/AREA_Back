@@ -1,7 +1,7 @@
 package area.server.AREA_Back.filter;
 
-import area.server.AREA_Back.service.JwtService;
-import area.server.AREA_Back.service.RedisTokenService;
+import area.server.AREA_Back.service.Auth.JwtService;
+import area.server.AREA_Back.service.Redis.RedisTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;

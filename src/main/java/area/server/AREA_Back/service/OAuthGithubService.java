@@ -1,7 +1,6 @@
 package area.server.AREA_Back.service;
 
 import java.util.Optional;
-import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +17,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import area.server.AREA_Back.service.AuthService;
 
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -62,6 +59,7 @@ public class OAuthGithubService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
+    // CHECKSTYLE:OFF ParameterNumber
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
@@ -72,6 +70,7 @@ public class OAuthGithubService extends OAuthService {
         PasswordEncoder passwordEncoder,
         AuthService authService
     ) {
+        // CHECKSTYLE:OFF LineLength
         super(
             "github",
             "GitHub",
@@ -82,10 +81,12 @@ public class OAuthGithubService extends OAuthService {
             githubClientSecret,
             jwtService
         );
+        // CHECKSTYLE:ON LineLength
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;
         this.authService = authService;
     }
+    // CHECKSTYLE:ON ParameterNumber
 
     @PostConstruct
     private void initMetrics() {
@@ -299,11 +300,26 @@ public class OAuthGithubService extends OAuthService {
 
         java.util.Map<String, Object> userBody = userResp.getBody();
         Object avatarUrlObj = userBody.get("avatar_url");
-        String avatarUrl = avatarUrlObj != null ? avatarUrlObj.toString() : "";
+        String avatarUrl;
+        if (avatarUrlObj != null) {
+            avatarUrl = avatarUrlObj.toString();
+        } else {
+            avatarUrl = "";
+        }
         Object nameObj = userBody.get("name");
-        String name = nameObj != null ? nameObj.toString() : "";
+        String name;
+        if (nameObj != null) {
+            name = nameObj.toString();
+        } else {
+            name = "";
+        }
         Object loginObj = userBody.get("login");
-        String login = loginObj != null ? loginObj.toString() : "";
+        String login;
+        if (loginObj != null) {
+            login = loginObj.toString();
+        } else {
+            login = "";
+        }
 
         Object idObj = userBody.get("id");
         if (idObj == null) {

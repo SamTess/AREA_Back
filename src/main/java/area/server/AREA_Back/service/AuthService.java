@@ -567,12 +567,13 @@ public class AuthService {
             authCookie.setDomain(jwtCookieProperties.getDomain());
         }
 
+        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
         response.setHeader("Set-Cookie", String.format(
             "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
             AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
             accessToken,
             jwtCookieProperties.getAccessTokenExpiry(),
-            jwtCookieProperties.isSecure() ? "Secure; " : "",
+            secureFlag,
             jwtCookieProperties.getSameSite()
         ));
 
@@ -591,7 +592,7 @@ public class AuthService {
             AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME,
             refreshToken,
             jwtCookieProperties.getRefreshTokenExpiry(),
-            jwtCookieProperties.isSecure() ? "Secure; " : "",
+            secureFlag,
             jwtCookieProperties.getSameSite()
         ));
 
@@ -600,17 +601,18 @@ public class AuthService {
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
+        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
         response.setHeader("Set-Cookie", String.format(
             "%s=; Path=/; Max-Age=0; HttpOnly; %sSameSite=%s",
             AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
-            jwtCookieProperties.isSecure() ? "Secure; " : "",
+            secureFlag,
             jwtCookieProperties.getSameSite()
         ));
 
         response.addHeader("Set-Cookie", String.format(
             "%s=; Path=/; Max-Age=0; HttpOnly; %sSameSite=%s",
             AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME,
-            jwtCookieProperties.isSecure() ? "Secure; " : "",
+            secureFlag,
             jwtCookieProperties.getSameSite()
         ));
 

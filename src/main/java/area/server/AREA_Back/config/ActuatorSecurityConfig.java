@@ -1,6 +1,5 @@
 package area.server.AREA_Back.config;
 
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -25,9 +24,9 @@ public class ActuatorSecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher(EndpointRequest.toAnyEndpoint())
+        http.securityMatcher("/actuator/**")
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(EndpointRequest.to("health", "info", "prometheus")).permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .anyRequest().authenticated()
             )
             .httpBasic(httpBasic -> httpBasic.realmName("Actuator"));

@@ -34,7 +34,7 @@ fi
 
 # Set proper permissions
 chmod 644 ca-cert.pem redis-cert.pem
-chmod 600 ca-key.pem redis-key.pem
+chmod 644 ca-key.pem redis-key.pem
 
 echo "Certificates generated successfully in $CERT_DIR"
 echo "CA Certificate: ca-cert.pem"

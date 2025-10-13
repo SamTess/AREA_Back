@@ -264,7 +264,7 @@ public class AuthService {
             localIdentity = new UserLocalIdentity();
             localIdentity.setUser(user);
             localIdentity.setEmail(email);
-            localIdentity.setPasswordHash(passwordEncoder.encode("oauth_dummy_password"));
+            localIdentity.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             localIdentity.setIsEmailVerified(true);
             localIdentity.setFailedLoginAttempts(0);
             localIdentity.setCreatedAt(LocalDateTime.now());

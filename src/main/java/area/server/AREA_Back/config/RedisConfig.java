@@ -98,8 +98,8 @@ public class RedisConfig {
 
             clientConfigBuilder
                 .useSsl()
-                .disablePeerVerification()
-                .and()
+                .disablePeerVerification()  // !! Big security flaw, replace in production
+                .and()                      // with letsencrypt or a valid certificate
                 .clientOptions(clientOptions);
         } else {
             log.warn(

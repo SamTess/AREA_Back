@@ -244,6 +244,66 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public AuthResponse oauthLogin(String email, String avatarUrl, HttpServletResponse response) {
+        log.info("Attempting OAuth login for email: {}", email);
+
+        Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(email);
+        User user;
+        UserLocalIdentity localIdentity;
+
+        if (localIdentityOpt.isEmpty()) {
+            user = new User();
+            user.setEmail(email);
+            user.setAvatarUrl(avatarUrl);
+            user.setIsActive(true);
+            user.setIsAdmin(false);
+            user.setCreatedAt(LocalDateTime.now());
+            user = userRepository.save(user);
+
+            localIdentity = new UserLocalIdentity();
+            localIdentity.setUser(user);
+            localIdentity.setEmail(email);
+            localIdentity.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+            localIdentity.setIsEmailVerified(true);
+            localIdentity.setFailedLoginAttempts(0);
+            localIdentity.setCreatedAt(LocalDateTime.now());
+            localIdentity.setUpdatedAt(LocalDateTime.now());
+            userLocalIdentityRepository.save(localIdentity);
+
+            log.info("Registered new OAuth user: {}", email);
+            registerSuccessCounter.increment();
+        } else {
+            localIdentity = localIdentityOpt.get();
+            user = localIdentity.getUser();
+
+            if (!user.getIsActive()) {
+                throw new RuntimeException("Account is inactive");
+            }
+
+            if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                user.setAvatarUrl(avatarUrl);
+            }
+
+            log.info("Logged in existing OAuth user: {}", email);
+            loginSuccessCounter.increment();
+        }
+
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
+        redisTokenService.storeAccessToken(accessToken, user.getId());
+        redisTokenService.storeRefreshToken(user.getId(), refreshToken);
+        setTokenCookies(response, accessToken, refreshToken);
+
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return new AuthResponse(
+            "OAuth login successful",
+            mapToUserResponse(user, localIdentity.getIsEmailVerified())
+        );
+    }
+
     public UserResponse getCurrentUser(HttpServletRequest request) {
         UUID userId = getUserIdFromRequest(request);
         if (userId == null) {
@@ -256,7 +316,11 @@ public class AuthService {
         Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByUserId(userId);
         Boolean isVerified = localIdentityOpt.map(UserLocalIdentity::getIsEmailVerified).orElse(false);
 
-        return mapToUserResponse(user, isVerified);
+        UserResponse response = mapToUserResponse(user, isVerified);
+        log.debug("Returning current user: id={}, email={}, avatarUrl={}",
+            response.getId(), response.getEmail(), response.getAvatarUrl());
+
+        return response;
     }
 
     public User getCurrentUserEntity(HttpServletRequest request) {
@@ -503,7 +567,16 @@ public class AuthService {
             authCookie.setDomain(jwtCookieProperties.getDomain());
         }
 
-        response.addCookie(authCookie);
+        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
+        response.setHeader("Set-Cookie", String.format(
+            "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
+            accessToken,
+            jwtCookieProperties.getAccessTokenExpiry(),
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
+
         Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(jwtCookieProperties.isSecure());
@@ -514,34 +587,34 @@ public class AuthService {
             refreshCookie.setDomain(jwtCookieProperties.getDomain());
         }
 
-        response.addCookie(refreshCookie);
+        response.addHeader("Set-Cookie", String.format(
+            "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME,
+            refreshToken,
+            jwtCookieProperties.getRefreshTokenExpiry(),
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
 
-        log.debug("Set HttpOnly cookies for authentication (secure: { })", jwtCookieProperties.isSecure());
+        log.debug("Set HttpOnly cookies for authentication (secure: {}, sameSite: {})",
+            jwtCookieProperties.isSecure(), jwtCookieProperties.getSameSite());
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
-        Cookie authCookie = new Cookie(AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME, "");
-        authCookie.setHttpOnly(true);
-        authCookie.setSecure(jwtCookieProperties.isSecure());
-        authCookie.setPath("/");
-        authCookie.setMaxAge(0);
-        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
-            authCookie.setDomain(jwtCookieProperties.getDomain());
-        }
+        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
+        response.setHeader("Set-Cookie", String.format(
+            "%s=; Path=/; Max-Age=0; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
 
-        response.addCookie(authCookie);
-
-        Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, "");
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(jwtCookieProperties.isSecure());
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(0);
-
-        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
-            refreshCookie.setDomain(jwtCookieProperties.getDomain());
-        }
-
-        response.addCookie(refreshCookie);
+        response.addHeader("Set-Cookie", String.format(
+            "%s=; Path=/; Max-Age=0; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME,
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
 
         log.debug("Cleared HttpOnly authentication cookies");
     }

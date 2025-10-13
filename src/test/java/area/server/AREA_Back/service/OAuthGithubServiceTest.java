@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.UUID;
 
@@ -31,6 +32,18 @@ class OAuthGithubServiceTest {
     @Mock
     private TokenEncryptionService tokenEncryptionService;
 
+    @Mock
+    private JwtService jwtService;
+
+    @Mock
+    private RedisTokenService redisTokenService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuthService authService;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGithubService oauthGithubService;
 
@@ -41,10 +54,11 @@ class OAuthGithubServiceTest {
             "test-client-id",
             "test-client-secret",
             "http://localhost:3000",
-            null, // jwtService not needed for these tests
+            jwtService,
             meterRegistry,
-            null, // redisTokenService not needed for these tests
-            null  // passwordEncoder not needed for these tests
+            redisTokenService,
+            passwordEncoder,
+            authService
         );
         // Manually initialize metrics since @PostConstruct won't run in tests
         try {

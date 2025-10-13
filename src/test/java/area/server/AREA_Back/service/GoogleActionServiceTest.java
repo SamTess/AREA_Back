@@ -1,22 +1,24 @@
 package area.server.AREA_Back.service;
 
-import area.server.AREA_Back.entity.User;
-import area.server.AREA_Back.entity.UserOAuthIdentity;
-import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
-import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
-import area.server.AREA_Back.service.Auth.ServiceAccountService;
-import area.server.AREA_Back.service.Auth.TokenEncryptionService;
+import area.server.AREA_Back.service.Area.Services.Google.GoogleApiUtils;
+import area.server.AREA_Back.service.Area.Services.Google.GoogleCalendarService;
+import area.server.AREA_Back.service.Area.Services.Google.GoogleDriveService;
+import area.server.AREA_Back.service.Area.Services.Google.GoogleGmailService;
+import area.server.AREA_Back.service.Area.Services.Google.GoogleSheetsService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -30,16 +32,19 @@ import static org.mockito.Mockito.*;
 class GoogleActionServiceTest {
 
     @Mock
-    private UserOAuthIdentityRepository userOAuthIdentityRepository;
+    private GoogleApiUtils googleApiUtils;
 
     @Mock
-    private UserRepository userRepository;
+    private GoogleGmailService gmailService;
 
     @Mock
-    private TokenEncryptionService tokenEncryptionService;
+    private GoogleCalendarService calendarService;
 
     @Mock
-    private ServiceAccountService serviceAccountService;
+    private GoogleDriveService driveService;
+
+    @Mock
+    private GoogleSheetsService sheetsService;
 
     private SimpleMeterRegistry meterRegistry;
     private GoogleActionService googleActionService;
@@ -48,10 +53,11 @@ class GoogleActionServiceTest {
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
         googleActionService = new GoogleActionService(
-            userOAuthIdentityRepository,
-            userRepository,
-            tokenEncryptionService,
-            serviceAccountService,
+            googleApiUtils,
+            gmailService,
+            calendarService,
+            driveService,
+            sheetsService,
             meterRegistry
         );
 
@@ -84,12 +90,7 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        User user = new User();
-        user.setId(userId);
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.empty());
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn(null);
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -106,19 +107,7 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -135,7 +124,7 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn(null);
 
         double initialExecuted = meterRegistry.counter("google_actions_executed_total").count();
         double initialFailed = meterRegistry.counter("google_actions_failed_total").count();
@@ -162,12 +151,7 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.empty());
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn(null);
 
         // When
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
@@ -186,19 +170,7 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
 
         // When
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
@@ -217,20 +189,9 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token"))
-            .thenThrow(new RuntimeException("Decryption failed"));
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(gmailService.checkNewGmailMessages(anyString(), any(), any()))
+            .thenThrow(new RuntimeException("API call failed"));
 
         // When
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
@@ -250,19 +211,9 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         // Missing required params: to, subject, body
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(gmailService.sendGmail(anyString(), any(), any()))
+            .thenThrow(new IllegalArgumentException("Missing required parameter"));
 
         // When & Then
         assertThrows(RuntimeException.class, () -> {
@@ -277,19 +228,9 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(calendarService.createCalendarEvent(anyString(), any(), any()))
+            .thenThrow(new RuntimeException("Missing required parameter"));
 
         // When & Then - should fail due to missing params or API call
         assertThrows(RuntimeException.class, () -> {
@@ -304,19 +245,9 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(driveService.createDriveFolder(anyString(), any(), any()))
+            .thenThrow(new RuntimeException("Missing required parameter"));
 
         // When & Then
         assertThrows(RuntimeException.class, () -> {
@@ -331,19 +262,9 @@ class GoogleActionServiceTest {
         Map<String, Object> inputPayload = new HashMap<>();
         Map<String, Object> actionParams = new HashMap<>();
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(sheetsService.addSheetRow(anyString(), any(), any()))
+            .thenThrow(new RuntimeException("Missing required parameter"));
 
         // When & Then
         assertThrows(RuntimeException.class, () -> {
@@ -358,19 +279,9 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(gmailService.checkNewGmailMessages(anyString(), any(), any()))
+            .thenReturn(Collections.emptyList());
 
         // When - should fail or return empty list due to API call failure
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
@@ -388,19 +299,9 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(calendarService.checkNewCalendarEvents(anyString(), any(), any()))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
@@ -418,19 +319,9 @@ class GoogleActionServiceTest {
         Map<String, Object> actionParams = new HashMap<>();
         LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
 
-        User user = new User();
-        user.setId(userId);
-
-        UserOAuthIdentity oauthIdentity = new UserOAuthIdentity();
-        oauthIdentity.setUser(user);
-        oauthIdentity.setProvider("google");
-        oauthIdentity.setAccessTokenEnc("encrypted-token");
-        oauthIdentity.setExpiresAt(LocalDateTime.now().plusHours(1));
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userOAuthIdentityRepository.findByUserAndProvider(user, "google"))
-            .thenReturn(Optional.of(oauthIdentity));
-        when(tokenEncryptionService.decryptToken("encrypted-token")).thenReturn("valid-token");
+        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
+        when(driveService.checkNewDriveFiles(anyString(), any(), any()))
+            .thenReturn(Collections.emptyList());
 
         // When
         List<Map<String, Object>> events = googleActionService.checkGoogleEvents(

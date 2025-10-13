@@ -1,9 +1,7 @@
 package area.server.AREA_Back.service;
 
-import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.entity.User;
-import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Auth.JwtService;
@@ -19,13 +17,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for OAuthGoogleService

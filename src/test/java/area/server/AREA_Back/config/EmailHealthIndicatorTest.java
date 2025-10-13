@@ -7,7 +7,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith(MockitoExtension.class)
 class EmailHealthIndicatorTest {
@@ -23,7 +24,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldReturnUp_WhenBothSmtpAndResendConfigured() {
+    void healthShouldReturnUpWhenBothSmtpAndResendConfigured() {
         // Given
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", true);
         ReflectionTestUtils.setField(emailHealthIndicator, "resendApiKey", "valid-api-key");
@@ -41,7 +42,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldReturnUp_WhenOnlySmtpConfigured() {
+    void healthShouldReturnUpWhenOnlySmtpConfigured() {
         // Given
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", false);
         ReflectionTestUtils.setField(emailHealthIndicator, "resendApiKey", "");
@@ -58,7 +59,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldReturnUp_WhenOnlyResendConfigured() {
+    void healthShouldReturnUpWhenOnlyResendConfigured() {
         // Given - SMTP is always considered configured in current implementation
         // This test verifies the logic when resend is enabled but SMTP might be considered not configured
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", true);
@@ -74,7 +75,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldHandleResendDisabledGracefully() {
+    void healthShouldHandleResendDisabledGracefully() {
         // Given
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", false);
         ReflectionTestUtils.setField(emailHealthIndicator, "resendApiKey", "some-key");
@@ -89,7 +90,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldHandleEmptyResendApiKeyGracefully() {
+    void healthShouldHandleEmptyResendApiKeyGracefully() {
         // Given
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", true);
         ReflectionTestUtils.setField(emailHealthIndicator, "resendApiKey", "");
@@ -104,7 +105,7 @@ class EmailHealthIndicatorTest {
     }
 
     @Test
-    void health_ShouldHandleNullResendApiKeyGracefully() {
+    void healthShouldHandleNullResendApiKeyGracefully() {
         // Given
         ReflectionTestUtils.setField(emailHealthIndicator, "resendEnabled", true);
         ReflectionTestUtils.setField(emailHealthIndicator, "resendApiKey", null);

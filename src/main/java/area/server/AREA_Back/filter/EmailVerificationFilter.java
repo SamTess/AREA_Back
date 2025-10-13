@@ -32,9 +32,9 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final FilterChain filterChain
     ) throws ServletException, IOException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -84,7 +84,10 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
             log.warn("Non-verified user {} attempted to access restricted endpoint: {}", userId, requestPath);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Email verification required\", \"message\": \"Please verify your email address to access this feature\"}");
+            response.getWriter().write(
+                "{\"error\": \"Email verification required\", "
+                + "\"message\": \"Please verify your email address to access this feature\"}"
+            );
 
         } catch (Exception e) {
             log.error("Error in email verification filter", e);
@@ -97,7 +100,7 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
     /**
      * Check if the endpoint is allowed for non-verified users
      */
-    private boolean isAllowedForNonVerifiedUsers(String path) {
+    private boolean isAllowedForNonVerifiedUsers(final String path) {
         if (path.startsWith("/api/auth/")) {
             return true;
         }

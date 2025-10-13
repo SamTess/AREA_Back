@@ -53,17 +53,19 @@ public class OAuthGoogleService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
+    @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
-        @Value("${spring.security.oauth2.client.registration.google.client-id}") String googleClientId,
-        @Value("${spring.security.oauth2.client.registration.google.client-secret}") String googleClientSecret,
-        @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
-        JwtService jwtService,
-        MeterRegistry meterRegistry,
-        RedisTokenService redisTokenService,
-        PasswordEncoder passwordEncoder,
-        TokenEncryptionService tokenEncryptionService,
-        UserOAuthIdentityRepository userOAuthIdentityRepository,
-        UserRepository userRepository
+        @Value("${spring.security.oauth2.client.registration.google.client-id}") final String googleClientId,
+        @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+        final String googleClientSecret,
+        @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") final String redirectBaseUrl,
+        final JwtService jwtService,
+        final MeterRegistry meterRegistry,
+        final RedisTokenService redisTokenService,
+        final PasswordEncoder passwordEncoder,
+        final TokenEncryptionService tokenEncryptionService,
+        final UserOAuthIdentityRepository userOAuthIdentityRepository,
+        final UserRepository userRepository
     ) {
         super(
             "google",
@@ -228,7 +230,7 @@ public class OAuthGoogleService extends OAuthService {
                 tokenUrl,
                 HttpMethod.POST,
                 request,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
+                new ParameterizedTypeReference<Map<String, Object>>() { }
             );
 
             if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
@@ -265,7 +267,7 @@ public class OAuthGoogleService extends OAuthService {
             "https://www.googleapis.com/oauth2/v2/userinfo",
             HttpMethod.GET,
             request,
-            new ParameterizedTypeReference<Map<String, Object>>() {}
+            new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
         if (!userResponse.getStatusCode().is2xxSuccessful() || userResponse.getBody() == null) {
@@ -457,8 +459,17 @@ public class OAuthGoogleService extends OAuthService {
         String locale;
         Boolean verifiedEmail;
 
-        UserProfileData(String email, String userIdentifier, String name, String givenName,
-                       String familyName, String picture, String locale, Boolean verifiedEmail) {
+        @SuppressWarnings("ParameterNumber")
+        UserProfileData(
+            final String email,
+            final String userIdentifier,
+            final String name,
+            final String givenName,
+            final String familyName,
+            final String picture,
+            final String locale,
+            final Boolean verifiedEmail
+        ) {
             this.email = email;
             this.userIdentifier = userIdentifier;
             this.name = name;

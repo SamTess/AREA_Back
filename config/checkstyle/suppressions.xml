@@ -35,4 +35,14 @@
 
     <!-- More lenient import order for Spring projects -->
     <suppress checks="ImportOrder" files=".*"/>
+
+    <!-- OAuth Google Service constructor has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthGoogleService\.java"
+              lines="70"/>
+
+    <!-- UserProfileData record-like class needs all profile fields -->
+    <suppress checks="ParameterNumber"
+              files="OAuthGoogleService\.java"
+              lines="487"/>
 </suppressions>

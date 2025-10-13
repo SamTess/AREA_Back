@@ -208,9 +208,10 @@ public class WebhookDeduplicationService {
         try {
             String pattern = WEBHOOK_DEDUP_PREFIX + provider + ":*";
             Set<String> keysToDelete = new HashSet<>();
+            final int scanCount = 100;
             ScanOptions options = ScanOptions.scanOptions()
                 .match(pattern)
-                .count(100)
+                .count(scanCount)
                 .build();
             redisTemplate.execute((RedisCallback<Object>) connection -> {
                 Cursor<byte[]> cursor = connection.scan(options);

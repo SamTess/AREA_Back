@@ -293,7 +293,7 @@ public class OAuthGithubService extends OAuthService {
                     }
                 }
             } catch (Exception e) {
-                // Failed to fetch emails, continue without email verification
+                log.error("Failed to fetch GitHub user emails: {}", e.getMessage(), e);
             }
         }
         return email;

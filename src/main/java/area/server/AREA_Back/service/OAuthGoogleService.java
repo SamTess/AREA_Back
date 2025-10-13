@@ -53,6 +53,19 @@ public class OAuthGoogleService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
+    /**
+     * Constructs OAuth Google Service with dependencies
+     * @param googleClientId Google OAuth2 client ID
+     * @param googleClientSecret Google OAuth2 client secret
+     * @param redirectBaseUrl Base URL for OAuth redirects
+     * @param jwtService JWT token service
+     * @param meterRegistry Metrics registry
+     * @param redisTokenService Redis token service
+     * @param passwordEncoder Password encoder
+     * @param tokenEncryptionService Token encryption service
+     * @param userOAuthIdentityRepository OAuth identity repository
+     * @param userRepository User repository
+     */
     @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
         @Value("${spring.security.oauth2.client.registration.google.client-id}") final String googleClientId,
@@ -459,6 +472,17 @@ public class OAuthGoogleService extends OAuthService {
         String locale;
         Boolean verifiedEmail;
 
+        /**
+         * Constructs UserProfileData with all user profile information
+         * @param email User email address
+         * @param userIdentifier Unique user identifier from Google
+         * @param name Full name
+         * @param givenName First name
+         * @param familyName Last name
+         * @param picture Profile picture URL
+         * @param locale User locale
+         * @param verifiedEmail Email verification status
+         */
         @SuppressWarnings("ParameterNumber")
         UserProfileData(
             final String email,

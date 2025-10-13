@@ -186,7 +186,7 @@ jobs:
 
       - name: Create production release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GH }}
         run: |
           # Create a proper tag if version starts with 'v'
           if [[ "${{ steps.version.outputs.version }}" =~ ^v ]]; then

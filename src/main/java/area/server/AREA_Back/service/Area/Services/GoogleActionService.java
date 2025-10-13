@@ -1015,13 +1015,7 @@ public class GoogleActionService {
         return result;
     }
 
-    /**
-     * Simple JSON conversion for metadata objects.
-     * Converts a Map to JSON string format for Google API requests.
-     *
-     * @param map The map to convert to JSON
-     * @return JSON string representation
-     */
+    @SuppressWarnings("unchecked")
     private String mapToJson(Map<String, Object> map) {
         StringBuilder json = new StringBuilder("{");
         boolean first = true;
@@ -1054,12 +1048,7 @@ public class GoogleActionService {
         return json.toString();
     }
 
-    /**
-     * Convert a List to JSON array format.
-     *
-     * @param list The list to convert
-     * @return JSON array string
-     */
+    @SuppressWarnings("unchecked")
     private String listToJson(List<?> list) {
         StringBuilder json = new StringBuilder("[");
         boolean first = true;
@@ -1089,12 +1078,6 @@ public class GoogleActionService {
         return json.toString();
     }
 
-    /**
-     * Escape special characters in JSON strings.
-     *
-     * @param str The string to escape
-     * @return Escaped string
-     */
     private String escapeJson(String str) {
         if (str == null) {
             return "";

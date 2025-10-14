@@ -31,9 +31,6 @@ public class ActionLinkService {
 
     @Transactional
     public ActionLinkResponse createActionLink(CreateActionLinkRequest request, UUID areaId) {
-        log.info("Creating action link from {} to {} in area {}",
-                request.getSourceActionInstanceId(), request.getTargetActionInstanceId(), areaId);
-
         Area area = areaRepository.findById(areaId)
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + areaId));
 
@@ -81,16 +78,12 @@ public class ActionLinkService {
         actionLink.setOrder(request.getOrder());
 
         ActionLink savedLink = actionLinkRepository.save(actionLink);
-        log.info("Created action link with source {} and target {}",
-                savedLink.getSourceActionInstance().getId(), savedLink.getTargetActionInstance().getId());
 
         return mapToResponse(savedLink);
     }
 
     @Transactional
     public List<ActionLinkResponse> createActionLinksBatch(BatchCreateActionLinksRequest request) {
-        log.info("Creating {} action links in batch for area {}", request.getLinks().size(), request.getAreaId());
-
         Area area = areaRepository.findById(request.getAreaId())
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + request.getAreaId()));
 
@@ -133,7 +126,6 @@ public class ActionLinkService {
                 .collect(Collectors.toList());
 
         List<ActionLink> savedLinks = actionLinkRepository.saveAll(linksToSave);
-        log.info("Created {} action links in batch", savedLinks.size());
 
         return savedLinks.stream()
                 .map(this::mapToResponse)
@@ -141,8 +133,6 @@ public class ActionLinkService {
     }
 
     public List<ActionLinkResponse> getActionLinksByArea(UUID areaId) {
-        log.info("Getting action links for area {}", areaId);
-
         List<ActionLink> links = actionLinkRepository.findByAreaIdOrderByOrder(areaId);
         return links.stream()
                 .map(this::mapToResponse)
@@ -151,8 +141,6 @@ public class ActionLinkService {
 
     @Transactional
     public void deleteActionLink(UUID sourceActionInstanceId, UUID targetActionInstanceId) {
-        log.info("Deleting action link from {} to {}", sourceActionInstanceId, targetActionInstanceId);
-
         actionInstanceRepository.findById(sourceActionInstanceId)
                 .orElseThrow(() -> new RuntimeException("Source action not found with id: " + sourceActionInstanceId));
 
@@ -162,23 +150,17 @@ public class ActionLinkService {
         actionLinkRepository.deleteById(
                 new area.server.AREA_Back.entity.ActionLinkId(
                         sourceActionInstanceId, targetActionInstanceId));
-        log.info("Deleted action link from {} to {}", sourceActionInstanceId, targetActionInstanceId);
     }
 
     @Transactional
     public void deleteActionLinksByArea(UUID areaId) {
-        log.info("Deleting all action links for area {}", areaId);
-
         Area area = areaRepository.findById(areaId)
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + areaId));
 
         actionLinkRepository.deleteByArea(area);
-        log.info("Deleted all action links for area {}", areaId);
     }
 
     public List<ActionLinkResponse> getActionLinksByActionInstance(UUID actionInstanceId) {
-        log.info("Getting action links for action instance {}", actionInstanceId);
-
         List<ActionLink> links = actionLinkRepository.findByActionInstanceId(actionInstanceId);
         return links.stream()
                 .map(this::mapToResponse)
@@ -207,13 +189,8 @@ public class ActionLinkService {
                 .findBySourceActionInstanceId(execution.getActionInstance().getId());
 
             if (linkedActions.isEmpty()) {
-                log.debug("No linked actions found for action instance: {}",
-                         execution.getActionInstance().getId());
                 return;
             }
-
-            log.info("Found {} linked actions to trigger for execution: {}",
-                     linkedActions.size(), execution.getId());
 
             for (ActionLink link : linkedActions) {
                 try {
@@ -231,12 +208,6 @@ public class ActionLinkService {
     }
 
     private void triggerLinkedAction(ActionLink link, Execution sourceExecution) {
-        log.info("Triggering linked action: {} -> {} (type: {})",
-                 link.getSourceActionInstance().getName(),
-                 link.getTargetActionInstance().getName(),
-                 link.getLinkType());
-
-        log.info("Would trigger action instance: {} with data from execution: {}",
-                 link.getTargetActionInstance().getId(), sourceExecution.getId());
+        // Trigger logic placeholder
     }
 }

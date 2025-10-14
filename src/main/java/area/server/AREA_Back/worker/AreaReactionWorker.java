@@ -78,7 +78,6 @@ public class AreaReactionWorker {
                     redisConfig.getAreasEventsStream(), ReadOffset.lastConsumed())
             );
             if (records != null && !records.isEmpty()) {
-                log.debug("Processing { } events from Redis stream", records.size());
                 processedEventsCounter.increment(records.size());
                 for (var record : records) {
                     processEventRecord(record);
@@ -99,7 +98,6 @@ public class AreaReactionWorker {
         try {
             List<Execution> queuedExecutions = executionService.getQueuedExecutions();
             if (!queuedExecutions.isEmpty()) {
-                log.info("Processing { } queued executions", queuedExecutions.size());
                 processedExecutionsCounter.increment(queuedExecutions.size());
                 for (Execution execution : queuedExecutions) {
                     processExecution(execution);
@@ -122,7 +120,6 @@ public class AreaReactionWorker {
             List<Execution> retryExecutions = executionService.getExecutionsReadyForRetry(retryThreshold);
 
             if (!retryExecutions.isEmpty()) {
-                log.info("Processing { } executions ready for retry", retryExecutions.size());
                 processedRetriesCounter.increment(retryExecutions.size());
                 for (Execution execution : retryExecutions) {
                     processExecution(execution);
@@ -157,7 +154,6 @@ public class AreaReactionWorker {
                         null
                     );
                     executionService.updateExecutionWithResult(failureResult);
-                    log.info("Marked timed out execution { } as failed", execution.getId());
                 }
             }
 
@@ -169,12 +165,10 @@ public class AreaReactionWorker {
     @Scheduled(fixedDelay = 60000)
     public void logStatistics() {
         try {
-            var stats = executionService.getExecutionStatistics();
-            log.info("Execution statistics: queued={ }, running={ }, ok={ }, retry={ }, failed={ }, canceled={ }",
-                    stats.get("queued"), stats.get("running"), stats.get("ok"),
-                    stats.get("retry"), stats.get("failed"), stats.get("canceled"));
+            // Statistics are tracked via metrics, no need to log them
+            executionService.getExecutionStatistics();
         } catch (Exception e) {
-            log.warn("Failed to log statistics: { }", e.getMessage());
+            log.warn("Failed to fetch statistics: { }", e.getMessage());
         }
     }
 
@@ -182,7 +176,6 @@ public class AreaReactionWorker {
     public void processEventRecord(final MapRecord<String, Object, Object> record) {
         try {
             Map<Object, Object> values = record.getValue();
-            log.debug("Processing event record: { }", record.getId());
             Object executionIdObj = values.get("executionId");
             if (executionIdObj != null) {
                 String executionIdStr = executionIdObj.toString();
@@ -213,24 +206,15 @@ public class AreaReactionWorker {
             .orElseThrow(() -> new IllegalStateException("Execution not found: " + execution.getId()));
 
         try {
-            log.info("Processing execution: id={ }, actionInstance={ }, attempt={ }",
-                    fullExecution.getId(),
-                    fullExecution.getActionInstance().getId(),
-                    fullExecution.getAttempt());
             executionService.markExecutionAsStarted(fullExecution.getId());
             ExecutionResult result = reactionExecutor.executeReaction(fullExecution);
             executionService.updateExecutionWithResult(result);
             successfulExecutionsCounter.increment();
-            log.info("Completed execution: id={ }, status={ }, duration={ }ms",
-                    fullExecution.getId(),
-                    result.getStatus(),
-                    result.getDurationMs());
 
             processedExecutionsCounter.increment();
             if ("SUCCESS".equals(result.getStatus().name())) {
                 try {
                     actionLinkService.triggerLinkedActions(fullExecution);
-                    log.info("Successfully triggered linked actions for execution: { }", fullExecution.getId());
                 } catch (Exception linkError) {
                     log.error("Failed to trigger linked actions for execution { }: { }",
                              fullExecution.getId(), linkError.getMessage(), linkError);

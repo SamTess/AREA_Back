@@ -3,6 +3,7 @@ package area.server.AREA_Back.service;
 import area.server.AREA_Back.dto.ServiceResponse;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.service.Auth.ServiceCacheService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -7,6 +7,7 @@ import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.ExecutionRepository;
+import area.server.AREA_Back.service.Area.ExecutionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

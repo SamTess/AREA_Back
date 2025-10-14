@@ -102,7 +102,10 @@ public class RedisConfig {
                 .and()                      // with letsencrypt or a valid certificate
                 .clientOptions(clientOptions);
         } else {
-            log.warn("TLS/SSL is DISABLED for Redis. Enable it in production by setting REDIS_SSL=true");
+            log.warn(
+                "TLS/SSL is DISABLED for Redis. "
+                + "Enable it in production by setting REDIS_SSL=true"
+            );
         }
 
         LettuceConnectionFactory factory = new LettuceConnectionFactory(

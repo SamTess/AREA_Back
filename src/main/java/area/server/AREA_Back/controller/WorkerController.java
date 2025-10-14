@@ -1,7 +1,7 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.service.ExecutionService;
-import area.server.AREA_Back.service.RedisEventService;
+import area.server.AREA_Back.service.Area.ExecutionService;
+import area.server.AREA_Back.service.Redis.RedisEventService;
 import area.server.AREA_Back.worker.AreaReactionWorker;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

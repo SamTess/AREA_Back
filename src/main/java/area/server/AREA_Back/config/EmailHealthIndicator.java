@@ -27,7 +27,8 @@ public class EmailHealthIndicator implements HealthIndicator {
             Health.Builder health = Health.up();
 
             boolean hasSmtp = true;
-            boolean hasResend = resendEnabled && resendApiKey != null && !resendApiKey.isEmpty();
+            boolean hasApiKey = resendApiKey != null && !resendApiKey.isEmpty();
+            boolean hasResend = resendEnabled && hasApiKey;
 
             if (!hasSmtp && !hasResend) {
                 return Health.down()
@@ -37,15 +38,29 @@ public class EmailHealthIndicator implements HealthIndicator {
                     .build();
             }
 
-            health.withDetail("smtp", hasSmtp ? "configured" : "not configured");
-            health.withDetail("resend", hasResend ? "configured" : "not configured");
+            String smtpStatusValue;
+            if (hasSmtp) {
+                smtpStatusValue = "configured";
+            } else {
+                smtpStatusValue = "not configured";
+            }
+
+            String resendStatusValue;
+            if (hasResend) {
+                resendStatusValue = "configured";
+            } else {
+                resendStatusValue = "not configured";
+            }
+
+            health.withDetail("smtp", smtpStatusValue);
+            health.withDetail("resend", resendStatusValue);
 
             if (hasSmtp) {
                 health.withDetail("smtp.status", "available");
             }
             if (hasResend) {
                 health.withDetail("resend.status", "available");
-                health.withDetail("resend.api_key_configured", resendApiKey != null && !resendApiKey.isEmpty());
+                health.withDetail("resend.api_key_configured", hasApiKey);
             }
 
             return health.build();

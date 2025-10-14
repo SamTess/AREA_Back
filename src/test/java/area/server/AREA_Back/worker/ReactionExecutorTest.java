@@ -6,7 +6,8 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
-import area.server.AREA_Back.service.GitHubActionService;
+import area.server.AREA_Back.service.Area.Services.GitHubActionService;
+import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class ReactionExecutorTest {
     @Mock
     private GitHubActionService gitHubActionService;
 
+    @Mock
+    private GoogleActionService googleActionService;
+
     private SimpleMeterRegistry meterRegistry;
 
     private ReactionExecutor reactionExecutor;
@@ -52,6 +56,7 @@ class ReactionExecutorTest {
         reactionExecutor = new ReactionExecutor(
             retryManager,
             gitHubActionService,
+            googleActionService,
             meterRegistry
         );
 

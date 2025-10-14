@@ -4,8 +4,9 @@ import area.server.AREA_Back.dto.OAuthLinkErrorResponse;
 import area.server.AREA_Back.dto.ServiceConnectionStatus;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
-import area.server.AREA_Back.service.AuthService;
-import area.server.AREA_Back.service.OAuthGithubService;
+import area.server.AREA_Back.service.Auth.AuthService;
+import area.server.AREA_Back.service.Auth.OAuthGithubService;
+import area.server.AREA_Back.service.Auth.OAuthGoogleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ public class OAuthLinkController {
 
     private final AuthService authService;
     private final OAuthGithubService oauthGithubService;
+    private final OAuthGoogleService oauthGoogleService;
 
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_NOT_FOUND = 404;
@@ -54,6 +56,9 @@ public class OAuthLinkController {
             switch (provider.toLowerCase()) {
                 case "github":
                     linkedIdentity = oauthGithubService.linkToExistingUser(currentUser, authorizationCode);
+                    break;
+                case "google":
+                    linkedIdentity = oauthGoogleService.linkToExistingUser(currentUser, authorizationCode);
                     break;
                 default:
                     return ResponseEntity.status(HTTP_NOT_FOUND).build();

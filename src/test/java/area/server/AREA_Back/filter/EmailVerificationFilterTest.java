@@ -3,7 +3,6 @@ package area.server.AREA_Back.filter;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
-import area.server.AREA_Back.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,14 +19,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EmailVerificationFilterTest {
-
-    @Mock
-    private UserRepository userRepository;
 
     @Mock
     private UserLocalIdentityRepository userLocalIdentityRepository;
@@ -56,7 +54,7 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenUserIsNotAuthenticated() throws Exception {
+    void shouldAllowAccessWhenUserIsNotAuthenticated() throws Exception {
         // Given
         SecurityContextHolder.getContext().setAuthentication(null);
         request.setRequestURI("/api/users");
@@ -71,12 +69,11 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenUserIsVerified() throws Exception {
+    void shouldAllowAccessWhenUserIsVerified() throws Exception {
         // Given
         testIdentity.setIsEmailVerified(true);
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/users");
@@ -91,11 +88,10 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldAllowAccess_WhenNonVerifiedUserAccessesAllowedEndpoint() throws Exception {
+    void shouldAllowAccessWhenNonVerifiedUserAccessesAllowedEndpoint() throws Exception {
         // Given
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/auth/me");
@@ -110,11 +106,10 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccess_WhenNonVerifiedUserAccessesRestrictedEndpoint() throws Exception {
+    void shouldDenyAccessWhenNonVerifiedUserAccessesRestrictedEndpoint() throws Exception {
         // Given
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/users");
@@ -131,30 +126,10 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccess_WhenUserNotFound() throws Exception {
-        // Given
+    void shouldDenyAccessWhenLocalIdentityNotFound() throws Exception {
+        // Given - User authenticated but no local identity (data inconsistency)
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        request.setRequestURI("/api/users");
-
-        // When
-        emailVerificationFilter.doFilterInternal(request, response, (req, res) -> {
-            // This should not be called
-            fail("Filter chain should not continue when user not found");
-        });
-
-        // Then
-        assertEquals(401, response.getStatus());
-    }
-
-    @Test
-    void shouldDenyAccess_WhenLocalIdentityNotFound() throws Exception {
-        // Given
-        setupAuthenticatedUser();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
         request.setRequestURI("/api/users");
@@ -166,6 +141,7 @@ class EmailVerificationFilterTest {
         });
 
         // Then
+        // User with no local identity should be denied (data inconsistency)
         assertEquals(401, response.getStatus());
     }
 

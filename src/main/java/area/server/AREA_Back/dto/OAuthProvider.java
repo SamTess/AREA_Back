@@ -2,7 +2,7 @@ package area.server.AREA_Back.dto;
 
 import java.util.Objects;
 
-import area.server.AREA_Back.service.OAuthService;
+import area.server.AREA_Back.service.Auth.OAuthService;
 
 public final class OAuthProvider {
     private final String providerKey;

@@ -46,4 +46,10 @@ public interface ActionDefinitionRepository extends JpaRepository<ActionDefiniti
      */
     @Query("SELECT ad FROM ActionDefinition ad WHERE ad.service.key = :serviceKey")
     List<ActionDefinition> findByServiceKey(@Param("serviceKey") String serviceKey);
+
+    /**
+     * Find action definitions by service ID
+     */
+    @Query("SELECT ad FROM ActionDefinition ad WHERE ad.service.id = :serviceId")
+    List<ActionDefinition> findByServiceId(@Param("serviceId") UUID serviceId);
 }

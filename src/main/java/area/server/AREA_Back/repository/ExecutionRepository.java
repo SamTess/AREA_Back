@@ -99,4 +99,16 @@ public interface ExecutionRepository extends JpaRepository<Execution, UUID> {
            + "JOIN FETCH ai.user u "
            + "WHERE e.id = :id")
     java.util.Optional<Execution> findByIdWithActionInstance(@Param("id") UUID id);
+
+    /**
+     * Count executions by status and created after timestamp
+     */
+    @Query("SELECT COUNT(e) FROM Execution e WHERE e.status = :status AND e.queuedAt > :createdAfter")
+    Long countByStatusAndCreatedAtAfter(@Param("status") ExecutionStatus status, @Param("createdAfter") LocalDateTime createdAfter);
+
+    /**
+     * Find executions by area ID ordered by created at descending
+     */
+    @Query("SELECT e FROM Execution e WHERE e.area.id = :areaId ORDER BY e.queuedAt DESC")
+    List<Execution> findByAreaIdOrderByCreatedAtDesc(@Param("areaId") UUID areaId);
 }

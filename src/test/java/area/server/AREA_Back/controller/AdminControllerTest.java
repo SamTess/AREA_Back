@@ -14,9 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -27,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+
+import org.springframework.data.domain.Sort;
 
 /**
  * Unit tests for AdminController
@@ -143,34 +143,34 @@ class AdminControllerTest {
     @Test
     void testGetAllServicesWithStats() {
         // Arrange
-        Page<Service> servicePage = new PageImpl<>(Collections.singletonList(testService));
+        List<Service> services = Collections.singletonList(testService);
 
-        when(serviceRepository.findAll(any(PageRequest.class))).thenReturn(servicePage);
+        when(serviceRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(services);
         when(actionInstanceRepository.countByActionDefinition_Service_Id(any(UUID.class))).thenReturn(5L);
 
         // Act
-        ResponseEntity<?> response = adminController.getAllServicesWithStats(0, 20, "name", "asc");
+        ResponseEntity<?> response = adminController.getAllServicesWithStats();
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(serviceRepository, times(1)).findAll(any(PageRequest.class));
+        verify(serviceRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
     }
 
     @Test
     void testGetAllAreas() {
         // Arrange
-        Page<Area> areaPage = new PageImpl<>(Collections.singletonList(testArea));
+        List<Area> areas = Collections.singletonList(testArea);
 
-        when(areaRepository.findAll(any(PageRequest.class))).thenReturn(areaPage);
+        when(areaRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(areas);
         when(executionRepository.findByAreaIdOrderByCreatedAtDesc(any(UUID.class)))
             .thenReturn(Collections.emptyList());
 
         // Act
-        ResponseEntity<?> response = adminController.getAllAreas(0, 20, "createdAt", "desc");
+        ResponseEntity<?> response = adminController.getAllAreas();
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(areaRepository, times(1)).findAll(any(PageRequest.class));
+        verify(areaRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
     }
 
     @Test
@@ -257,16 +257,16 @@ class AdminControllerTest {
     @Test
     void testGetUsers() {
         // Arrange
-        Page<User> userPage = new PageImpl<>(Collections.singletonList(testUser));
+        List<User> users = Collections.singletonList(testUser);
 
-        when(userRepository.findAll(any(PageRequest.class))).thenReturn(userPage);
+        when(userRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(users);
 
         // Act
-        ResponseEntity<?> response = adminController.getUsers(0, 20);
+        ResponseEntity<?> response = adminController.getUsers();
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(userRepository, times(1)).findAll(any(PageRequest.class));
+        verify(userRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
     }
 
     @Test

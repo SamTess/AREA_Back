@@ -45,24 +45,15 @@ public class AdminController {
 
     @GetMapping("/services")
     @Operation(summary = "Get all services with usage stats", description = "Admin endpoint to list all services with usage statistics")
-    public ResponseEntity<Page<AdminServiceResponse>> getAllServicesWithStats(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+    public ResponseEntity<List<AdminServiceResponse>> getAllServicesWithStats() {
+        List<Service> services = serviceRepository.findAll(Sort.by("name").ascending());
 
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-            ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Service> services = serviceRepository.findAll(pageable);
-
-        Page<AdminServiceResponse> responses = services.map(service -> {
+        List<AdminServiceResponse> responses = services.stream().map(service -> {
             AdminServiceResponse response = convertToAdminServiceResponse(service);
             Long usageCount = actionInstanceRepository.countByActionDefinition_Service_Id(service.getId());
             response.setUsageCount(usageCount);
             return response;
-        });
+        }).collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
@@ -148,77 +139,14 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/areas/{id}/execute")
-    @Operation(summary = "Force-run an AREA manually",
-               description = "Manually triggers execution of an AREA for testing/debugging purposes")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "AREA execution triggered successfully"),
-        @ApiResponse(responseCode = "404", description = "AREA not found"),
-        @ApiResponse(responseCode = "400", description = "AREA has no action instances"),
-        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
-    })
-    public ResponseEntity<?> forceExecuteArea(
-            @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, Object> inputPayload) {
-        try {
-            Optional<Area> optionalArea = areaRepository.findById(id);
-            if (!optionalArea.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "AREA not found"));
-            }
-
-            Area area = optionalArea.get();
-
-            List<ActionInstance> actionInstances = actionInstanceRepository.findByAreaId(id);
-            if (actionInstances.isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "AREA has no action instances configured"));
-            }
-
-            ActionInstance triggerAction = actionInstances.stream()
-                .filter(ai -> ai.getActionDefinition().getIsEventCapable())
-                .findFirst()
-                .orElse(actionInstances.get(0));
-
-            Execution execution = new Execution();
-            execution.setArea(area);
-            execution.setActionInstance(triggerAction);
-            execution.setStatus(ExecutionStatus.QUEUED);
-            execution.setInputPayload(inputPayload != null ? inputPayload : new HashMap<>());
-
-            Execution savedExecution = executionRepository.save(execution);
-
-            log.info("Admin manually triggered AREA execution: {} for area: {}", savedExecution.getId(), area.getName());
-
-            return ResponseEntity.ok(Map.of(
-                "message", "AREA execution triggered successfully",
-                "executionId", savedExecution.getId(),
-                "areaId", area.getId(),
-                "areaName", area.getName(),
-                "status", savedExecution.getStatus().name().toLowerCase()
-            ));
-        } catch (Exception e) {
-            log.error("Error triggering AREA execution", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to trigger AREA execution", "message", e.getMessage()));
-        }
-    }
-
     @GetMapping("/areas")
     @Operation(summary = "Get all areas with user info", description = "Admin endpoint to list all areas across all users")
-    public ResponseEntity<Page<AdminAreaResponse>> getAllAreas(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+    public ResponseEntity<List<AdminAreaResponse>> getAllAreas() {
+        List<Area> areas = areaRepository.findAll(Sort.by("createdAt").descending());
 
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-            ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Area> areas = areaRepository.findAll(pageable);
-
-        Page<AdminAreaResponse> responses = areas.map(this::convertToAdminAreaResponse);
+        List<AdminAreaResponse> responses = areas.stream()
+            .map(this::convertToAdminAreaResponse)
+            .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
@@ -294,14 +222,13 @@ public class AdminController {
 
     @GetMapping("/logs")
     @Operation(summary = "Get system logs", description = "Get recent execution logs")
-    public ResponseEntity<Page<Map<String, Object>>> getLogs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+    public ResponseEntity<List<Map<String, Object>>> getLogs(
+            @RequestParam(defaultValue = "50") int limit) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("queuedAt").descending());
+            Pageable pageable = PageRequest.of(0, limit, Sort.by("queuedAt").descending());
             Page<Execution> executions = executionRepository.findAll(pageable);
 
-            Page<Map<String, Object>> logs = executions.map(execution -> {
+            List<Map<String, Object>> logs = executions.stream().map(execution -> {
                 Map<String, Object> log = new HashMap<>();
                 log.put("id", execution.getId());
                 log.put("timestamp", execution.getQueuedAt());
@@ -310,7 +237,7 @@ public class AdminController {
                        (execution.getArea() != null ? execution.getArea().getName() : "N/A"));
                 log.put("source", "area-runner");
                 return log;
-            });
+            }).collect(Collectors.toList());
 
             return ResponseEntity.ok(logs);
         } catch (Exception e) {
@@ -321,14 +248,13 @@ public class AdminController {
 
     @GetMapping("/area-runs")
     @Operation(summary = "Get recent area runs")
-    public ResponseEntity<Page<Map<String, Object>>> getAreaRuns(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+    public ResponseEntity<List<Map<String, Object>>> getAreaRuns(
+            @RequestParam(defaultValue = "50") int limit) {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("queuedAt").descending());
+            Pageable pageable = PageRequest.of(0, limit, Sort.by("queuedAt").descending());
             Page<Execution> executions = executionRepository.findAll(pageable);
 
-            Page<Map<String, Object>> runs = executions.map(execution -> {
+            List<Map<String, Object>> runs = executions.stream().map(execution -> {
                 Map<String, Object> run = new HashMap<>();
                 run.put("id", execution.getId());
                 run.put("areaName", execution.getArea() != null ? execution.getArea().getName() : "N/A");
@@ -339,7 +265,7 @@ public class AdminController {
                     ? java.time.Duration.between(execution.getQueuedAt(), execution.getFinishedAt()).getSeconds() + "s"
                     : "N/A");
                 return run;
-            });
+            }).collect(Collectors.toList());
 
             return ResponseEntity.ok(runs);
         } catch (Exception e) {
@@ -429,21 +355,18 @@ public class AdminController {
 
     @GetMapping("/users")
     @Operation(summary = "Get all users")
-    public ResponseEntity<Page<Map<String, Object>>> getUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<Map<String, Object>>> getUsers() {
         try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<User> users = userRepository.findAll(pageable);
+            List<User> users = userRepository.findAll(Sort.by("createdAt").descending());
 
-            Page<Map<String, Object>> userResponses = users.map(user -> {
+            List<Map<String, Object>> userResponses = users.stream().map(user -> {
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("id", user.getId());
                 userMap.put("name", user.getEmail().split("@")[0]);
                 userMap.put("email", user.getEmail());
                 userMap.put("role", user.getIsAdmin() ? "Admin" : "User");
                 return userMap;
-            });
+            }).collect(Collectors.toList());
 
             return ResponseEntity.ok(userResponses);
         } catch (Exception e) {

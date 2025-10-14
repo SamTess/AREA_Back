@@ -318,7 +318,7 @@ public class AdminController {
                 "executionId", savedExecution.getId(),
                 "areaId", area.getId(),
                 "areaName", area.getName(),
-                "status", "PENDING"
+                "status", savedExecution.getStatus().name().toLowerCase()
             ));
         } catch (Exception e) {
             log.error("Error triggering AREA execution", e);
@@ -503,8 +503,11 @@ public class AdminController {
             LocalDate endDate = LocalDate.now();
             LocalDate startDate = endDate.minusDays(days);
 
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
+
             List<Map<String, Object>> data = new ArrayList<>();
-            List<Object[]> results = userRepository.findUsersConnectedPerDay(startDate, endDate);
+            List<Object[]> results = userRepository.findUsersConnectedPerDay(start, endExclusive);
 
             for (Object[] result : results) {
                 Map<String, Object> entry = new HashMap<>();

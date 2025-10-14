@@ -466,6 +466,40 @@ public class AreaService {
         return convertToResponse(savedArea);
     }
 
+    public AreaResponse updateAreaWithActionsAndLinks(UUID areaId, CreateAreaWithActionsAndLinksRequest request) {
+
+        Area area = areaRepository.findById(areaId)
+            .orElseThrow(() -> new IllegalArgumentException("Area not found with ID: " + areaId));
+
+        if (!area.getUser().getId().equals(request.getUserId())) {
+            throw new IllegalArgumentException("Area does not belong to user: " + request.getUserId());
+        }
+
+        validateActionsAndReactions(request.getActions(), request.getReactions());
+        actionLinkService.deleteAllLinksForArea(areaId);
+        actionInstanceRepository.deleteByAreaId(areaId);
+        area.setName(request.getName());
+        area.setDescription(request.getDescription());
+        area.setActions(convertActionsToJsonb(request.getActions()));
+        area.setReactions(convertReactionsToJsonb(request.getReactions()));
+
+        Area savedArea = areaRepository.save(area);
+
+        Map<String, UUID> serviceIdMapping = createActionInstancesWithMapping(
+                savedArea, request.getActions(), request.getReactions());
+
+        if (request.getConnections() != null && !request.getConnections().isEmpty()) {
+            createActionLinks(savedArea, request.getConnections(), serviceIdMapping);
+        } else {
+            String layoutMode = request.getLayoutMode();
+            if ("linear".equals(layoutMode)) {
+                createLinearActionLinks(savedArea, request.getActions(),
+                        request.getReactions(), serviceIdMapping);
+            }
+        }
+        return convertToResponse(savedArea);
+    }
+
     private Map<String, UUID> createActionInstancesWithMapping(Area area,
             List<AreaActionRequest> actions, List<AreaReactionRequest> reactions) {
         Map<String, UUID> serviceIdMapping = new HashMap<>();

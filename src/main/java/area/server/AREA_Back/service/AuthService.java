@@ -623,6 +623,8 @@ public class AuthService {
         return new UserResponse(
             user.getId(),
             user.getEmail(),
+            user.getFirstname(),
+            user.getLastname(),
             user.getIsActive(),
             user.getIsAdmin(),
             isVerified,

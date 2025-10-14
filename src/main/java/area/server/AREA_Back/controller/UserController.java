@@ -3,6 +3,8 @@ package area.server.AREA_Back.controller;
 import area.server.AREA_Back.dto.UpdateUserRequest;
 import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
+import area.server.AREA_Back.entity.UserLocalIdentity;
+import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,14 +12,24 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,10 +37,17 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "API for managing users")
+@Slf4j
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserLocalIdentityRepository localIdentityRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping
     @Operation(summary = "Get all users",
@@ -89,12 +108,13 @@ public class UserController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a user",
-               description = "Updates an existing user's information")
+               description = "Updates an existing user's information including firstname, lastname, and password")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User updated successfully"),
-        @ApiResponse(responseCode = "404", description = "User not found")
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public ResponseEntity<UserResponse> updateUser(
+    public ResponseEntity<?> updateUser(
             @Parameter(description = "User ID")
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -107,19 +127,50 @@ public class UserController {
         User user = optionalUser.get();
 
         if (request.getEmail() != null) {
+            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                return ResponseEntity.badRequest()
+                    .body("Email already exists");
+            }
             user.setEmail(request.getEmail());
         }
+
+        if (request.getFirstname() != null) {
+            user.setFirstname(request.getFirstname());
+        }
+
+        if (request.getLastname() != null) {
+            user.setLastname(request.getLastname());
+        }
+
         if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());
         }
+
         if (request.getIsAdmin() != null) {
             user.setIsAdmin(request.getIsAdmin());
         }
+
         if (request.getAvatarUrl() != null) {
             user.setAvatarUrl(request.getAvatarUrl());
         }
 
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            Optional<UserLocalIdentity> localIdentity = localIdentityRepository.findByUserId(user.getId());
+            if (localIdentity.isPresent()) {
+                UserLocalIdentity identity = localIdentity.get();
+                String hashedPassword = passwordEncoder.encode(request.getPassword());
+                identity.setPasswordHash(hashedPassword);
+                identity.setLastPasswordChangeAt(LocalDateTime.now());
+                localIdentityRepository.save(identity);
+                log.info("Password updated for user: {}", user.getEmail());
+            } else {
+                log.warn("Cannot update password: no local identity found for user: {}", user.getEmail());
+            }
+        }
+
         User updatedUser = userRepository.save(user);
+        log.info("User updated: {}", updatedUser.getEmail());
         return ResponseEntity.ok(convertToResponse(updatedUser));
     }
 
@@ -161,6 +212,8 @@ public class UserController {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setEmail(user.getEmail());
+        response.setFirstname(user.getFirstname());
+        response.setLastname(user.getLastname());
         response.setIsActive(user.getIsActive());
         response.setIsAdmin(user.getIsAdmin());
         response.setCreatedAt(user.getCreatedAt());

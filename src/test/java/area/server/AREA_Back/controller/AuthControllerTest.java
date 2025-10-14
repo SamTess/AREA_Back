@@ -75,6 +75,8 @@ class AuthControllerTest {
         testUserResponse = new UserResponse(
             testUserId,
             "test@example.com",
+            "John",
+            "Doe",
             true,
             false,
             true, // isVerified

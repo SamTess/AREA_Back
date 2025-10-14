@@ -9,6 +9,7 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.*;
 import area.server.AREA_Back.service.ServiceCacheService;
+import area.server.AREA_Back.service.WorkerTrackingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,9 @@ class AdminControllerTest {
 
     @Mock
     private ServiceCacheService serviceCacheService;
+
+    @Mock
+    private WorkerTrackingService workerTrackingService;
 
     @InjectMocks
     private AdminController adminController;
@@ -224,6 +228,11 @@ class AdminControllerTest {
         when(executionRepository.count()).thenReturn(100L);
         when(actionDefinitionRepository.count()).thenReturn(50L);
         when(serviceRepository.count()).thenReturn(10L);
+        
+        // Mock WorkerTrackingService
+        when(workerTrackingService.getActiveWorkers()).thenReturn(3);
+        when(workerTrackingService.getTotalWorkers()).thenReturn(6);
+        when(workerTrackingService.getWorkerStatistics()).thenReturn(new HashMap<>());
 
         // Act
         ResponseEntity<AdminMetricsResponse> response = adminController.getSystemMetrics();
@@ -232,11 +241,18 @@ class AdminControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(5L, response.getBody().getQueueLength());
+        assertEquals(3, response.getBody().getActiveWorkers());
+        assertEquals(6, response.getBody().getTotalWorkers());
         assertEquals(3L, response.getBody().getFailedExecutions());
         assertEquals(42L, response.getBody().getSuccessfulExecutions());
         assertEquals(15L, response.getBody().getTotalAreas());
         assertEquals(12L, response.getBody().getActiveAreas());
         assertEquals(40L, response.getBody().getTotalUsers());
+        
+        // Verify WorkerTrackingService was called
+        verify(workerTrackingService).getActiveWorkers();
+        verify(workerTrackingService).getTotalWorkers();
+        verify(workerTrackingService).getWorkerStatistics();
     }
 
     @Test

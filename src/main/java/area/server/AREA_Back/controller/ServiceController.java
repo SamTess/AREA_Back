@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -119,6 +120,13 @@ public class ServiceController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create a new service", description = "Admin-only endpoint to create a new service")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Service created successfully"),
+        @ApiResponse(responseCode = "409", description = "Service with this key already exists"),
+        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+    })
     public ResponseEntity<ServiceResponse> createService(@Valid @RequestBody CreateServiceRequest request) {
         if (serviceRepository.existsByKey(request.getKey())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -141,6 +149,13 @@ public class ServiceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update a service", description = "Admin-only endpoint to update an existing service")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Service updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Service not found"),
+        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+    })
     public ResponseEntity<ServiceResponse> updateService(
             @PathVariable UUID id,
             @Valid @RequestBody CreateServiceRequest request) {
@@ -166,6 +181,13 @@ public class ServiceController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete a service", description = "Admin-only endpoint to delete a service")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Service deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Service not found"),
+        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+    })
     public ResponseEntity<Void> deleteService(@PathVariable UUID id) {
         if (!serviceRepository.existsById(id)) {
             return ResponseEntity.notFound().build();

@@ -1,14 +1,12 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.dto.AdminMetricsResponse;
-import area.server.AREA_Back.dto.CreateServiceAdminRequest;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.*;
-import area.server.AREA_Back.service.ServiceCacheService;
 import area.server.AREA_Back.service.WorkerTrackingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,9 +53,6 @@ class AdminControllerTest {
     private ActionInstanceRepository actionInstanceRepository;
 
     @Mock
-    private ServiceCacheService serviceCacheService;
-
-    @Mock
     private WorkerTrackingService workerTrackingService;
 
     @InjectMocks
@@ -102,117 +97,7 @@ class AdminControllerTest {
         testExecution.setQueuedAt(LocalDateTime.now());
     }
 
-    @Test
-    void testCreateService_Success() {
-        // Arrange
-        CreateServiceAdminRequest request = new CreateServiceAdminRequest();
-        request.setKey("github");
-        request.setName("GitHub");
-        request.setAuth(Service.AuthType.OAUTH2);
-        request.setIsActive(true);
-
-        when(serviceRepository.existsByKey("github")).thenReturn(false);
-        when(serviceRepository.save(any(Service.class))).thenReturn(testService);
-
-        // Act
-        ResponseEntity<?> response = adminController.createService(request);
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(serviceRepository, times(1)).save(any(Service.class));
-        verify(serviceCacheService, times(1)).invalidateServicesCache();
-    }
-
-    @Test
-    void testCreateService_Conflict() {
-        // Arrange
-        CreateServiceAdminRequest request = new CreateServiceAdminRequest();
-        request.setKey("github");
-        request.setName("GitHub");
-        request.setAuth(Service.AuthType.OAUTH2);
-
-        when(serviceRepository.existsByKey("github")).thenReturn(true);
-
-        // Act
-        ResponseEntity<?> response = adminController.createService(request);
-
-        // Assert
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        verify(serviceRepository, never()).save(any(Service.class));
-    }
-
-    @Test
-    void testUpdateService_Success() {
-        // Arrange
-        UUID serviceId = testService.getId();
-        CreateServiceAdminRequest request = new CreateServiceAdminRequest();
-        request.setKey("github-updated");
-        request.setName("GitHub Updated");
-        request.setAuth(Service.AuthType.OAUTH2);
-
-        when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
-        when(serviceRepository.existsByKey("github-updated")).thenReturn(false);
-        when(serviceRepository.save(any(Service.class))).thenReturn(testService);
-
-        // Act
-        ResponseEntity<?> response = adminController.updateService(serviceId, request);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(serviceRepository, times(1)).save(any(Service.class));
-        verify(serviceCacheService, times(1)).invalidateServicesCache();
-    }
-
-    @Test
-    void testUpdateService_NotFound() {
-        // Arrange
-        UUID serviceId = UUID.randomUUID();
-        CreateServiceAdminRequest request = new CreateServiceAdminRequest();
-        request.setKey("github");
-        request.setName("GitHub");
-        request.setAuth(Service.AuthType.OAUTH2);
-
-        when(serviceRepository.findById(serviceId)).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<?> response = adminController.updateService(serviceId, request);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(serviceRepository, never()).save(any(Service.class));
-    }
-
-    @Test
-    void testDeleteService_Success() {
-        // Arrange
-        UUID serviceId = testService.getId();
-        when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
-        when(actionDefinitionRepository.findByServiceId(serviceId)).thenReturn(Collections.emptyList());
-
-        // Act
-        ResponseEntity<?> response = adminController.deleteService(serviceId);
-
-        // Assert
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(serviceRepository, times(1)).deleteById(serviceId);
-        verify(serviceCacheService, times(1)).invalidateServicesCache();
-    }
-
-    @Test
-    void testDeleteService_HasActionDefinitions() {
-        // Arrange
-        UUID serviceId = testService.getId();
-        when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
-        when(actionDefinitionRepository.findByServiceId(serviceId))
-            .thenReturn(Collections.singletonList(new area.server.AREA_Back.entity.ActionDefinition()));
-
-        // Act
-        ResponseEntity<?> response = adminController.deleteService(serviceId);
-
-        // Assert
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        verify(serviceRepository, never()).deleteById(any());
-    }
+    // ========== Service CRUD tests removed - Now handled by ServiceController ==========
 
     @Test
     void testGetSystemMetrics_Success() {

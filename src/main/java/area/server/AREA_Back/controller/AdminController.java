@@ -4,14 +4,12 @@ import area.server.AREA_Back.dto.*;
 import area.server.AREA_Back.entity.*;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.repository.*;
-import area.server.AREA_Back.service.ServiceCacheService;
 import area.server.AREA_Back.service.WorkerTrackingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -43,128 +41,7 @@ public class AdminController {
     private final UserRepository userRepository;
     private final ExecutionRepository executionRepository;
     private final ActionInstanceRepository actionInstanceRepository;
-    private final ServiceCacheService serviceCacheService;
     private final WorkerTrackingService workerTrackingService;
-
-    @PostMapping("/services")
-    @Operation(summary = "Create a new service", description = "Admin endpoint to create a new service integration")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Service created successfully"),
-        @ApiResponse(responseCode = "409", description = "Service with this key already exists"),
-        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
-    })
-    public ResponseEntity<?> createService(@Valid @RequestBody CreateServiceAdminRequest request) {
-        try {
-            if (serviceRepository.existsByKey(request.getKey())) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Service with key '" + request.getKey() + "' already exists"));
-            }
-
-            Service service = new Service();
-            service.setKey(request.getKey());
-            service.setName(request.getName());
-            service.setAuth(request.getAuth());
-            service.setDocsUrl(request.getDocsUrl());
-            service.setIconLightUrl(request.getIconLightUrl());
-            service.setIconDarkUrl(request.getIconDarkUrl());
-            service.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
-
-            Service savedService = serviceRepository.save(service);
-            serviceCacheService.invalidateServicesCache();
-
-            log.info("Admin created service: {}", savedService.getKey());
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertToAdminServiceResponse(savedService));
-        } catch (Exception e) {
-            log.error("Error creating service", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to create service", "message", e.getMessage()));
-        }
-    }
-
-    @PutMapping("/services/{id}")
-    @Operation(summary = "Update a service", description = "Admin endpoint to update an existing service")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Service updated successfully"),
-        @ApiResponse(responseCode = "404", description = "Service not found"),
-        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
-    })
-    public ResponseEntity<?> updateService(
-            @PathVariable UUID id,
-            @Valid @RequestBody CreateServiceAdminRequest request) {
-        try {
-            Optional<Service> optionalService = serviceRepository.findById(id);
-            if (!optionalService.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Service not found"));
-            }
-
-            Service service = optionalService.get();
-
-            if (!service.getKey().equals(request.getKey()) && serviceRepository.existsByKey(request.getKey())) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Service with key '" + request.getKey() + "' already exists"));
-            }
-
-            service.setKey(request.getKey());
-            service.setName(request.getName());
-            service.setAuth(request.getAuth());
-            service.setDocsUrl(request.getDocsUrl());
-            service.setIconLightUrl(request.getIconLightUrl());
-            service.setIconDarkUrl(request.getIconDarkUrl());
-            if (request.getIsActive() != null) {
-                service.setIsActive(request.getIsActive());
-            }
-
-            Service updatedService = serviceRepository.save(service);
-            serviceCacheService.invalidateServicesCache();
-
-            log.info("Admin updated service: {}", updatedService.getKey());
-            return ResponseEntity.ok(convertToAdminServiceResponse(updatedService));
-        } catch (Exception e) {
-            log.error("Error updating service", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to update service", "message", e.getMessage()));
-        }
-    }
-
-    @DeleteMapping("/services/{id}")
-    @Operation(summary = "Delete a service", description = "Admin endpoint to delete a service")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Service deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Service not found"),
-        @ApiResponse(responseCode = "409", description = "Service has associated action definitions"),
-        @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
-    })
-    public ResponseEntity<?> deleteService(@PathVariable UUID id) {
-        try {
-            Optional<Service> optionalService = serviceRepository.findById(id);
-            if (!optionalService.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Service not found"));
-            }
-
-            Service service = optionalService.get();
-
-            List<ActionDefinition> actionDefinitions = actionDefinitionRepository.findByServiceId(id);
-            if (!actionDefinitions.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of(
-                        "error", "Cannot delete service with existing action definitions",
-                        "actionDefinitionsCount", actionDefinitions.size()
-                    ));
-            }
-
-            serviceRepository.deleteById(id);
-            serviceCacheService.invalidateServicesCache();
-
-            log.info("Admin deleted service: {}", service.getKey());
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            log.error("Error deleting service", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to delete service", "message", e.getMessage()));
-        }
-    }
 
     @GetMapping("/services")
     @Operation(summary = "Get all services with usage stats", description = "Admin endpoint to list all services with usage statistics")

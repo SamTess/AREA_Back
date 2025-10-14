@@ -32,11 +32,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Find users connected per day
      * Uses half-open interval [start, endExclusive) to properly handle timestamp ranges
      */
-    @Query(value = "SELECT DATE(last_login_at) as date, COUNT(*) as count " +
-                   "FROM area.a_users " +
-                   "WHERE last_login_at >= :start AND last_login_at < :endExclusive " +
-                   "GROUP BY DATE(last_login_at) " +
-                   "ORDER BY date", nativeQuery = true)
+    @Query(value = "SELECT DATE(last_login_at) as date, COUNT(*) as count "
+                   + "FROM area.a_users "
+                   + "WHERE last_login_at >= :start AND last_login_at < :endExclusive "
+                   + "GROUP BY DATE(last_login_at) "
+                   + "ORDER BY date", nativeQuery = true)
     java.util.List<Object[]> findUsersConnectedPerDay(@Param("start") java.time.LocalDateTime start,
                                                        @Param("endExclusive") java.time.LocalDateTime endExclusive);
 

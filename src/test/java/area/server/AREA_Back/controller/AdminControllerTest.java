@@ -146,7 +146,7 @@ class AdminControllerTest {
         List<Service> services = Collections.singletonList(testService);
 
         when(serviceRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(services);
-        when(actionInstanceRepository.countByActionDefinition_Service_Id(any(UUID.class))).thenReturn(5L);
+            when(actionInstanceRepository.countByActionDefinitionServiceId(any(UUID.class))).thenReturn(5L);
 
         // Act
         ResponseEntity<?> response = adminController.getAllServicesWithStats();
@@ -223,7 +223,7 @@ class AdminControllerTest {
     void testGetServicesUsage() {
         // Arrange
         when(serviceRepository.findAll()).thenReturn(Collections.singletonList(testService));
-        when(actionInstanceRepository.countByActionDefinition_Service_Id(any(UUID.class))).thenReturn(25L);
+            when(actionInstanceRepository.countByActionDefinitionServiceId(any(UUID.class))).thenReturn(25L);
 
         // Act
         ResponseEntity<List<Map<String, Object>>> response = adminController.getServicesUsage();

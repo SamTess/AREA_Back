@@ -95,6 +95,6 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
     /**
      * Count action instances by service ID
      */
-    @Query("SELECT COUNT(ai) FROM ActionInstance ai WHERE ai.actionDefinition.service.id = :serviceId")
-    Long countByActionDefinition_Service_Id(@Param("serviceId") UUID serviceId);
+       @Query("SELECT COUNT(ai) FROM ActionInstance ai WHERE ai.actionDefinition.service.id = :serviceId")
+       Long countByActionDefinitionServiceId(@Param("serviceId") UUID serviceId);
 }

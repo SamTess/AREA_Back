@@ -104,7 +104,9 @@ public interface ExecutionRepository extends JpaRepository<Execution, UUID> {
      * Count executions by status and created after timestamp
      */
     @Query("SELECT COUNT(e) FROM Execution e WHERE e.status = :status AND e.queuedAt > :createdAfter")
-    Long countByStatusAndCreatedAtAfter(@Param("status") ExecutionStatus status, @Param("createdAfter") LocalDateTime createdAfter);
+    Long countByStatusAndCreatedAtAfter(
+        @Param("status") ExecutionStatus status,
+        @Param("createdAfter") LocalDateTime createdAfter);
 
     /**
      * Find executions by area ID ordered by created at descending

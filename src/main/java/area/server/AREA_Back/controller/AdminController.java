@@ -1,9 +1,19 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.dto.*;
-import area.server.AREA_Back.entity.*;
+import area.server.AREA_Back.dto.AdminAreaResponse;
+import area.server.AREA_Back.dto.AdminMetricsResponse;
+import area.server.AREA_Back.dto.AdminServiceResponse;
+import area.server.AREA_Back.entity.Area;
+import area.server.AREA_Back.entity.Execution;
+import area.server.AREA_Back.entity.Service;
+import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
-import area.server.AREA_Back.repository.*;
+import area.server.AREA_Back.repository.ActionDefinitionRepository;
+import area.server.AREA_Back.repository.ActionInstanceRepository;
+import area.server.AREA_Back.repository.AreaRepository;
+import area.server.AREA_Back.repository.ExecutionRepository;
+import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.WorkerTrackingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,7 +33,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -44,13 +59,14 @@ public class AdminController {
     private final WorkerTrackingService workerTrackingService;
 
     @GetMapping("/services")
-    @Operation(summary = "Get all services with usage stats", description = "Admin endpoint to list all services with usage statistics")
+    @Operation(summary = "Get all services with usage stats",
+               description = "Admin endpoint to list all services with usage statistics")
     public ResponseEntity<List<AdminServiceResponse>> getAllServicesWithStats() {
         List<Service> services = serviceRepository.findAll(Sort.by("name").ascending());
 
         List<AdminServiceResponse> responses = services.stream().map(service -> {
             AdminServiceResponse response = convertToAdminServiceResponse(service);
-            Long usageCount = actionInstanceRepository.countByActionDefinition_Service_Id(service.getId());
+            Long usageCount = actionInstanceRepository.countByActionDefinitionServiceId(service.getId());
             response.setUsageCount(usageCount);
             return response;
         }).collect(Collectors.toList());
@@ -69,10 +85,13 @@ public class AdminController {
         try {
             Long queueLength = executionRepository.countByStatus(ExecutionStatus.QUEUED);
 
-            LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
-            Long failedExecutions = executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.FAILED, yesterday);
+            final int hoursInDay = 24;
+            LocalDateTime yesterday = LocalDateTime.now().minusHours(hoursInDay);
+            Long failedExecutions =
+                executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.FAILED, yesterday);
 
-            Long successfulExecutions = executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.OK, yesterday);
+            Long successfulExecutions =
+                executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.OK, yesterday);
 
             Long totalAreas = areaRepository.count();
 
@@ -109,7 +128,8 @@ public class AdminController {
 
     @GetMapping("/workers/statistics")
     @Operation(summary = "Get detailed worker statistics",
-               description = "Returns detailed statistics about worker thread pools including active, total, and queue status")
+               description = "Returns detailed statistics about worker thread pools "
+                   + "including active, total, and queue status")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Worker statistics retrieved successfully"),
         @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
@@ -140,7 +160,8 @@ public class AdminController {
     }
 
     @GetMapping("/areas")
-    @Operation(summary = "Get all areas with user info", description = "Admin endpoint to list all areas across all users")
+    @Operation(summary = "Get all areas with user info",
+               description = "Admin endpoint to list all areas across all users")
     public ResponseEntity<List<AdminAreaResponse>> getAllAreas() {
         List<Area> areas = areaRepository.findAll(Sort.by("createdAt").descending());
 
@@ -205,7 +226,7 @@ public class AdminController {
         try {
             List<Service> services = serviceRepository.findAll();
             List<Map<String, Object>> usageStats = services.stream().map(service -> {
-                Long usageCount = actionInstanceRepository.countByActionDefinition_Service_Id(service.getId());
+                Long usageCount = actionInstanceRepository.countByActionDefinitionServiceId(service.getId());
                 Map<String, Object> stat = new HashMap<>();
                 stat.put("service", service.getName());
                 stat.put("usage", usageCount);
@@ -233,8 +254,9 @@ public class AdminController {
                 log.put("id", execution.getId());
                 log.put("timestamp", execution.getQueuedAt());
                 log.put("level", execution.getStatus() == ExecutionStatus.FAILED ? "ERROR" : "INFO");
-                log.put("message", "Execution " + execution.getStatus().name() + " for area: " +
-                       (execution.getArea() != null ? execution.getArea().getName() : "N/A"));
+                String areaName = execution.getArea() != null ? execution.getArea().getName() : "N/A";
+                log.put("message", "Execution " + execution.getStatus().name() + " for area: "
+                       + areaName);
                 log.put("source", "area-runner");
                 return log;
             }).collect(Collectors.toList());
@@ -279,11 +301,14 @@ public class AdminController {
     public ResponseEntity<List<Map<String, Object>>> getAreaStats() {
         try {
             Long total = areaRepository.count();
-            LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
-            Long successful = executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.OK, yesterday);
-            Long failed = executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.FAILED, yesterday);
-            Long inProgress = executionRepository.countByStatus(ExecutionStatus.QUEUED) +
-                              executionRepository.countByStatus(ExecutionStatus.RUNNING);
+            final int hoursInDay = 24;
+            LocalDateTime yesterday = LocalDateTime.now().minusHours(hoursInDay);
+            Long successful =
+                executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.OK, yesterday);
+            Long failed =
+                executionRepository.countByStatusAndCreatedAtAfter(ExecutionStatus.FAILED, yesterday);
+            Long inProgress = executionRepository.countByStatus(ExecutionStatus.QUEUED)
+                              + executionRepository.countByStatus(ExecutionStatus.RUNNING);
 
             List<Map<String, Object>> stats = new ArrayList<>();
             stats.add(Map.of("title", "Total Areas", "value", total.toString(), "icon", "IconMap"));
@@ -335,13 +360,15 @@ public class AdminController {
             LocalDateTime endDate = LocalDateTime.now();
 
             for (int i = months - 1; i >= 0; i--) {
-                LocalDateTime monthStart = endDate.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+                LocalDateTime monthStart = endDate.minusMonths(i).withDayOfMonth(1)
+                    .withHour(0).withMinute(0).withSecond(0);
                 LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
 
                 Long count = userRepository.countByCreatedAtBetween(monthStart, monthEnd);
 
                 Map<String, Object> entry = new HashMap<>();
-                entry.put("month", monthStart.getMonth().toString().substring(0, 3));
+                final int monthNameLength = 3;
+                entry.put("month", monthStart.getMonth().toString().substring(0, monthNameLength));
                 entry.put("users", count);
                 data.add(entry);
             }
@@ -390,18 +417,44 @@ public class AdminController {
             Long newUsersThisMonth = userRepository.countByCreatedAtAfter(oneMonthAgo);
             Long newUsersLastMonth = userRepository.countByCreatedAtBetween(twoMonthsAgo, oneMonthAgo);
 
+            final double activeUsersRatio = 0.9;
             Long totalUsersLastMonth = totalUsers - newUsersThisMonth;
-            Long activeUsersLastMonth = totalUsersLastMonth > 0 ? (long) (activeUsers * 0.9) : activeUsers;
+            Long activeUsersLastMonth;
+            if (totalUsersLastMonth > 0) {
+                activeUsersLastMonth = (long) (activeUsers * activeUsersRatio);
+            } else {
+                activeUsersLastMonth = activeUsers;
+            }
 
             int totalUsersDiff = calculatePercentageDiff(totalUsers, totalUsersLastMonth);
             int activeUsersDiff = calculatePercentageDiff(activeUsers, activeUsersLastMonth);
             int newUsersDiff = calculatePercentageDiff(newUsersThisMonth, newUsersLastMonth);
 
             List<Map<String, Object>> data = new ArrayList<>();
-            data.add(Map.of("title", "Total Users", "icon", "user", "value", totalUsers.toString(), "diff", totalUsersDiff));
-            data.add(Map.of("title", "Active Users", "icon", "user", "value", activeUsers.toString(), "diff", activeUsersDiff));
-            data.add(Map.of("title", "New Users", "icon", "user", "value", newUsersThisMonth.toString(), "diff", newUsersDiff));
-            data.add(Map.of("title", "Admins", "icon", "user", "value", adminUsers.toString(), "diff", 0));
+            data.add(Map.of(
+                "title", "Total Users",
+                "icon", "user",
+                "value", totalUsers.toString(),
+                "diff", totalUsersDiff
+            ));
+            data.add(Map.of(
+                "title", "Active Users",
+                "icon", "user",
+                "value", activeUsers.toString(),
+                "diff", activeUsersDiff
+            ));
+            data.add(Map.of(
+                "title", "New Users",
+                "icon", "user",
+                "value", newUsersThisMonth.toString(),
+                "diff", newUsersDiff
+            ));
+            data.add(Map.of(
+                "title", "Admins",
+                "icon", "user",
+                "value", adminUsers.toString(),
+                "diff", 0
+            ));
 
             return ResponseEntity.ok(data);
         } catch (Exception e) {
@@ -411,10 +464,15 @@ public class AdminController {
     }
 
     private int calculatePercentageDiff(Long current, Long previous) {
+        final int percent = 100;
         if (previous == null || previous == 0) {
-            return current > 0 ? 100 : 0;
+            if (current > 0) {
+                return percent;
+            }
+            return 0;
         }
-        return (int) Math.round(((current - previous) * 100.0) / previous);
+        double diff = ((current - previous) * (double) percent) / previous;
+        return (int) Math.round(diff);
     }
 
     private AdminServiceResponse convertToAdminServiceResponse(Service service) {

@@ -60,6 +60,7 @@ public class OAuthGithubService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
+    @SuppressWarnings("ParameterNumber")
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,

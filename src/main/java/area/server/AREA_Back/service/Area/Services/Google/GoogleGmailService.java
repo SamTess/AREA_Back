@@ -235,7 +235,11 @@ public class GoogleGmailService {
 
         @SuppressWarnings("unchecked")
         List<String> labelIds = (List<String>) message.get("labelIds");
-        event.put("labels", labelIds != null ? labelIds : List.of());
+        if (labelIds != null) {
+            event.put("labels", labelIds);
+        } else {
+            event.put("labels", List.of());
+        }
 
         return event;
     }

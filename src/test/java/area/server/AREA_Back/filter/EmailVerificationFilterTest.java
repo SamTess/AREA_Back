@@ -3,7 +3,6 @@ package area.server.AREA_Back.filter;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
-import area.server.AREA_Back.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +26,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EmailVerificationFilterTest {
-
-    @Mock
-    private UserRepository userRepository;
 
     @Mock
     private UserLocalIdentityRepository userLocalIdentityRepository;
@@ -78,7 +74,6 @@ class EmailVerificationFilterTest {
         testIdentity.setIsEmailVerified(true);
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/users");
@@ -97,7 +92,6 @@ class EmailVerificationFilterTest {
         // Given
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/auth/me");
@@ -116,7 +110,6 @@ class EmailVerificationFilterTest {
         // Given
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
 
         request.setRequestURI("/api/users");
@@ -133,41 +126,23 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccessWhenUserNotFound() throws Exception {
-        // Given
+    void shouldDenyAccessWhenLocalIdentityNotFound() throws Exception {
+        // Given - User authenticated but no local identity (data inconsistency)
         setupAuthenticatedUser();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        request.setRequestURI("/api/users");
-
-        // When
-        emailVerificationFilter.doFilterInternal(request, response, (req, res) -> {
-            // This should not be called
-            fail("Filter chain should not continue when user not found");
-        });
-
-        // Then
-        assertEquals(401, response.getStatus());
-    }
-
-    @Test
-    void shouldAllowAccessWhenLocalIdentityNotFound() throws Exception {
-        // Given - OAuth2 user without local identity
-        setupAuthenticatedUser();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
         request.setRequestURI("/api/users");
 
         // When
         emailVerificationFilter.doFilterInternal(request, response, (req, res) -> {
-            // Filter chain should continue for OAuth2 users
+            // This should not be called
+            fail("Filter chain should not continue when local identity not found");
         });
 
         // Then
-        assertEquals(200, response.getStatus()); // No error status set
+        // User with no local identity should be denied (data inconsistency)
+        assertEquals(401, response.getStatus());
     }
 
     private void setupAuthenticatedUser() {

@@ -121,7 +121,8 @@ public class OAuthGithubService extends OAuthService {
 
             if (profileData.email == null || profileData.email.isEmpty()) {
                 profileData.email = "github-" + profileData.userIdentifier + "@oauth.placeholder";
-                log.warn("GitHub user {} has no email; using placeholder {}", profileData.userIdentifier, profileData.email);
+                log.warn("GitHub user {} has no email; using placeholder {}",
+                    profileData.userIdentifier, profileData.email);
             }
 
             log.info("Calling authService.oauthLogin for email: {}", profileData.email);
@@ -131,7 +132,8 @@ public class OAuthGithubService extends OAuthService {
             User user = userRepository.findById(authResponse.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("User not found after login"));
 
-            Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository.findByUserAndProvider(user, this.providerKey);
+            Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository.findByUserAndProvider(user,
+                this.providerKey);
             UserOAuthIdentity oauth;
             if (oauthOpt.isPresent()) {
                 oauth = oauthOpt.get();

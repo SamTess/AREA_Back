@@ -153,34 +153,11 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendEmail_ShouldSendViaSmtp_WhenSmtpSucceeds() {
+    void sendEmail_ShouldSendViaResend_WhenResendSucceeds() {
         // Given
         String to = "user@example.com";
         String subject = "Test Subject";
         String body = "Test Body";
-
-        doNothing().when(mailSender).send(any(SimpleMailMessage.class));
-
-        // When
-        boolean result = emailService.sendEmail(to, subject, body);
-
-        // Then
-        assertTrue(result);
-        verify(mailSender).send(any(SimpleMailMessage.class));
-        verify(emailSentCounter).increment();
-        verify(smtpEmailSentCounter).increment();
-        verify(resendEmailSentCounter, never()).increment();
-        verify(resendFallbackCounter, never()).increment();
-    }
-
-    @Test
-    void sendEmail_ShouldFallbackToResend_WhenSmtpFails() {
-        // Given
-        String to = "user@example.com";
-        String subject = "Test Subject";
-        String body = "Test Body";
-
-        doThrow(new MailException("SMTP failed") {}).when(mailSender).send(any(SimpleMailMessage.class));
 
         // Mock successful Resend response
         ResponseEntity<String> resendResponse = ResponseEntity.ok("{\"id\": \"test-id\"}");
@@ -192,11 +169,37 @@ class EmailServiceTest {
 
         // Then
         assertTrue(result);
-        verify(mailSender).send(any(SimpleMailMessage.class));
         verify(restTemplate).postForEntity(eq("https://api.resend.com/emails"), any(HttpEntity.class), eq(String.class));
         verify(emailSentCounter).increment();
-        verify(emailFailedCounter, never()).increment();
         verify(resendEmailSentCounter).increment();
+        verify(smtpEmailSentCounter, never()).increment();
+        verify(resendFallbackCounter, never()).increment();
+    }
+
+    @Test
+    void sendEmail_ShouldFallbackToSmtp_WhenResendFails() {
+        // Given
+        String to = "user@example.com";
+        String subject = "Test Subject";
+        String body = "Test Body";
+
+        // Mock failed Resend response
+        when(restTemplate.postForEntity(eq("https://api.resend.com/emails"), any(HttpEntity.class), eq(String.class)))
+            .thenThrow(new RuntimeException("Resend failed"));
+
+        // Mock successful SMTP
+        doNothing().when(mailSender).send(any(SimpleMailMessage.class));
+
+        // When
+        boolean result = emailService.sendEmail(to, subject, body);
+
+        // Then
+        assertTrue(result);
+        verify(restTemplate).postForEntity(eq("https://api.resend.com/emails"), any(HttpEntity.class), eq(String.class));
+        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(emailSentCounter).increment();
+        verify(emailFailedCounter, never()).increment();
+        verify(smtpEmailSentCounter).increment();
         verify(resendFallbackCounter).increment();
     }
 
@@ -207,21 +210,21 @@ class EmailServiceTest {
         String subject = "Test Subject";
         String body = "Test Body";
 
-        doThrow(new MailException("SMTP failed") {}).when(mailSender).send(any(SimpleMailMessage.class));
-
         // Mock failed Resend response
         when(restTemplate.postForEntity(eq("https://api.resend.com/emails"), any(HttpEntity.class), eq(String.class)))
             .thenThrow(new RuntimeException("Resend failed"));
+
+        // Mock failed SMTP
+        doThrow(new MailException("SMTP failed") {}).when(mailSender).send(any(SimpleMailMessage.class));
 
         // When
         boolean result = emailService.sendEmail(to, subject, body);
 
         // Then
         assertFalse(result);
-        verify(mailSender).send(any(SimpleMailMessage.class));
         verify(restTemplate).postForEntity(eq("https://api.resend.com/emails"), any(HttpEntity.class), eq(String.class));
-        // Note: emailFailedCounter is NOT incremented when Resend fallback is attempted
-        verify(emailFailedCounter, never()).increment();
+        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(emailFailedCounter).increment();
         verify(resendFallbackCounter).increment();
     }
 

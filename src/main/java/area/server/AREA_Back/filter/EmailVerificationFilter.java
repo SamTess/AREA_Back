@@ -1,9 +1,7 @@
 package area.server.AREA_Back.filter;
 
-import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
-import area.server.AREA_Back.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +26,6 @@ import java.util.UUID;
 @Slf4j
 public class EmailVerificationFilter extends OncePerRequestFilter {
 
-    private final UserRepository userRepository;
     private final UserLocalIdentityRepository userLocalIdentityRepository;
 
     @Override
@@ -47,29 +44,17 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String userIdStr = authentication.getName();
-        if (userIdStr == null || "anonymousUser".equals(userIdStr)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
+            String userIdStr = authentication.getName();
             UUID userId = UUID.fromString(userIdStr);
-
-            User user = userRepository.findById(userId).orElse(null);
-            if (user == null) {
-                log.warn("Authenticated user not found in database: {}", userId);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
 
             UserLocalIdentity localIdentity = userLocalIdentityRepository
                 .findByUserId(userId)
                 .orElse(null);
 
             if (localIdentity == null) {
-                log.debug("User {} authenticated via OAuth2, no email verification required", userId);
-                filterChain.doFilter(request, response);
+                log.warn("No local identity found for user: {}", userId);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 

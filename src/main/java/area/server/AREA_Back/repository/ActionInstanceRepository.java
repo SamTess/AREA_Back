@@ -47,6 +47,11 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
     long countByArea(Area area);
 
     /**
+     * Delete all action instances by area ID
+     */
+    void deleteByAreaId(UUID areaId);
+
+    /**
      * Find active GitHub action instances (event-capable actions with POLL activation mode)
      */
     @Query("SELECT DISTINCT ai FROM ActionInstance ai "

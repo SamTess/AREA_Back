@@ -48,7 +48,6 @@ public class AreaService {
     private final ActionLinkService actionLinkService;
 
     private static final int DEFAULT_MAX_CONCURRENCY = 5;
-    private static final int DEFAULT_RETRY_DELAY_SECONDS = 10;
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
 
     /**
@@ -383,12 +382,13 @@ public class AreaService {
 
             Map<String, Object> config = new HashMap<>(activationConfig);
             config.remove("type");
-            activationMode.setConfig(config);
-
-            switch (activationModeType) {
+            Integer maxConcurrency = DEFAULT_MAX_CONCURRENCY;
+            if (config.containsKey("max_concurrency")) {
+                maxConcurrency = ((Number) config.get("max_concurrency")).intValue();
+            }
+            activationMode.setMaxConcurrency(maxConcurrency);
+             switch (activationModeType) {
                 case WEBHOOK:
-                    activationMode.setMaxConcurrency(
-                            (Integer) config.getOrDefault("max_concurrency", DEFAULT_RETRY_DELAY_SECONDS));
                     break;
                 case CRON:
                     if (!config.containsKey("cron_expression")) {
@@ -403,12 +403,11 @@ public class AreaService {
                 case MANUAL:
                     break;
                 case CHAIN:
-                    activationMode.setMaxConcurrency(
-                            (Integer) config.getOrDefault("max_concurrency", DEFAULT_MAX_CONCURRENCY));
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown activation mode type: " + activationModeType);
             }
+            activationMode.setConfig(config);
 
             activationModeRepository.save(activationMode);
 

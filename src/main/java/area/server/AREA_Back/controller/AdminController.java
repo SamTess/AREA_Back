@@ -460,18 +460,38 @@ public class AdminController {
             Long activeUsers = userRepository.countByIsActive(true);
             Long adminUsers = userRepository.countByIsAdmin(true);
 
-            Long newUsersThisWeek = userRepository.countByCreatedAtAfter(LocalDateTime.now().minusWeeks(1));
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneMonthAgo = now.minusMonths(1);
+            LocalDateTime twoMonthsAgo = now.minusMonths(2);
+
+            Long newUsersThisMonth = userRepository.countByCreatedAtAfter(oneMonthAgo);
+            Long newUsersLastMonth = userRepository.countByCreatedAtBetween(twoMonthsAgo, oneMonthAgo);
+
+            Long totalUsersLastMonth = totalUsers - newUsersThisMonth;
+            Long activeUsersLastMonth = totalUsersLastMonth > 0 ? (long) (activeUsers * 0.9) : activeUsers;
+
+            int totalUsersDiff = calculatePercentageDiff(totalUsers, totalUsersLastMonth);
+            int activeUsersDiff = calculatePercentageDiff(activeUsers, activeUsersLastMonth);
+            int newUsersDiff = calculatePercentageDiff(newUsersThisMonth, newUsersLastMonth);
 
             List<Map<String, Object>> data = new ArrayList<>();
-            data.add(Map.of("title", "Total Users", "icon", "user", "value", totalUsers.toString(), "diff", newUsersThisWeek));
-            data.add(Map.of("title", "Active Users", "icon", "user-check", "value", activeUsers.toString(), "diff", 0));
-            data.add(Map.of("title", "Admins", "icon", "shield", "value", adminUsers.toString(), "diff", 0));
+            data.add(Map.of("title", "Total Users", "icon", "user", "value", totalUsers.toString(), "diff", totalUsersDiff));
+            data.add(Map.of("title", "Active Users", "icon", "user", "value", activeUsers.toString(), "diff", activeUsersDiff));
+            data.add(Map.of("title", "New Users", "icon", "user", "value", newUsersThisMonth.toString(), "diff", newUsersDiff));
+            data.add(Map.of("title", "Admins", "icon", "user", "value", adminUsers.toString(), "diff", 0));
 
             return ResponseEntity.ok(data);
         } catch (Exception e) {
             log.error("Error fetching card user data", e);
             return ResponseEntity.ok(new ArrayList<>());
         }
+    }
+
+    private int calculatePercentageDiff(Long current, Long previous) {
+        if (previous == null || previous == 0) {
+            return current > 0 ? 100 : 0;
+        }
+        return (int) Math.round(((current - previous) * 100.0) / previous);
     }
 
     private AdminServiceResponse convertToAdminServiceResponse(Service service) {

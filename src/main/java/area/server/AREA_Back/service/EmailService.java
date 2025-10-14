@@ -94,7 +94,7 @@ public class EmailService {
     }
 
     /**
-     * Send a simple text email with SMTP primary and Resend fallback
+     * Send a simple text email with Resend primary and SMTP fallback
      *
      * @param to      Recipient email address
      * @param subject Email subject
@@ -102,17 +102,19 @@ public class EmailService {
      * @return true if email was sent successfully, false otherwise
      */
     public boolean sendEmail(String to, String subject, String text) {
+        if (resendEnabled && resendApiKey != null && !resendApiKey.isEmpty()) {
+            if (sendEmailViaResend(to, subject, text)) {
+                return true;
+            }
+            log.warn("Resend failed for email to: {}, attempting SMTP fallback", to);
+            resendFallbackCounter.increment();
+        }
+
         if (sendEmailViaSmtp(to, subject, text)) {
             return true;
         }
 
-        if (resendEnabled && resendApiKey != null && !resendApiKey.isEmpty()) {
-            log.warn("SMTP failed for email to: {}, attempting Resend fallback", to);
-            resendFallbackCounter.increment();
-            return sendEmailViaResend(to, subject, text);
-        }
-
-        log.error("Both SMTP and Resend failed for email to: {}", to);
+        log.error("Both Resend and SMTP failed for email to: {}", to);
         emailFailedCounter.increment();
         return false;
     }

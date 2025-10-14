@@ -113,7 +113,7 @@ class AdminControllerTest {
         when(executionRepository.count()).thenReturn(100L);
         when(actionDefinitionRepository.count()).thenReturn(50L);
         when(serviceRepository.count()).thenReturn(10L);
-        
+
         // Mock WorkerTrackingService
         when(workerTrackingService.getActiveWorkers()).thenReturn(3);
         when(workerTrackingService.getTotalWorkers()).thenReturn(6);
@@ -133,7 +133,7 @@ class AdminControllerTest {
         assertEquals(15L, response.getBody().getTotalAreas());
         assertEquals(12L, response.getBody().getActiveAreas());
         assertEquals(40L, response.getBody().getTotalUsers());
-        
+
         // Verify WorkerTrackingService was called
         verify(workerTrackingService).getActiveWorkers();
         verify(workerTrackingService).getTotalWorkers();
@@ -144,7 +144,7 @@ class AdminControllerTest {
     void testGetAllServicesWithStats() {
         // Arrange
         Page<Service> servicePage = new PageImpl<>(Collections.singletonList(testService));
-        
+
         when(serviceRepository.findAll(any(PageRequest.class))).thenReturn(servicePage);
         when(actionInstanceRepository.countByActionDefinition_Service_Id(any(UUID.class))).thenReturn(5L);
 
@@ -160,7 +160,7 @@ class AdminControllerTest {
     void testGetAllAreas() {
         // Arrange
         Page<Area> areaPage = new PageImpl<>(Collections.singletonList(testArea));
-        
+
         when(areaRepository.findAll(any(PageRequest.class))).thenReturn(areaPage);
         when(executionRepository.findByAreaIdOrderByCreatedAtDesc(any(UUID.class)))
             .thenReturn(Collections.emptyList());
@@ -258,7 +258,7 @@ class AdminControllerTest {
     void testGetUsers() {
         // Arrange
         Page<User> userPage = new PageImpl<>(Collections.singletonList(testUser));
-        
+
         when(userRepository.findAll(any(PageRequest.class))).thenReturn(userPage);
 
         // Act
@@ -276,6 +276,7 @@ class AdminControllerTest {
         when(userRepository.countByIsActive(true)).thenReturn(35L);
         when(userRepository.countByIsAdmin(true)).thenReturn(5L);
         when(userRepository.countByCreatedAtAfter(any(LocalDateTime.class))).thenReturn(5L);
+        when(userRepository.countByCreatedAtBetween(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(3L);
 
         // Act
         ResponseEntity<List<Map<String, Object>>> response = adminController.getCardUserData();
@@ -283,6 +284,6 @@ class AdminControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(3, response.getBody().size());
+        assertEquals(4, response.getBody().size());
     }
 }

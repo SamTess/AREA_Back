@@ -111,6 +111,29 @@ class UserControllerUpdateTest {
     }
 
     @Test
+    void updateUserShouldUpdateEmailInBothUserAndLocalIdentity() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setEmail("newemail@example.com");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("newemail@example.com")).thenReturn(Optional.empty());
+        when(localIdentityRepository.findByUserId(userId)).thenReturn(Optional.of(testIdentity));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(testUser.getEmail()).isEqualTo("newemail@example.com");
+        assertThat(testIdentity.getEmail()).isEqualTo("newemail@example.com");
+        verify(userRepository).save(any(User.class));
+        verify(localIdentityRepository).save(any(UserLocalIdentity.class));
+    }
+
+
+    @Test
     void updateUserShouldUpdateAllFieldsTogether() {
         // Given
         UpdateUserRequest request = new UpdateUserRequest();
@@ -132,7 +155,8 @@ class UserControllerUpdateTest {
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(userRepository).save(any(User.class));
-        verify(localIdentityRepository).save(any(UserLocalIdentity.class));
+        // LocalIdentity is saved twice: once for email update, once for password update
+        verify(localIdentityRepository, org.mockito.Mockito.times(2)).save(any(UserLocalIdentity.class));
         verify(passwordEncoder).encode("newPassword123");
     }
 
@@ -170,7 +194,7 @@ class UserControllerUpdateTest {
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isEqualTo("Email already exists");
+        assertThat(response.getBody()).isEqualTo(java.util.Map.of("error", "Email already exists"));
         verify(userRepository, never()).save(any(User.class));
     }
 

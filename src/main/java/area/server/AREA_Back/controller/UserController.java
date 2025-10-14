@@ -130,9 +130,16 @@ public class UserController {
             Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
             if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
                 return ResponseEntity.badRequest()
-                    .body("Email already exists");
+                    .body(java.util.Map.of("error", "Email already exists"));
             }
             user.setEmail(request.getEmail());
+            Optional<UserLocalIdentity> localIdentity = localIdentityRepository.findByUserId(user.getId());
+            if (localIdentity.isPresent()) {
+                UserLocalIdentity identity = localIdentity.get();
+                identity.setEmail(request.getEmail());
+                localIdentityRepository.save(identity);
+                log.info("Email updated in local identity for user: {}", request.getEmail());
+            }
         }
 
         if (request.getFirstname() != null) {

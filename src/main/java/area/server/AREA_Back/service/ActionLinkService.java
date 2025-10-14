@@ -160,6 +160,12 @@ public class ActionLinkService {
         actionLinkRepository.deleteByArea(area);
     }
 
+    @Transactional
+    public void deleteAllLinksForArea(UUID areaId) {
+        List<ActionLink> links = actionLinkRepository.findByAreaIdOrderByOrder(areaId);
+        actionLinkRepository.deleteAll(links);
+    }
+
     public List<ActionLinkResponse> getActionLinksByActionInstance(UUID actionInstanceId) {
         List<ActionLink> links = actionLinkRepository.findByActionInstanceId(actionInstanceId);
         return links.stream()

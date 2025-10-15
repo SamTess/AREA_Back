@@ -63,13 +63,10 @@ public class GitHubEventPollingService {
     @Scheduled(fixedRate = 10000)
     public void pollGitHubEvents() {
         pollingCycles.increment();
-        log.info("Starting GitHub events polling cycle");
 
         try {
             List<ActionInstance> githubActionInstances = actionInstanceRepository
                 .findActiveGitHubActionInstances();
-
-            log.info("Found {} GitHub action instances to check", githubActionInstances.size());
 
             for (ActionInstance actionInstance : githubActionInstances) {
                 try {
@@ -80,9 +77,6 @@ public class GitHubEventPollingService {
                              actionInstance.getId(), e.getMessage(), e);
                 }
             }
-
-            log.info("Completed GitHub events polling cycle, processed {} instances",
-                     githubActionInstances.size());
 
         } catch (Exception e) {
             pollingFailures.increment();
@@ -106,15 +100,10 @@ public class GitHubEventPollingService {
         ActivationMode activationMode = activationModes.get(0);
 
         if (!shouldPollNow(activationMode)) {
-            log.debug("Skipping poll for action instance {} - interval not elapsed",
-                     actionInstance.getId());
             return;
         }
 
         LocalDateTime lastCheck = calculateLastCheckTime(activationMode);
-
-        log.info("Polling GitHub events for action instance {} with interval {} seconds",
-                 actionInstance.getId(), getPollingInterval(activationMode));
 
         try {
             List<Map<String, Object>> events = gitHubActionService.checkGitHubEvents(
@@ -126,11 +115,8 @@ public class GitHubEventPollingService {
 
             if (!events.isEmpty()) {
                 eventsFound.increment(events.size());
-                log.info("Found { } new GitHub events for action instance { }",
-                        events.size(), actionInstance.getId());
 
                 for (Map<String, Object> event : events) {
-                    log.debug("Processing GitHub event: {}", event);
 
                     try {
                         executionTriggerService.triggerAreaExecution(
@@ -138,9 +124,6 @@ public class GitHubEventPollingService {
                             ActivationModeType.POLL,
                             event
                         );
-
-                        log.debug("Successfully triggered execution for GitHub event from action instance {}",
-                                actionInstance.getId());
 
                     } catch (Exception e) {
                         log.error("Failed to trigger execution for GitHub event from action instance {}: {}",

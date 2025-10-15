@@ -50,7 +50,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 if (!redisTokenService.isAccessTokenValid(authToken)) {
-                    log.debug("Token not found in Redis or expired");
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -72,14 +71,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-                    log.debug("Successfully authenticated user with ID: { }", userId);
-                } else {
-                    log.debug("JWT token validation failed");
                 }
 
             } catch (Exception e) {
-                log.debug("JWT token processing failed: { }", e.getMessage());
                 // In case of error, continue without authentication
             }
         }
@@ -110,6 +104,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                || path.startsWith("/v3/api-docs/")
                || path.equals("/swagger-ui.html")
                || path.startsWith("/api/about")
+               || path.equals("/api/services/catalog")
+               || path.equals("/api/services/catalog/enabled")
                || path.startsWith("/actuator/")
                || path.startsWith("/webjars/")
                || path.equals("/favicon.ico");

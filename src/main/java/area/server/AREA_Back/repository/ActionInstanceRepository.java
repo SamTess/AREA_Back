@@ -28,6 +28,8 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
 
     long countByArea(Area area);
 
+    void deleteByAreaId(UUID areaId);
+
     @Query("SELECT DISTINCT ai FROM ActionInstance ai "
            + "JOIN FETCH ai.actionDefinition ad "
            + "JOIN FETCH ad.service s "
@@ -83,4 +85,16 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
            + "AND ai.enabled = true "
            + "AND ad.isExecutable = true")
     List<ActionInstance> findReactionsByArea(@Param("area") Area area);
+
+    /**
+     * Find action instances by area ID
+     */
+    @Query("SELECT ai FROM ActionInstance ai WHERE ai.area.id = :areaId")
+    List<ActionInstance> findByAreaId(@Param("areaId") UUID areaId);
+
+    /**
+     * Count action instances by service ID
+     */
+       @Query("SELECT COUNT(ai) FROM ActionInstance ai WHERE ai.actionDefinition.service.id = :serviceId")
+       Long countByActionDefinitionServiceId(@Param("serviceId") UUID serviceId);
 }

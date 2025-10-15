@@ -4,13 +4,17 @@
 -- ============================================
 
 -- Add GitHub service
-INSERT INTO area.a_services (key, name, auth, is_active, docs_url) 
-VALUES ('github', 'GitHub', 'OAUTH2', true, 'https://docs.github.com/en/rest')
+INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url) 
+VALUES ('github', 'GitHub', 'OAUTH2', true, 'https://docs.github.com/en/rest', 
+        'https://cdn.simpleicons.org/github/181717', 
+        'https://cdn.simpleicons.org/github/FFFFFF')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,
     is_active = EXCLUDED.is_active,
-    docs_url = EXCLUDED.docs_url;
+    docs_url = EXCLUDED.docs_url,
+    icon_light_url = EXCLUDED.icon_light_url,
+    icon_dark_url = EXCLUDED.icon_dark_url;
 
 -- Get GitHub service ID for references
 -- Note: In PostgreSQL, we'll use a CTE for this

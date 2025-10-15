@@ -84,7 +84,7 @@ public class OAuthGoogleService extends OAuthService {
         super(
             "google",
             "Google",
-            "/oauth-icons/google.svg",
+            "https://img.icons8.com/?size=100&id=17949&format=png&color=000000",
             "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"

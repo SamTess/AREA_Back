@@ -22,6 +22,8 @@ class AuthResponseTest {
         userResponse = new UserResponse(
             UUID.randomUUID(),
             "test@example.com",
+            "John",
+            "Doe",
             true,
             false,
             true, // isVerified
@@ -64,6 +66,8 @@ class AuthResponseTest {
         UserResponse testUser = new UserResponse(
             UUID.randomUUID(),
             "getter@example.com",
+            "Jane",
+            "Smith",
             false,
             true,
             false, // isVerified
@@ -92,6 +96,8 @@ class AuthResponseTest {
         UserResponse testUser = new UserResponse(
             UUID.randomUUID(),
             "constructor@example.com",
+            "Alice",
+            "Johnson",
             true,
             false,
             true, // isVerified

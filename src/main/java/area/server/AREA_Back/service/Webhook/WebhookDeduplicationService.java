@@ -49,12 +49,6 @@ public class WebhookDeduplicationService {
             Boolean exists = redisTemplate.hasKey(key);
             boolean duplicate = Boolean.TRUE.equals(exists);
 
-            if (duplicate) {
-                log.debug("Duplicate event detected: {} for provider: {}", eventId, provider);
-            } else {
-                log.debug("New event: {} for provider: {}", eventId, provider);
-            }
-
             return duplicate;
         } catch (Exception e) {
             log.error("Error checking event duplication for {}: {}", eventId, e.getMessage());
@@ -95,8 +89,6 @@ public class WebhookDeduplicationService {
 
         try {
             redisTemplate.opsForValue().set(key, System.currentTimeMillis(), ttl);
-            log.debug("Marked event {} as processed for provider {} with TTL {}",
-                     eventId, provider, ttl);
         } catch (Exception e) {
             log.error("Error marking event {} as processed: {}", eventId, e.getMessage());
         }
@@ -141,12 +133,6 @@ public class WebhookDeduplicationService {
             Boolean wasSet = redisTemplate.opsForValue().setIfAbsent(key, System.currentTimeMillis(), ttl);
             boolean isNew = Boolean.TRUE.equals(wasSet);
 
-            if (isNew) {
-                log.debug("New event {} processed for provider {}", eventId, provider);
-            } else {
-                log.debug("Duplicate event {} detected for provider {}", eventId, provider);
-            }
-
             return !isNew;
         } catch (Exception e) {
             log.error("Error in atomic check-and-mark for event {}: {}", eventId, e.getMessage());
@@ -169,8 +155,7 @@ public class WebhookDeduplicationService {
         String key = buildDeduplicationKey(eventId, provider);
 
         try {
-            Boolean deleted = redisTemplate.delete(key);
-            log.debug("Removed event {} from deduplication cache: {}", eventId, deleted);
+            redisTemplate.delete(key);
         } catch (Exception e) {
             log.error("Error removing event {} from deduplication cache: {}", eventId, e.getMessage());
         }
@@ -227,10 +212,6 @@ public class WebhookDeduplicationService {
             });
             if (!keysToDelete.isEmpty()) {
                 redisTemplate.delete(keysToDelete);
-                log.info("Cleared {} deduplication entries for provider {}",
-                         keysToDelete.size(), provider);
-            } else {
-                log.debug("No deduplication entries found for provider {}", provider);
             }
         } catch (Exception e) {
             log.error("Error clearing events for provider {}: {}", provider, e.getMessage());

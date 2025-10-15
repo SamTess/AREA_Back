@@ -322,6 +322,46 @@ public class AreaController {
         }
     }
 
+    @PutMapping("/{id}/complete")
+    @Operation(summary = "Update an AREA with actions, reactions, and connections",
+               description = "Updates an existing AREA including all actions, reactions, and connections. "
+                           + "This will replace all existing action instances and links.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "AREA updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request data or validation failure"),
+        @ApiResponse(responseCode = "404", description = "AREA not found"),
+        @ApiResponse(responseCode = "403", description = "Access denied - AREA does not belong to user"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<?> updateAreaComplete(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateAreaWithActionsAndLinksRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            UUID userId = getUserIdFromRequest(httpRequest);
+            request.setUserId(userId);
+
+            log.info("Updating AREA complete: {} (ID: {}) for user: {}", request.getName(), id, userId);
+
+            AreaResponse response = areaService.updateAreaWithActionsAndLinks(id, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.warn("Area update failed: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "error", "Validation failed",
+                    "message", e.getMessage()
+                ));
+        } catch (Exception e) {
+            log.error("Unexpected error updating AREA", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "Internal server error",
+                    "message", "An unexpected error occurred"
+                ));
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteArea(@PathVariable UUID id, HttpServletRequest request) {
         try {

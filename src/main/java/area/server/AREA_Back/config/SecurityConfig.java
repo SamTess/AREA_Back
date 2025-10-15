@@ -36,7 +36,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",
-            "https://yourdomain.com"
+            "https://*.areaaaaaaaaaaaaaaaaaaa.space",
+            "https://areaaaaaaaaaaaaaaaaaaa.space"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(

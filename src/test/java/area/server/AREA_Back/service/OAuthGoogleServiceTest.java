@@ -110,7 +110,7 @@ class OAuthGoogleServiceTest {
 
     @Test
     void testGetProviderLogoUrl() {
-        assertEquals("/oauth-icons/google.svg", oauthGoogleService.getProviderLogoUrl());
+        assertEquals("https://img.icons8.com/?size=100&id=17949&format=png&color=000000", oauthGoogleService.getProviderLogoUrl());
     }
 
     @Test

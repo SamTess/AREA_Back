@@ -60,6 +60,7 @@ public class OAuthGithubService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
+    @SuppressWarnings("ParameterNumber")
     public OAuthGithubService(
         @Value("${spring.security.oauth2.client.registration.github.client-id}") String githubClientId,
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
@@ -73,7 +74,7 @@ public class OAuthGithubService extends OAuthService {
         super(
             "github",
             "GitHub",
-            "/oauth-icons/github.svg",
+            "https://cdn.simpleicons.org/github/181717",
             "https://github.com/login/oauth/authorize?client_id=" + githubClientId
                 + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
             githubClientId,

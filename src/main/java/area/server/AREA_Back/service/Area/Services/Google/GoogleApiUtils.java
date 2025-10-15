@@ -42,7 +42,7 @@ public class GoogleApiUtils {
      * @param userId The user's UUID
      * @return The decrypted Google access token, or null if not found
      */
-    public String getGoogleToken(UUID userId) {
+    public String getGoogleToken(final UUID userId) {
         Optional<String> serviceToken = serviceAccountService.getAccessToken(userId, GOOGLE_PROVIDER_KEY);
         if (serviceToken.isPresent()) {
             log.debug("Google token found in service accounts for user: {}", userId);
@@ -87,7 +87,7 @@ public class GoogleApiUtils {
      * @param token The OAuth access token
      * @return Configured HTTP headers
      */
-    public HttpHeaders createGoogleHeaders(String token) {
+    public HttpHeaders createGoogleHeaders(final String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);
@@ -104,7 +104,7 @@ public class GoogleApiUtils {
      * @throws IllegalArgumentException if the parameter is missing
      */
     @SuppressWarnings("unchecked")
-    public <T> T getRequiredParam(Map<String, Object> params, String key, Class<T> type) {
+    public <T> T getRequiredParam(final Map<String, Object> params, final String key, final Class<T> type) {
         Object value = params.get(key);
         if (value == null) {
             throw new IllegalArgumentException("Required parameter missing: " + key);
@@ -123,12 +123,15 @@ public class GoogleApiUtils {
      */
     @SuppressWarnings("unchecked")
     public <T> T getOptionalParam(
-            Map<String, Object> params,
-            String key,
-            Class<T> type,
-            T defaultValue) {
+            final Map<String, Object> params,
+            final String key,
+            final Class<T> type,
+            final T defaultValue) {
         Object value = params.get(key);
-        return value != null ? (T) value : defaultValue;
+        if (value != null) {
+            return (T) value;
+        }
+        return defaultValue;
     }
 
     /**
@@ -137,7 +140,7 @@ public class GoogleApiUtils {
      * @param map The map to convert
      * @return JSON string representation
      */
-    public String mapToJson(Map<String, Object> map) {
+    public String mapToJson(final Map<String, Object> map) {
         StringBuilder json = new StringBuilder("{");
         boolean first = true;
 
@@ -161,7 +164,7 @@ public class GoogleApiUtils {
      * @param list The list to convert
      * @return JSON array string
      */
-    public String listToJson(List<?> list) {
+    public String listToJson(final List<?> list) {
         StringBuilder json = new StringBuilder("[");
         boolean first = true;
 
@@ -184,7 +187,7 @@ public class GoogleApiUtils {
      * @return JSON string representation of the value
      */
     @SuppressWarnings("unchecked")
-    private String valueToJson(Object value) {
+    private String valueToJson(final Object value) {
         if (value == null) {
             return "null";
         }
@@ -209,7 +212,7 @@ public class GoogleApiUtils {
      * @param str The string to escape
      * @return Escaped string
      */
-    public String escapeJson(String str) {
+    public String escapeJson(final String str) {
         if (str == null) {
             return "";
         }

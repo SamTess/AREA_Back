@@ -88,6 +88,8 @@ class UserResponseTest {
         // Test all-args constructor
         UUID id = UUID.randomUUID();
         String email = "constructor@example.com";
+        String firstname = "John";
+        String lastname = "Doe";
         Boolean isActive = true;
         Boolean isAdmin = false;
         Boolean isVerified = true;
@@ -95,11 +97,14 @@ class UserResponseTest {
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(1);
         String avatarUrl = "https://constructor.com/avatar.jpg";
 
-        UserResponse response2 = new UserResponse(id, email, isActive, isAdmin, isVerified,
+        UserResponse response2 = new UserResponse(id, email, firstname, lastname,
+                                                 isActive, isAdmin, isVerified,
                                                  createdAt, lastLoginAt, avatarUrl);
 
         assertEquals(id, response2.getId());
         assertEquals(email, response2.getEmail());
+        assertEquals(firstname, response2.getFirstname());
+        assertEquals(lastname, response2.getLastname());
         assertEquals(isActive, response2.getIsActive());
         assertEquals(isAdmin, response2.getIsAdmin());
         assertEquals(isVerified, response2.getIsVerified());

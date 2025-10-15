@@ -46,4 +46,9 @@ public interface AreaRepository extends JpaRepository<Area, UUID> {
      */
     @Query("SELECT a FROM Area a WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Area> findByNameContainingIgnoreCase(@Param("name") String name);
+
+    /**
+     * Count areas by enabled status
+     */
+    long countByEnabled(Boolean enabled);
 }

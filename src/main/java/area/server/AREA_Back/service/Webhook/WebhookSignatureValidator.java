@@ -42,7 +42,6 @@ public class WebhookSignatureValidator {
                 + calculateHmacSha256(payload, secret);
 
             boolean isValid = secureEquals(signature, expectedSignature);
-            log.debug("GitHub signature validation result: {}", isValid);
             return isValid;
 
         } catch (Exception e) {
@@ -75,7 +74,6 @@ public class WebhookSignatureValidator {
                 + calculateHmacSha256(baseString.getBytes(StandardCharsets.UTF_8), secret);
 
             boolean isValid = secureEquals(signature, expectedSignature);
-            log.debug("Slack signature validation result: {}", isValid);
             return isValid;
 
         } catch (Exception e) {
@@ -96,7 +94,6 @@ public class WebhookSignatureValidator {
         try {
             String expectedSignature = calculateHmacSha256(payload, secret);
             boolean isValid = secureEquals(signature, expectedSignature);
-            log.debug("HMAC-SHA256 signature validation result: {}", isValid);
             return isValid;
 
         } catch (Exception e) {
@@ -130,7 +127,6 @@ public class WebhookSignatureValidator {
                 .encodeToString(calculateHmacSha256(data.getBytes(StandardCharsets.UTF_8), secret).getBytes());
 
             boolean isValid = secureEquals(signature, expectedSignature);
-            log.debug("JWT signature validation result: {}", isValid);
             return isValid;
 
         } catch (Exception e) {

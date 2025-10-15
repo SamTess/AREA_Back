@@ -14,6 +14,12 @@ public class UpdateUserRequest {
     @Email(message = "Email should be valid")
     private String email;
 
+    @Size(min = 1, max = 100, message = "Firstname must be between 1 and 100 characters")
+    private String firstname;
+
+    @Size(min = 1, max = 100, message = "Lastname must be between 1 and 100 characters")
+    private String lastname;
+
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 

@@ -1,0 +1,289 @@
+package area.server.AREA_Back.controller;
+
+import area.server.AREA_Back.dto.AdminMetricsResponse;
+import area.server.AREA_Back.entity.Service;
+import area.server.AREA_Back.entity.User;
+import area.server.AREA_Back.entity.Area;
+import area.server.AREA_Back.entity.Execution;
+import area.server.AREA_Back.entity.enums.ExecutionStatus;
+import area.server.AREA_Back.repository.*;
+import area.server.AREA_Back.service.WorkerTrackingService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+import org.springframework.data.domain.Sort;
+
+/**
+ * Unit tests for AdminController
+ */
+@ExtendWith(MockitoExtension.class)
+class AdminControllerTest {
+
+    @Mock
+    private ServiceRepository serviceRepository;
+
+    @Mock
+    private ActionDefinitionRepository actionDefinitionRepository;
+
+    @Mock
+    private AreaRepository areaRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private ExecutionRepository executionRepository;
+
+    @Mock
+    private ActionInstanceRepository actionInstanceRepository;
+
+    @Mock
+    private WorkerTrackingService workerTrackingService;
+
+    @InjectMocks
+    private AdminController adminController;
+
+    private Service testService;
+    private Area testArea;
+    private User testUser;
+    private Execution testExecution;
+
+    @BeforeEach
+    void setUp() {
+        // Setup test service
+        testService = new Service();
+        testService.setId(UUID.randomUUID());
+        testService.setKey("test-service");
+        testService.setName("Test Service");
+        testService.setAuth(Service.AuthType.OAUTH2);
+        testService.setIsActive(true);
+
+        // Setup test user
+        testUser = new User();
+        testUser.setId(UUID.randomUUID());
+        testUser.setEmail("test@example.com");
+        testUser.setIsAdmin(true);
+
+        // Setup test area
+        testArea = new Area();
+        testArea.setId(UUID.randomUUID());
+        testArea.setName("Test Area");
+        testArea.setDescription("Test Description");
+        testArea.setEnabled(true);
+        testArea.setUser(testUser);
+        testArea.setCreatedAt(LocalDateTime.now());
+        testArea.setUpdatedAt(LocalDateTime.now());
+
+        // Setup test execution
+        testExecution = new Execution();
+        testExecution.setId(UUID.randomUUID());
+        testExecution.setArea(testArea);
+        testExecution.setStatus(ExecutionStatus.OK);
+        testExecution.setQueuedAt(LocalDateTime.now());
+    }
+
+    // ========== Service CRUD tests removed - Now handled by ServiceController ==========
+
+    @Test
+    void testGetSystemMetrics_Success() {
+        // Arrange
+        when(executionRepository.countByStatus(ExecutionStatus.QUEUED)).thenReturn(5L);
+        when(executionRepository.countByStatusAndCreatedAtAfter(eq(ExecutionStatus.FAILED), any(LocalDateTime.class)))
+            .thenReturn(3L);
+        when(executionRepository.countByStatusAndCreatedAtAfter(eq(ExecutionStatus.OK), any(LocalDateTime.class)))
+            .thenReturn(42L);
+        when(areaRepository.count()).thenReturn(15L);
+        when(areaRepository.countByEnabled(true)).thenReturn(12L);
+        when(userRepository.count()).thenReturn(40L);
+        when(executionRepository.count()).thenReturn(100L);
+        when(actionDefinitionRepository.count()).thenReturn(50L);
+        when(serviceRepository.count()).thenReturn(10L);
+
+        // Mock WorkerTrackingService
+        when(workerTrackingService.getActiveWorkers()).thenReturn(3);
+        when(workerTrackingService.getTotalWorkers()).thenReturn(6);
+        when(workerTrackingService.getWorkerStatistics()).thenReturn(new HashMap<>());
+
+        // Act
+        ResponseEntity<AdminMetricsResponse> response = adminController.getSystemMetrics();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(5L, response.getBody().getQueueLength());
+        assertEquals(3, response.getBody().getActiveWorkers());
+        assertEquals(6, response.getBody().getTotalWorkers());
+        assertEquals(3L, response.getBody().getFailedExecutions());
+        assertEquals(42L, response.getBody().getSuccessfulExecutions());
+        assertEquals(15L, response.getBody().getTotalAreas());
+        assertEquals(12L, response.getBody().getActiveAreas());
+        assertEquals(40L, response.getBody().getTotalUsers());
+
+        // Verify WorkerTrackingService was called
+        verify(workerTrackingService).getActiveWorkers();
+        verify(workerTrackingService).getTotalWorkers();
+        verify(workerTrackingService).getWorkerStatistics();
+    }
+
+    @Test
+    void testGetAllServicesWithStats() {
+        // Arrange
+        List<Service> services = Collections.singletonList(testService);
+
+        when(serviceRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(services);
+            when(actionInstanceRepository.countByActionDefinitionServiceId(any(UUID.class))).thenReturn(5L);
+
+        // Act
+        ResponseEntity<?> response = adminController.getAllServicesWithStats();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(serviceRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
+    }
+
+    @Test
+    void testGetAllAreas() {
+        // Arrange
+        List<Area> areas = Collections.singletonList(testArea);
+
+        when(areaRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(areas);
+        when(executionRepository.findByAreaIdOrderByCreatedAtDesc(any(UUID.class)))
+            .thenReturn(Collections.emptyList());
+
+        // Act
+        ResponseEntity<?> response = adminController.getAllAreas();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(areaRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
+    }
+
+    @Test
+    void testUpdateAreaStatus_Success() {
+        // Arrange
+        UUID areaId = testArea.getId();
+        Map<String, Boolean> body = new HashMap<>();
+        body.put("enabled", false);
+
+        when(areaRepository.findById(areaId)).thenReturn(Optional.of(testArea));
+        when(areaRepository.save(any(Area.class))).thenReturn(testArea);
+
+        // Act
+        ResponseEntity<?> response = adminController.updateAreaStatus(areaId, body);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(areaRepository, times(1)).save(testArea);
+    }
+
+    @Test
+    void testDeleteArea_Success() {
+        // Arrange
+        UUID areaId = testArea.getId();
+        when(areaRepository.existsById(areaId)).thenReturn(true);
+
+        // Act
+        ResponseEntity<?> response = adminController.deleteArea(areaId);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(areaRepository, times(1)).deleteById(areaId);
+    }
+
+    @Test
+    void testDeleteArea_NotFound() {
+        // Arrange
+        UUID areaId = UUID.randomUUID();
+        when(areaRepository.existsById(areaId)).thenReturn(false);
+
+        // Act
+        ResponseEntity<?> response = adminController.deleteArea(areaId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        verify(areaRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testGetServicesUsage() {
+        // Arrange
+        when(serviceRepository.findAll()).thenReturn(Collections.singletonList(testService));
+            when(actionInstanceRepository.countByActionDefinitionServiceId(any(UUID.class))).thenReturn(25L);
+
+        // Act
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getServicesUsage();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isEmpty());
+    }
+
+    @Test
+    void testGetAreaStats() {
+        // Arrange
+        when(areaRepository.count()).thenReturn(15L);
+        when(executionRepository.countByStatusAndCreatedAtAfter(eq(ExecutionStatus.OK), any(LocalDateTime.class)))
+            .thenReturn(8L);
+        when(executionRepository.countByStatusAndCreatedAtAfter(eq(ExecutionStatus.FAILED), any(LocalDateTime.class)))
+            .thenReturn(4L);
+        when(executionRepository.countByStatus(ExecutionStatus.QUEUED)).thenReturn(2L);
+        when(executionRepository.countByStatus(ExecutionStatus.RUNNING)).thenReturn(1L);
+
+        // Act
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getAreaStats();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(4, response.getBody().size());
+    }
+
+    @Test
+    void testGetUsers() {
+        // Arrange
+        List<User> users = Collections.singletonList(testUser);
+
+        when(userRepository.findAll(org.mockito.ArgumentMatchers.any(Sort.class))).thenReturn(users);
+
+        // Act
+        ResponseEntity<?> response = adminController.getUsers();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(userRepository, times(1)).findAll(org.mockito.ArgumentMatchers.any(Sort.class));
+    }
+
+    @Test
+    void testGetCardUserData() {
+        // Arrange
+        when(userRepository.count()).thenReturn(40L);
+        when(userRepository.countByIsActive(true)).thenReturn(35L);
+        when(userRepository.countByIsAdmin(true)).thenReturn(5L);
+        when(userRepository.countByCreatedAtAfter(any(LocalDateTime.class))).thenReturn(5L);
+        when(userRepository.countByCreatedAtBetween(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(3L);
+
+        // Act
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getCardUserData();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(4, response.getBody().size());
+    }
+}

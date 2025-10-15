@@ -568,7 +568,12 @@ public class AuthService {
             authCookie.setDomain(jwtCookieProperties.getDomain());
         }
 
-        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
+        String secureFlag;
+        if (jwtCookieProperties.isSecure()) {
+            secureFlag = "Secure; ";
+        } else {
+            secureFlag = "";
+        }
         response.setHeader("Set-Cookie", String.format(
             "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
             AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
@@ -602,7 +607,12 @@ public class AuthService {
     }
 
     private void clearTokenCookies(HttpServletResponse response) {
-        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
+        String secureFlag;
+        if (jwtCookieProperties.isSecure()) {
+            secureFlag = "Secure; ";
+        } else {
+            secureFlag = "";
+        }
         response.setHeader("Set-Cookie", String.format(
             "%s=; Path=/; Max-Age=0; HttpOnly; %sSameSite=%s",
             AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
@@ -624,6 +634,8 @@ public class AuthService {
         return new UserResponse(
             user.getId(),
             user.getEmail(),
+            user.getFirstname(),
+            user.getLastname(),
             user.getIsActive(),
             user.getIsAdmin(),
             isVerified,

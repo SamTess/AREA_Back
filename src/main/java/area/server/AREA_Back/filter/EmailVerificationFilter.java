@@ -97,9 +97,15 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
             return true;
         }
 
+        if (path.startsWith("/api/about")) {
+            return true;
+        }
+
         return path.startsWith("/swagger-ui/")
                || path.startsWith("/v3/api-docs/")
                || path.equals("/swagger-ui.html")
+               || path.equals("/api/services/catalog")
+               || path.equals("/api/services/catalog/enabled")
                || path.startsWith("/actuator/")
                || path.startsWith("/webjars/")
                || path.equals("/favicon.ico");

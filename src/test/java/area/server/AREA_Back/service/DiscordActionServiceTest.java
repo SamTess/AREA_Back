@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -22,6 +23,9 @@ class DiscordActionServiceTest {
     @Mock
     private TokenEncryptionService tokenEncryptionService;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private SimpleMeterRegistry meterRegistry;
     private DiscordActionService discordActionService;
 
@@ -31,6 +35,7 @@ class DiscordActionServiceTest {
         discordActionService = new DiscordActionService(
             userOAuthIdentityRepository,
             tokenEncryptionService,
+            restTemplate,
             meterRegistry
         );
 

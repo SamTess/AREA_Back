@@ -19,7 +19,9 @@ import org.springframework.web.client.RestTemplate;
 import jakarta.annotation.PostConstruct;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +40,7 @@ public class DiscordActionService {
 
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
     private final TokenEncryptionService tokenEncryptionService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final MeterRegistry meterRegistry;
 
     private Counter discordActionsExecuted;
@@ -48,6 +50,26 @@ public class DiscordActionService {
     public void init() {
         discordActionsExecuted = meterRegistry.counter("discord_actions_executed_total");
         discordActionsFailed = meterRegistry.counter("discord_actions_failed_total");
+    }
+
+    private LocalDateTime parseDiscordTimestamp(String timestampStr) {
+        if (timestampStr == null || timestampStr.isEmpty()) {
+            return null;
+        }
+
+        try {
+            ZonedDateTime zonedDateTime = ZonedDateTime.parse(timestampStr,
+                DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return zonedDateTime.toLocalDateTime();
+        } catch (DateTimeParseException e) {
+            log.warn("Failed to parse Discord timestamp '{}': {}", timestampStr, e.getMessage());
+            try {
+                return LocalDateTime.parse(timestampStr, DateTimeFormatter.ISO_DATE_TIME);
+            } catch (DateTimeParseException ex) {
+                log.error("Failed to parse Discord timestamp with fallback: '{}'", timestampStr, ex);
+                return null;
+            }
+        }
     }
 
     public Map<String, Object> executeDiscordAction(String actionKey,
@@ -271,9 +293,8 @@ public class DiscordActionService {
             for (Map<String, Object> message : response.getBody()) {
                 String timestampStr = (String) message.get("timestamp");
                 if (timestampStr != null) {
-                    LocalDateTime messageTime = LocalDateTime.parse(timestampStr,
-                        DateTimeFormatter.ISO_DATE_TIME);
-                    if (messageTime.isAfter(lastCheck)) {
+                    LocalDateTime messageTime = parseDiscordTimestamp(timestampStr);
+                    if (messageTime != null && messageTime.isAfter(lastCheck)) {
                         Map<String, Object> event = new HashMap<>();
                         event.put("message_id", message.get("id"));
                         event.put("content", message.get("content"));
@@ -315,9 +336,8 @@ public class DiscordActionService {
             for (Map<String, Object> member : response.getBody()) {
                 String joinedAtStr = (String) member.get("joined_at");
                 if (joinedAtStr != null) {
-                    LocalDateTime joinedAt = LocalDateTime.parse(joinedAtStr,
-                        DateTimeFormatter.ISO_DATE_TIME);
-                    if (joinedAt.isAfter(lastCheck)) {
+                    LocalDateTime joinedAt = parseDiscordTimestamp(joinedAtStr);
+                    if (joinedAt != null && joinedAt.isAfter(lastCheck)) {
                         Map<String, Object> event = new HashMap<>();
                         event.put("user", member.get("user"));
                         event.put("joined_at", joinedAtStr);

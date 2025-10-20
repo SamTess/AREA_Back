@@ -5,14 +5,36 @@
 - [Service Framework](#service-framework)
 - [Service Discovery](#service-discovery)
 - [Authentication Management](#authentication-management)
-- [GitHub Integration](#github-integration)
+- [Supported Services](#supported-services)
+  - [GitHub Integration](#github-integration)
+  - [Google Integration](#google-integration)
+  - [Discord Integration](#discord-integration)
+  - [Slack Integration](#slack-integration)
 - [Webhook System](#webhook-system)
 - [Service Cache](#service-cache)
 - [API Reference](#api-reference)
 
 ## Overview
 
-The Service Integration Architecture provides a unified framework for connecting with external services (GitHub, Slack, Google, etc.). It handles authentication, API interactions, webhooks, and event processing in a scalable and extensible manner.
+The Service Integration Architecture provides a unified framework for connecting with external services (GitHub, Google, Discord, Slack, etc.). It handles authentication, API interactions, webhooks, and event processing in a scalable and extensible manner.
+
+### Supported Services
+
+| Service | Auth Type | Actions | Events | Webhooks | Status |
+|---------|-----------|---------|--------|----------|--------|
+| **GitHub** | OAuth2 | Create issues, PRs, comments | New issues, PRs, commits | ✅ | Active |
+| **Google** | OAuth2 | Gmail, Calendar, Drive, Sheets | New emails, events, files | ⚠️ | Polling |
+| **Discord** | OAuth2 | Send messages, manage channels | New messages, members, reactions | ✅ | Active |
+| **Slack** | OAuth2 | Send messages, manage channels | New messages, reactions | ✅ | Active |
+
+### Integration Capabilities
+
+- **OAuth2 Authentication**: Secure user authorization with token encryption
+- **Real-time Webhooks**: Instant event notifications from external services
+- **Event Polling**: Periodic checking for services without webhook support
+- **Token Management**: Automatic refresh and secure storage
+- **Rate Limiting**: Respect service API limits
+- **Caching**: Redis-based caching for performance optimization
 
 ## Service Framework
 
@@ -312,9 +334,16 @@ public class TokenEncryptionService {
 }
 ```
 
-## GitHub Integration
+## Supported Services
 
-### GitHub Service Implementation
+### GitHub Integration
+
+GitHub provides comprehensive repository management, issue tracking, and collaboration features.
+
+**Service Key**: `github`  
+**Documentation**: [GitHub Provider Documentation](../providers/github.md)
+
+#### GitHub Service Implementation
 ```java
 @Service
 @ConditionalOnProperty(name = "github.enabled", havingValue = "true", matchIfMissing = true)
@@ -385,19 +414,303 @@ public class GitHubActionService {
 }
 ```
 
-### GitHub Webhook Processing
+#### GitHub Features
+
+**Available Actions**:
+- Create issues
+- Comment on issues
+- Close issues
+- Add labels
+- Create pull requests
+- Merge pull requests
+
+**Available Events**:
+- New issue created
+- Issue updated/closed
+- New pull request
+- PR merged
+- Push to branch
+- New commit
+- Repository starred
+- New release
+
+**Webhook Support**: ✅ Full webhook support with HMAC-SHA256 signature validation
+
+For complete GitHub integration details, see [GitHub Provider Documentation](../providers/github.md).
+
+---
+
+### Google Integration
+
+Google provides integration with Gmail, Calendar, Drive, and Sheets services.
+
+**Service Key**: `google`  
+**Documentation**: [Google Provider Documentation](../providers/google.md)
+
+#### Google Service Implementation
+
 ```java
-@RestController
-@RequestMapping("/api/webhooks/github")
-@Slf4j
-public class GitHubWebhookController {
+@Service
+@RequiredArgsConstructor
+public class GoogleActionService {
     
-    private final WebhookEventProcessingService processingService;
-    private final WebhookSignatureValidator signatureValidator;
+    private final ServiceAccountService serviceAccountService;
     
-    @PostMapping
-    public ResponseEntity<String> handleWebhook(
-            @RequestHeader("X-GitHub-Event") String eventType,
+    /**
+     * Executes Google service actions
+     */
+    public Map<String, Object> executeAction(String actionKey,
+                                            Map<String, Object> inputPayload,
+                                            Map<String, Object> actionParams,
+                                            UUID userId) {
+        
+        return switch (actionKey) {
+            case "gmail_send_email" -> sendEmail(userId, actionParams);
+            case "calendar_create_event" -> createCalendarEvent(userId, actionParams);
+            case "drive_create_folder" -> createDriveFolder(userId, actionParams);
+            case "sheets_add_row" -> addSheetRow(userId, actionParams);
+            default -> throw new IllegalArgumentException("Unknown action: " + actionKey);
+        };
+    }
+    
+    private Map<String, Object> sendEmail(UUID userId, Map<String, Object> params) {
+        String accessToken = serviceAccountService.getAccessToken(userId, "google")
+            .orElseThrow(() -> new RuntimeException("Google not connected"));
+        
+        // Gmail API call implementation
+        // ...
+    }
+}
+```
+
+#### Google Features
+
+**Gmail**:
+- Send emails
+- Search emails
+- Mark as read/unread
+- Add labels
+- Monitor new emails
+
+**Calendar**:
+- Create events
+- Update events
+- Delete events
+- Monitor new/upcoming events
+
+**Drive**:
+- Create folders
+- Upload files
+- Share documents
+- Monitor file changes
+
+**Sheets**:
+- Add rows
+- Update cells
+- Create spreadsheets
+- Monitor spreadsheet changes
+
+**Webhook Support**: ⚠️ Polling-based (no native webhook support for most services)
+
+For complete Google integration details, see [Google Provider Documentation](../providers/google.md).
+
+---
+
+### Discord Integration
+
+Discord provides real-time messaging, guild management, and bot capabilities.
+
+**Service Key**: `discord`  
+**Documentation**: [Discord Provider Documentation](../providers/discord.md)
+
+#### Discord Service Implementation
+
+```java
+@Service
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.discord.client-id")
+@RequiredArgsConstructor
+public class DiscordActionService {
+    
+    private final ServiceAccountService serviceAccountService;
+    private final RestTemplate restTemplate;
+    private static final String DISCORD_API_BASE = "https://discord.com/api/v10";
+    
+    /**
+     * Executes Discord actions
+     */
+    public Map<String, Object> executeAction(String actionKey,
+                                            Map<String, Object> inputPayload,
+                                            Map<String, Object> actionParams,
+                                            UUID userId) {
+        
+        String accessToken = serviceAccountService.getAccessToken(userId, "discord")
+            .orElseThrow(() -> new RuntimeException("Discord not connected"));
+        
+        return switch (actionKey) {
+            case "send_message" -> sendMessage(accessToken, actionParams);
+            case "create_webhook" -> createWebhook(accessToken, actionParams);
+            case "add_reaction" -> addReaction(accessToken, actionParams);
+            case "create_channel" -> createChannel(accessToken, actionParams);
+            default -> throw new IllegalArgumentException("Unknown action: " + actionKey);
+        };
+    }
+    
+    private Map<String, Object> sendMessage(String accessToken, Map<String, Object> params) {
+        String channelId = (String) params.get("channel_id");
+        String content = (String) params.get("content");
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        Map<String, Object> body = Map.of("content", content);
+        
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+            DISCORD_API_BASE + "/channels/" + channelId + "/messages",
+            request,
+            Map.class
+        );
+        
+        return response.getBody();
+    }
+}
+```
+
+#### Discord Features
+
+**Available Actions**:
+- Send messages to channels
+- Create channel webhooks
+- Send webhook messages
+- Add reactions
+- Create guild channels
+- Delete messages
+
+**Available Events**:
+- New message posted
+- Message deleted
+- Guild member joined
+- Guild member left
+- Reaction added
+- Channel created
+
+**Webhook Support**: ✅ Full webhook support with Ed25519 signature validation
+
+For complete Discord integration details, see [Discord Provider Documentation](../providers/discord.md).
+
+---
+
+### Slack Integration
+
+Slack provides workspace messaging, channel management, and workflow automation.
+
+**Service Key**: `slack`  
+**Documentation**: [Slack Provider Documentation](../providers/slack.md)
+
+#### Slack Service Implementation
+
+```java
+@Service
+@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.slack.client-id")
+@RequiredArgsConstructor
+public class SlackActionService {
+    
+    private final ServiceAccountService serviceAccountService;
+    private final RestTemplate restTemplate;
+    private static final String SLACK_API_BASE = "https://slack.com/api";
+    
+    /**
+     * Executes Slack actions
+     */
+    public Map<String, Object> executeAction(String actionKey,
+                                            Map<String, Object> inputPayload,
+                                            Map<String, Object> actionParams,
+                                            UUID userId) {
+        
+        String accessToken = serviceAccountService.getAccessToken(userId, "slack")
+            .orElseThrow(() -> new RuntimeException("Slack not connected"));
+        
+        return switch (actionKey) {
+            case "send_message" -> sendMessage(accessToken, actionParams);
+            case "create_channel" -> createChannel(accessToken, actionParams);
+            case "add_reaction" -> addReaction(accessToken, actionParams);
+            case "pin_message" -> pinMessage(accessToken, actionParams);
+            default -> throw new IllegalArgumentException("Unknown action: " + actionKey);
+        };
+    }
+    
+    private Map<String, Object> sendMessage(String accessToken, Map<String, Object> params) {
+        String channel = (String) params.get("channel");
+        String text = (String) params.get("text");
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        Map<String, Object> body = Map.of(
+            "channel", channel,
+            "text", text
+        );
+        
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+            SLACK_API_BASE + "/chat.postMessage",
+            request,
+            Map.class
+        );
+        
+        return response.getBody();
+    }
+}
+```
+
+#### Slack Features
+
+**Available Actions**:
+- Send messages to channels
+- Create channels
+- Add reactions
+- Pin messages
+- Upload files
+- Invite users to channels
+
+**Available Events**:
+- New message in channel
+- Message deleted
+- Reaction added
+- Channel created
+- User joined channel
+- File uploaded
+
+**Webhook Support**: ✅ Full webhook support with HMAC-SHA256 signature validation
+
+For complete Slack integration details, see [Slack Provider Documentation](../providers/slack.md).
+
+---
+
+### Adding New Services
+
+To add a new service integration:
+
+1. **Create OAuth Service**: Extend `OAuthService` abstract class
+2. **Implement Action Service**: Create service for executing actions
+3. **Add Database Migration**: Create service and action definitions
+4. **Configure Webhooks** (optional): Add webhook handling
+5. **Create Documentation**: Follow provider documentation template
+6. **Add Tests**: Unit and integration tests
+
+See [Provider Documentation Template](../providers/README.md#adding-a-new-provider).
+
+---
+
+## Webhook System
+
+The webhook system enables real-time event notifications from external services. For complete webhook system documentation, see [Webhook System Guide](./09-webhook-system.md).
+
+### Webhook Controller
             @RequestHeader("X-GitHub-Delivery") String deliveryId,
             @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
             @RequestBody String payload) {

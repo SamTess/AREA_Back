@@ -10,25 +10,61 @@ The AREA platform integrates with external services through OAuth2 authenticatio
 
 ### [GitHub Provider](./github.md)
 **Status**: ✅ Implemented  
+**Auth**: OAuth2  
 **Services**: Repository management, Issues, Pull Requests  
-**Scopes**: `user:email`
+**Scopes**: `user:email`  
+**Webhooks**: ✅ Supported (HMAC-SHA256)
 
 Key features:
 - Create and manage GitHub issues
 - Monitor new issues, pull requests, and commits
 - Add comments and labels
 - Close issues programmatically
+- Real-time webhook events
 
 ### [Google Provider](./google.md)
 **Status**: ✅ Implemented  
+**Auth**: OAuth2  
 **Services**: Gmail, Google Calendar, Google Drive, Google Sheets  
-**Scopes**: Multiple (Gmail, Calendar, Drive, Sheets)
+**Scopes**: Multiple (Gmail, Calendar, Drive, Sheets)  
+**Webhooks**: ⚠️ Polling-based
 
 Key features:
 - **Gmail**: Send emails, monitor inbox, manage labels
 - **Calendar**: Create events, monitor new/upcoming events
 - **Drive**: Create folders, upload files, share documents, monitor changes
 - **Sheets**: Add rows, update cells, create spreadsheets, monitor changes
+
+### [Discord Provider](./discord.md)
+**Status**: ✅ Implemented  
+**Auth**: OAuth2  
+**Services**: Messaging, Channel Management, Guild Management  
+**Scopes**: `identify`, `email`, `guilds`, `webhook.incoming`, `messages.read`  
+**Webhooks**: ✅ Supported (Ed25519)
+
+Key features:
+- Send messages to channels
+- Create and manage webhooks
+- Add reactions to messages
+- Create and manage channels
+- Monitor new messages, member events, and reactions
+- Real-time webhook events with Ed25519 signature validation
+
+### [Slack Provider](./slack.md)
+**Status**: ✅ Implemented  
+**Auth**: OAuth2  
+**Services**: Messaging, Channel Management, Workspace Integration  
+**Scopes**: `channels:read`, `channels:write`, `chat:write`, `users:read`, `reactions:write`  
+**Webhooks**: ✅ Supported (HMAC-SHA256)
+
+Key features:
+- Send messages to channels
+- Create and manage channels
+- Add reactions and pin messages
+- Upload files
+- Invite users to channels
+- Monitor new messages, reactions, and channel events
+- Real-time webhook events with signature validation
 
 ## Documentation Structure
 

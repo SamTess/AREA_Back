@@ -71,37 +71,12 @@ Before running this application, make sure you have the following installed:
    ```
 
 3. **Start the infrastructure services:**
-   ```bash
-   docker-compose up -d
-   ```
-   This will start PostgreSQL and Redis containers.
+
 
 ## Running the Application
 
-### Using Gradle Wrapper (Recommended)
-
-1. **Build the application:**
-   ```bash
-   ./gradlew build
-   ```
-
-2. **Run the application:**
-   ```bash
-   ./gradlew bootRun
-   ```
-
-### Using the start script
-
 ```bash
-./start.sh
-```
-
-### Using Docker
-
-Build and run with Docker:
-```bash
-docker build -t area-backend .
-docker run -p 8080:8080 area-backend
+docker compose --env-file .env -f Docker/docker-compose.back.yaml up --build -d
 ```
 
 The application will be available at: `http://localhost:8080`

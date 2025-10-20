@@ -6,6 +6,7 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.Service;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
+import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -39,6 +40,9 @@ class ReactionExecutorTest {
     @Mock
     private GoogleActionService googleActionService;
 
+    @Mock
+    private DiscordActionService discordActionService;
+
     private SimpleMeterRegistry meterRegistry;
 
     private ReactionExecutor reactionExecutor;
@@ -57,6 +61,7 @@ class ReactionExecutorTest {
             retryManager,
             gitHubActionService,
             googleActionService,
+            discordActionService,
             meterRegistry
         );
 

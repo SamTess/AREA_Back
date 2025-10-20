@@ -4,6 +4,7 @@ import area.server.AREA_Back.dto.ExecutionResult;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.ActionInstance;
+import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -45,6 +46,7 @@ public class ReactionExecutor {
     private final RetryManager retryManager;
     private final GitHubActionService gitHubActionService;
     private final GoogleActionService googleActionService;
+    private final DiscordActionService discordActionService;
     private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
@@ -128,6 +130,9 @@ public class ReactionExecutor {
                 break;
             case "google":
                 result.putAll(executeGoogleAction(actionKey, inputPayload, actionParams, execution));
+                break;
+            case "discord":
+                result.putAll(executeDiscordAction(actionKey, inputPayload, actionParams, execution));
                 break;
             case "webhook":
                 result.putAll(executeWebhookAction(actionKey, inputPayload, actionParams));
@@ -239,6 +244,21 @@ public class ReactionExecutor {
         } catch (Exception e) {
             log.error("Failed to execute GitHub action { }: { }", actionKey, e.getMessage(), e);
             throw new RuntimeException("GitHub action execution failed: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> executeDiscordAction(final String actionKey, final Map<String, Object> input,
+                                                     final Map<String, Object> params, final Execution execution) {
+        try {
+            UUID userId = execution.getActionInstance().getUser().getId();
+            Map<String, Object> result = discordActionService.executeDiscordAction(actionKey, input, params, userId);
+            result.put("type", "discord");
+            result.put("executedAt", LocalDateTime.now());
+            result.put("executionId", execution.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to execute Discord action {}: {}", actionKey, e.getMessage(), e);
+            throw new RuntimeException("Discord action execution failed: " + e.getMessage(), e);
         }
     }
 

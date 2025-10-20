@@ -87,6 +87,9 @@ public class WebhookEventProcessingService {
         if ("slack".equals(instance.getActionDefinition().getService().getKey())) {
             return matchesSlackAction(actionKey, action);
         }
+        if ("discord".equals(instance.getActionDefinition().getService().getKey())) {
+            return matchesDiscordAction(actionKey, action);
+        }
         return actionKey.contains(action) || action.contains(actionKey);
     }
 
@@ -109,6 +112,17 @@ public class WebhookEventProcessingService {
             case "reaction_added" -> actionKey.equals("reaction_added");
             case "member_joined_channel" -> actionKey.equals("member_joined");
             case "app_mention" -> actionKey.equals("app_mention");
+            default -> actionKey.equals(webhookAction);
+        };
+    }
+
+    private boolean matchesDiscordAction(String actionKey, String webhookAction) {
+        return switch (webhookAction.toLowerCase()) {
+            case "message_create" -> actionKey.equals("new_message") || actionKey.equals("message_created");
+            case "message_reaction_add" -> actionKey.equals("message_reaction") || actionKey.equals("reaction_added");
+            case "guild_member_add" -> actionKey.equals("new_member") || actionKey.equals("member_joined");
+            case "channel_create" -> actionKey.equals("channel_created");
+            case "guild_create" -> actionKey.equals("server_joined");
             default -> actionKey.equals(webhookAction);
         };
     }
@@ -193,6 +207,10 @@ public class WebhookEventProcessingService {
             return matchesSlackEventSubType(actionKey, eventAction);
         }
 
+        if ("discord".equals(service)) {
+            return matchesDiscordEventSubType(actionKey, eventAction);
+        }
+
         return true;
     }
 
@@ -213,6 +231,17 @@ public class WebhookEventProcessingService {
             case "new_message" -> "message".equals(eventAction);
             case "reaction_added" -> "reaction_added".equals(eventAction);
             case "member_joined" -> "member_joined_channel".equals(eventAction);
+            default -> true;
+        };
+    }
+
+    private boolean matchesDiscordEventSubType(String actionKey, String eventAction) {
+        return switch (actionKey) {
+            case "new_message" -> "message_create".equals(eventAction) || "MESSAGE_CREATE".equals(eventAction);
+            case "message_reaction" -> "message_reaction_add".equals(eventAction)
+                || "MESSAGE_REACTION_ADD".equals(eventAction);
+            case "new_member" -> "guild_member_add".equals(eventAction) || "GUILD_MEMBER_ADD".equals(eventAction);
+            case "channel_created" -> "channel_create".equals(eventAction) || "CHANNEL_CREATE".equals(eventAction);
             default -> true;
         };
     }

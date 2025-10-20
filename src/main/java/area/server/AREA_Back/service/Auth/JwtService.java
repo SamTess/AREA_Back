@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service.Auth;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.constants.AuthTokenConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -10,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,12 +35,7 @@ public class JwtService {
     @Value("${JWT_REFRESH_SECRET:}")
     private String refreshTokenSecret;
 
-    @Value("${ACCESS_TOKEN_EXPIRES_IN:24h}")
-    private String accessTokenExpiresIn;
-
-    @Value("${REFRESH_TOKEN_EXPIRES_IN:7d}")
-    private String refreshTokenExpiresIn;
-
+    private final JwtCookieProperties jwtCookieProperties;
     private final MeterRegistry meterRegistry;
 
     private Counter generateAccessTokenCalls;
@@ -49,7 +44,8 @@ public class JwtService {
     private Counter refreshTokenValidationCalls;
     private Counter tokenValidationFailures;
 
-    public JwtService(MeterRegistry meterRegistry) {
+    public JwtService(JwtCookieProperties jwtCookieProperties, MeterRegistry meterRegistry) {
+        this.jwtCookieProperties = jwtCookieProperties;
         this.meterRegistry = meterRegistry;
     }
 
@@ -154,11 +150,11 @@ public class JwtService {
     }
 
     public long getAccessTokenExpirationMs() {
-        return parseDuration(accessTokenExpiresIn).toMillis();
+        return jwtCookieProperties.getAccessTokenExpiry() * 1000L;
     }
 
     public long getRefreshTokenExpirationMs() {
-        return parseDuration(refreshTokenExpiresIn).toMillis();
+        return jwtCookieProperties.getRefreshTokenExpiry() * 1000L;
     }
 
     public static String generateSecureKey() {
@@ -245,41 +241,12 @@ public class JwtService {
     }
 
     private Date getAccessTokenExpiration() {
-        Duration duration = parseDuration(accessTokenExpiresIn);
-        return Date.from(Instant.now().plus(duration));
+        long expirySeconds = jwtCookieProperties.getAccessTokenExpiry();
+        return Date.from(Instant.now().plusSeconds(expirySeconds));
     }
 
     private Date getRefreshTokenExpiration() {
-        Duration duration = parseDuration(refreshTokenExpiresIn);
-        return Date.from(Instant.now().plus(duration));
-    }
-
-    private Duration parseDuration(String durationStr) {
-        if (durationStr == null || durationStr.isEmpty()) {
-            throw new IllegalArgumentException("Duration string cannot be null or empty");
-        }
-
-        String trimmed = durationStr.trim();
-        if (trimmed.length() < 2) {
-            throw new IllegalArgumentException("Invalid duration format: " + durationStr);
-        }
-
-        String unit = trimmed.substring(trimmed.length() - 1).toLowerCase();
-        String numberPart = trimmed.substring(0, trimmed.length() - 1);
-
-        try {
-            long value = Long.parseLong(numberPart);
-
-            return switch (unit) {
-                case "s" -> Duration.ofSeconds(value);
-                case "m" -> Duration.ofMinutes(value);
-                case "h" -> Duration.ofHours(value);
-                case "d" -> Duration.ofDays(value);
-                default -> throw new IllegalArgumentException(
-                    "Invalid duration unit: " + unit + ". Supported units: s, m, h, d");
-            };
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid number in duration: " + numberPart, e);
-        }
+        long expirySeconds = jwtCookieProperties.getRefreshTokenExpiry();
+        return Date.from(Instant.now().plusSeconds(expirySeconds));
     }
 }

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.service.Auth.JwtService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JwtServiceTest {
 
     private MeterRegistry meterRegistry;
+    private JwtCookieProperties jwtCookieProperties;
 
     private JwtService jwtService;
     private UUID testUserId;
@@ -27,15 +29,21 @@ class JwtServiceTest {
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
-        jwtService = new JwtService(meterRegistry);
+
+        // Setup JwtCookieProperties for tests
+        jwtCookieProperties = new JwtCookieProperties();
+        jwtCookieProperties.setAccessTokenExpiry(900);      // 15 minutes in seconds
+        jwtCookieProperties.setRefreshTokenExpiry(604800);  // 7 days in seconds
+        jwtCookieProperties.setSecure(false);
+        jwtCookieProperties.setSameSite("Strict");
+
+        jwtService = new JwtService(jwtCookieProperties, meterRegistry);
 
         // Set test values using reflection (since @Value is not available in unit tests)
         ReflectionTestUtils.setField(jwtService, "accessTokenSecret",
                 "dGVzdC1hY2Nlc3Mtc2VjcmV0LWZvci1qd3QtdGVzdGluZy0xMjM0NTY3ODkw");
         ReflectionTestUtils.setField(jwtService, "refreshTokenSecret",
                 "dGVzdC1yZWZyZXNoLXNlY3JldC1mb3Itand0LXRlc3RpbmctMTIzNDU2Nzg5MA==");
-        ReflectionTestUtils.setField(jwtService, "accessTokenExpiresIn", "15m");
-        ReflectionTestUtils.setField(jwtService, "refreshTokenExpiresIn", "7d");
 
         // Initialize metrics manually since @PostConstruct is not called in unit tests
         jwtService.initMetrics();
@@ -216,73 +224,6 @@ class JwtServiceTest {
         String token4 = jwtService.generateAccessToken(testUserId, "different@example.com");
 
         assertFalse(token3.equals(token4));
-    }
-
-    @Test
-    void testParseDurationSeconds() {
-        // Use reflection to test the private method
-        Duration result = (Duration) ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "30s");
-        assertEquals(Duration.ofSeconds(30), result);
-    }
-
-    @Test
-    void testParseDurationMinutes() {
-        Duration result = (Duration) ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "15m");
-        assertEquals(Duration.ofMinutes(15), result);
-    }
-
-    @Test
-    void testParseDurationHours() {
-        Duration result = (Duration) ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "2h");
-        assertEquals(Duration.ofHours(2), result);
-    }
-
-    @Test
-    void testParseDurationDays() {
-        Duration result = (Duration) ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "7d");
-        assertEquals(Duration.ofDays(7), result);
-    }
-
-    @Test
-    void testParseDurationWithInvalidUnit() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "15x");
-        });
-    }
-
-    @Test
-    void testParseDurationWithInvalidFormat() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "invalid");
-        });
-    }
-
-    @Test
-    void testParseDurationWithNullInput() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", (String) null);
-        });
-    }
-
-    @Test
-    void testParseDurationWithEmptyInput() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "");
-        });
-    }
-
-    @Test
-    void testParseDurationWithTooShortInput() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "5");
-        });
-    }
-
-    @Test
-    void testParseDurationWithInvalidNumber() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ReflectionTestUtils.invokeMethod(jwtService, "parseDuration", "invalidm");
-        });
     }
 
     @Test

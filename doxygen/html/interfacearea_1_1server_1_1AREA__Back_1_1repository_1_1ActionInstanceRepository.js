@@ -4,6 +4,7 @@ var interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceReposit
     [ "countByArea", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a1fd81cc01b409afae6e5d6ff299dd87e", null ],
     [ "countByUser", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#addeef8622080c96325b3a885a35d72ce", null ],
     [ "deleteByAreaId", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a22204375034f3f19dc11e9ee92db4e58", null ],
+    [ "findActiveDiscordActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a20521c3979ff68f97ad829de88a7fb8e", null ],
     [ "findActiveGitHubActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#aeae5ed362c17ed694ab507ad31e933b1", null ],
     [ "findActiveGoogleActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a3dceb6c912482898774aa9098e24d669", null ],
     [ "findByArea", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a0ecea72103fdc1a74afad2be0d7c98c2", null ],

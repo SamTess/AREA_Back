@@ -129,6 +129,7 @@ var annotated_dup =
                   [ "GoogleGmailService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService" ],
                   [ "GoogleSheetsService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService" ]
                 ] ],
+                [ "DiscordActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService" ],
                 [ "GitHubActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService" ],
                 [ "GoogleActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService" ]
               ] ],
@@ -143,6 +144,7 @@ var annotated_dup =
               [ "AuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService" ],
               [ "EmailService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1EmailService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1EmailService" ],
               [ "JwtService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService" ],
+              [ "OAuthDiscordService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService" ],
               [ "OAuthGithubService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService" ],
               [ "OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService" ],
               [ "OAuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService" ],
@@ -152,6 +154,7 @@ var annotated_dup =
               [ "UserIdentityService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1UserIdentityService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1UserIdentityService" ]
             ] ],
             [ "Polling", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Polling.html", [
+              [ "DiscordEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService" ],
               [ "GitHubEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService" ],
               [ "GoogleEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService" ]
             ] ],

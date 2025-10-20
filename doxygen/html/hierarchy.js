@@ -55,6 +55,8 @@ var hierarchy =
     [ "area.server.AREA_Back.config.DatabaseConfig", "classarea_1_1server_1_1AREA__Back_1_1config_1_1DatabaseConfig.html", null ],
     [ "area.server.AREA_Back.service.DataMappingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1DataMappingService.html", null ],
     [ "area.server.AREA_Back.entity.enums.DedupStrategy", "enumarea_1_1server_1_1AREA__Back_1_1entity_1_1enums_1_1DedupStrategy.html", null ],
+    [ "area.server.AREA_Back.service.Area.Services.DiscordActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService.html", null ],
+    [ "area.server.AREA_Back.service.Polling.DiscordEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService.html", null ],
     [ "area.server.AREA_Back.service.Auth.EmailService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1EmailService.html", null ],
     [ "area.server.AREA_Back.entity.Event", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1Event.html", null ],
     [ "area.server.AREA_Back.entity.Execution", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1Execution.html", null ],
@@ -99,6 +101,7 @@ var hierarchy =
     [ "area.server.AREA_Back.dto.OAuthLoginRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthLoginRequest.html", null ],
     [ "area.server.AREA_Back.dto.OAuthProvider", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html", null ],
     [ "area.server.AREA_Back.service.Auth.OAuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html", [
+      [ "area.server.AREA_Back.service.Auth.OAuthDiscordService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html", null ],
       [ "area.server.AREA_Back.service.Auth.OAuthGithubService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html", null ],
       [ "area.server.AREA_Back.service.Auth.OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", null ]
     ] ],

@@ -18,6 +18,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.extern.slf4j.Slf4j;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.entity.User;
@@ -66,6 +67,7 @@ public class OAuthGithubService extends OAuthService {
         @Value("${spring.security.oauth2.client.registration.github.client-secret}") String githubClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") String redirectBaseUrl,
         JwtService jwtService,
+        JwtCookieProperties jwtCookieProperties,
         MeterRegistry meterRegistry,
         RedisTokenService redisTokenService,
         PasswordEncoder passwordEncoder,
@@ -80,7 +82,8 @@ public class OAuthGithubService extends OAuthService {
                 + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
             githubClientId,
             githubClientSecret,
-            jwtService
+            jwtService,
+            jwtCookieProperties
         );
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;

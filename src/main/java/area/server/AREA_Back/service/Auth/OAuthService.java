@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service.Auth;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.constants.AuthTokenConstants;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
@@ -19,14 +20,12 @@ public abstract class OAuthService {
     protected final String clientId;
     protected final String clientSecret;
     protected final JwtService jwtService;
+    protected final JwtCookieProperties jwtCookieProperties;
 
     protected PasswordEncoder passwordEncoder;
     protected UserOAuthIdentityRepository userOAuthIdentityRepository;
     protected UserRepository userRepository;
     protected RedisTokenService redisTokenService;
-
-    private static final int ACCESS_TOKEN_COOKIE_MAX_AGE = 15 * 60;
-    private static final int REFRESH_TOKEN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 
     protected OAuthService(
         String providerKey,
@@ -35,7 +34,8 @@ public abstract class OAuthService {
         String userAuthUrl,
         String clientId,
         String clientSecret,
-        JwtService jwtService) {
+        JwtService jwtService,
+        JwtCookieProperties jwtCookieProperties) {
 
         if (clientId == null || clientId.isEmpty()
             || clientSecret == null || clientSecret.isEmpty()) {
@@ -50,6 +50,7 @@ public abstract class OAuthService {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.jwtService = jwtService;
+        this.jwtCookieProperties = jwtCookieProperties;
 
     }
 
@@ -77,16 +78,41 @@ public abstract class OAuthService {
     protected void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
         Cookie accessCookie = new Cookie(AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken);
         accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
+        accessCookie.setSecure(jwtCookieProperties.isSecure());
         accessCookie.setPath("/");
-        accessCookie.setMaxAge(ACCESS_TOKEN_COOKIE_MAX_AGE);
-        response.addCookie(accessCookie);
+        accessCookie.setMaxAge(jwtCookieProperties.getAccessTokenExpiry());
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            accessCookie.setDomain(jwtCookieProperties.getDomain());
+        }
+
+        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
+
+        response.setHeader("Set-Cookie", String.format(
+            "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME,
+            accessToken,
+            jwtCookieProperties.getAccessTokenExpiry(),
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
 
         Cookie refreshCookie = new Cookie(AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
+        refreshCookie.setSecure(jwtCookieProperties.isSecure());
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(REFRESH_TOKEN_COOKIE_MAX_AGE);
-        response.addCookie(refreshCookie);
+        refreshCookie.setMaxAge(jwtCookieProperties.getRefreshTokenExpiry());
+
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            refreshCookie.setDomain(jwtCookieProperties.getDomain());
+        }
+
+        response.addHeader("Set-Cookie", String.format(
+            "%s=%s; Path=/; Max-Age=%d; HttpOnly; %sSameSite=%s",
+            AuthTokenConstants.REFRESH_TOKEN_COOKIE_NAME,
+            refreshToken,
+            jwtCookieProperties.getRefreshTokenExpiry(),
+            secureFlag,
+            jwtCookieProperties.getSameSite()
+        ));
     }
 }

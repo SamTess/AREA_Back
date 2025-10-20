@@ -32,7 +32,6 @@ import java.util.UUID;
 @Slf4j
 public class WebhookController {
 
-    private final GitHubWebhookService gitHubWebhookService;
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;

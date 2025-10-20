@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.service.Auth.AuthService;
 import area.server.AREA_Back.service.Auth.JwtService;
 import area.server.AREA_Back.service.Auth.OAuthDiscordService;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class OAuthDiscordServiceTest {
@@ -48,17 +50,29 @@ class OAuthDiscordServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private JwtCookieProperties jwtCookieProperties;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthDiscordService oauthDiscordService;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
+
+        // Setup JwtCookieProperties mock with lenient() to avoid UnnecessaryStubbingException
+        lenient().when(jwtCookieProperties.getAccessTokenExpiry()).thenReturn(900);
+        lenient().when(jwtCookieProperties.getRefreshTokenExpiry()).thenReturn(604800);
+        lenient().when(jwtCookieProperties.isSecure()).thenReturn(false);
+        lenient().when(jwtCookieProperties.getSameSite()).thenReturn("Strict");
+        lenient().when(jwtCookieProperties.getDomain()).thenReturn(null);
+
         oauthDiscordService = new OAuthDiscordService(
             "test-client-id",
             "test-client-secret",
             "http://localhost:3000",
             jwtService,
+            jwtCookieProperties,
             meterRegistry,
             redisTokenService,
             passwordEncoder,

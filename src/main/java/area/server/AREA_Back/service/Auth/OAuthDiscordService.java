@@ -20,6 +20,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.entity.User;
@@ -60,6 +61,7 @@ public class OAuthDiscordService extends OAuthService {
         final String discordClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") final String redirectBaseUrl,
         final JwtService jwtService,
+        final JwtCookieProperties jwtCookieProperties,
         final MeterRegistry meterRegistry,
         final RedisTokenService redisTokenService,
         final PasswordEncoder passwordEncoder,
@@ -79,7 +81,8 @@ public class OAuthDiscordService extends OAuthService {
                 + "&scope=identify%20email%20guilds%20messages.read",
             discordClientId,
             discordClientSecret,
-            jwtService
+            jwtService,
+            jwtCookieProperties
         );
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;

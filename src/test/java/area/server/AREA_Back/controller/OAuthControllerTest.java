@@ -293,4 +293,78 @@ class OAuthControllerTest {
             oauthController.exchangeToken("google", null, httpServletResponse);
         });
     }
+
+    @Test
+    void testDiscordProviderInList() {
+        OAuthService discordService = mock(OAuthService.class);
+        when(discordService.getProviderKey()).thenReturn("discord");
+        when(discordService.getProviderLabel()).thenReturn("Discord");
+        when(discordService.getProviderLogoUrl())
+            .thenReturn("https://cdn.simpleicons.org/discord/5865F2");
+        when(discordService.getUserAuthUrl())
+            .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test");
+        when(discordService.getClientId()).thenReturn("test-discord-client-id");
+
+        oauthController = new OAuthController(List.of(oauthGoogleService, discordService));
+
+        ResponseEntity<List<OAuthProvider>> response = oauthController.getProviders();
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(2, response.getBody().size());
+
+        OAuthProvider discordProvider = response.getBody().stream()
+            .filter(p -> "discord".equals(p.getProviderKey()))
+            .findFirst()
+            .orElse(null);
+
+        assertNotNull(discordProvider);
+        assertEquals("Discord", discordProvider.getProviderLabel());
+        assertTrue(discordProvider.getUserAuthUrl().contains("discord.com"));
+    }
+
+    @Test
+    void testDiscordAuthorize() {
+        OAuthService discordService = mock(OAuthService.class);
+        when(discordService.getProviderKey()).thenReturn("discord");
+        when(discordService.getUserAuthUrl())
+            .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test");
+
+        oauthController = new OAuthController(List.of(discordService));
+
+        ResponseEntity<String> response = oauthController.authorize("discord",
+            httpServletResponse);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        verify(httpServletResponse).setHeader("Location",
+            "https://discord.com/api/oauth2/authorize?client_id=test");
+    }
+
+    @Test
+    void testDiscordTokenExchange() {
+        OAuthService discordService = mock(OAuthService.class);
+        when(discordService.getProviderKey()).thenReturn("discord");
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("code", "discord-auth-code");
+
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setMessage("Discord authentication successful");
+
+        when(discordService.authenticate(any(OAuthLoginRequest.class), eq(httpServletResponse)))
+            .thenReturn(authResponse);
+
+        oauthController = new OAuthController(List.of(discordService));
+
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("discord",
+            requestBody, httpServletResponse);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        verify(discordService).authenticate(any(OAuthLoginRequest.class),
+            eq(httpServletResponse));
+    }
 }

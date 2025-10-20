@@ -74,6 +74,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/api/hooks/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

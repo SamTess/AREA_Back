@@ -166,7 +166,8 @@ var NAVTREEINDEX0 =
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1RedisStreamProperties.html":[1,0,0,0,0,0,6],
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1RedisStreamProperties.html#aa0659d20ff38fedfa843b9466221c666":[1,0,0,0,0,0,6,0],
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1RestTemplateConfig.html":[1,0,0,0,0,0,7],
-"classarea_1_1server_1_1AREA__Back_1_1config_1_1RestTemplateConfig.html#a767b2ac468de6c586bfa872300949c58":[1,0,0,0,0,0,7,0],
+"classarea_1_1server_1_1AREA__Back_1_1config_1_1RestTemplateConfig.html#a3adddb9ab0b370572f41280a41403935":[1,0,0,0,0,0,7,0],
+"classarea_1_1server_1_1AREA__Back_1_1config_1_1RestTemplateConfig.html#a41418e08056499940e2829ede31b054e":[1,0,0,0,0,0,7,1],
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1SecurityConfig.html":[1,0,0,0,0,0,8],
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1SecurityConfig.html#a292e866fa381f335a736ffdc690a6fb0":[1,0,0,0,0,0,8,2],
 "classarea_1_1server_1_1AREA__Back_1_1config_1_1SecurityConfig.html#ada2fa4b7c45bd04fb946eb6154a72458":[1,0,0,0,0,0,8,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX0 =
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#abbf35029644042e083799fbda1e15cdf":[1,0,0,0,0,2,7,3],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#ac6e61e8a0222bfb06541c0b623204837":[1,0,0,0,0,2,7,2],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthLinkController.html":[1,0,0,0,0,2,8],
-"classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthLinkController.html#a5095756dd09a14436557a29626271ede":[1,0,0,0,0,2,8,0],
-"classarea_1_1server_1_1AREA__Back_1_1controller_1_1ServiceController.html":[1,0,0,0,0,2,9]
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthLinkController.html#a5095756dd09a14436557a29626271ede":[1,0,0,0,0,2,8,0]
 };

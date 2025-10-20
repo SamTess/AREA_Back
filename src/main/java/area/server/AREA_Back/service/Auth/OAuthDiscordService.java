@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class OAuthDiscordService extends OAuthService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final String redirectBaseUrl;
     private final TokenEncryptionService tokenEncryptionService;
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
@@ -66,7 +66,8 @@ public class OAuthDiscordService extends OAuthService {
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,
-        final AuthService authService
+        final AuthService authService,
+        final RestTemplate restTemplate
     ) {
         super(
             "discord",
@@ -87,6 +88,7 @@ public class OAuthDiscordService extends OAuthService {
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.userRepository = userRepository;
         this.authService = authService;
+        this.restTemplate = restTemplate;
     }
 
     @PostConstruct

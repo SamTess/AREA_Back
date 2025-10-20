@@ -1,0 +1,47 @@
+# Doxyfile for AREA Backend
+
+PROJECT_NAME           = "AREA Backend"
+PROJECT_NUMBER         = 1.0
+PROJECT_BRIEF          = "Action REAction Backend API Documentation"
+
+# Input configuration
+INPUT                  = src/main/java
+RECURSIVE              = YES
+FILE_PATTERNS          = *.java
+EXCLUDE_PATTERNS       = */test/*
+
+# Output configuration
+OUTPUT_DIRECTORY       = docusaurus/static/doxygen
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+
+# HTML customization
+HTML_EXTRA_STYLESHEET  = 
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+HTML_TIMESTAMP         = YES
+HTML_DYNAMIC_SECTIONS  = YES
+GENERATE_TREEVIEW      = YES
+
+# Extraction settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+# Java specific
+OPTIMIZE_OUTPUT_JAVA   = YES
+JAVADOC_AUTOBRIEF      = YES
+
+# Diagram configuration
+HAVE_DOT               = NO
+UML_LOOK               = YES
+CLASS_DIAGRAMS         = YES
+
+# Other settings
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES

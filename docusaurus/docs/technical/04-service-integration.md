@@ -711,6 +711,11 @@ See [Provider Documentation Template](../providers/README.md#adding-a-new-provid
 The webhook system enables real-time event notifications from external services. For complete webhook system documentation, see [Webhook System Guide](./09-webhook-system.md).
 
 ### Webhook Controller
+
+```java
+@PostMapping("/webhooks/github")
+public ResponseEntity<String> handleGitHubWebhook(
+            @RequestHeader("X-GitHub-Event") String eventType,
             @RequestHeader("X-GitHub-Delivery") String deliveryId,
             @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
             @RequestBody String payload) {

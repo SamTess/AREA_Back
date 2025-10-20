@@ -77,6 +77,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.ACCESS_TOKEN_TYPE);
+        claims.put("jti", UUID.randomUUID().toString()); // JWT ID for traceability
         return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
     }
     public String generateRefreshToken(UUID userId, String email) {
@@ -84,6 +85,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.REFRESH_TOKEN_TYPE);
+        claims.put("jti", UUID.randomUUID().toString()); // JWT ID for traceability
         return generateToken(claims, userId.toString(), getRefreshTokenExpiration(), getRefreshTokenSigningKey());
     }
 
@@ -115,6 +117,16 @@ public class JwtService {
     public String extractEmailFromRefreshToken(String token) {
         Claims claims = extractAllClaims(token, getRefreshTokenSigningKey());
         return claims.get("email", String.class);
+    }
+
+    public String extractJtiFromAccessToken(String token) {
+        Claims claims = extractAllClaims(token, getAccessTokenSigningKey());
+        return claims.get("jti", String.class);
+    }
+
+    public String extractJtiFromRefreshToken(String token) {
+        Claims claims = extractAllClaims(token, getRefreshTokenSigningKey());
+        return claims.get("jti", String.class);
     }
 
     public boolean isAccessTokenValid(String token, UUID userId) {

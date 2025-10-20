@@ -47,35 +47,59 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authToken = extractTokenFromCookies(request);
 
-        if (authToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            try {
-                if (!redisTokenService.isAccessTokenValid(authToken)) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
+        if (authToken == null) {
+            log.debug("No auth token found in cookies for path: {}", requestPath);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                UUID userId = jwtService.extractUserIdFromAccessToken(authToken);
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            log.debug("User already authenticated, skipping token validation");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                if (jwtService.isAccessTokenValid(authToken, userId)) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
-
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                        );
-
-                    authenticationToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }
-
-            } catch (Exception e) {
-                // In case of error, continue without authentication
+        try {
+            if (!redisTokenService.isAccessTokenValid(authToken)) {
+                log.warn("Access token not found in Redis or has been revoked for path: {}", requestPath);
+                filterChain.doFilter(request, response);
+                return;
             }
+
+            UUID userId = jwtService.extractUserIdFromAccessToken(authToken);
+
+            if (!jwtService.isAccessTokenValid(authToken, userId)) {
+                log.warn("Access token validation failed for user: {} on path: {}", userId, requestPath);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
+
+            UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+                );
+
+            authenticationToken.setDetails(
+                new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            log.debug("Successfully authenticated user: {} for path: {}", userId, requestPath);
+
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.info("Access token expired for path: {} - User should refresh token", requestPath);
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.warn("Malformed JWT token for path: {} - {}", requestPath, e.getMessage());
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.warn("Invalid JWT signature for path: {} - Token may be tampered", requestPath);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid JWT token format for path: {} - {}", requestPath, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error during JWT authentication for path: {}", requestPath, e);
         }
 
         filterChain.doFilter(request, response);

@@ -26,7 +26,6 @@ public class RedisTokenService {
     private Counter storeAccessTokenCalls;
     private Counter storeRefreshTokenCalls;
     private Counter accessTokenValidationCalls;
-    private Counter refreshTokenValidationCalls;
     private Counter deleteAccessTokenCalls;
     private Counter deleteRefreshTokenCalls;
     private Counter tokenValidationFailures;
@@ -43,10 +42,6 @@ public class RedisTokenService {
 
         accessTokenValidationCalls = Counter.builder("redis_token.validate_access.calls")
                 .description("Total number of access token validation calls")
-                .register(meterRegistry);
-
-        refreshTokenValidationCalls = Counter.builder("redis_token.validate_refresh.calls")
-                .description("Total number of refresh token validation calls")
                 .register(meterRegistry);
 
         deleteAccessTokenCalls = Counter.builder("redis_token.delete_access.calls")
@@ -67,6 +62,21 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getAccessTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, userId.toString(), ttl);
+
+        try {
+            String jti = jwtService.extractJtiFromAccessToken(accessToken);
+            if (jti != null) {
+                String jtiKey = AuthTokenConstants.REDIS_ACCESS_JTI_PREFIX + jti;
+                redisTemplate.opsForValue().set(jtiKey, userId.toString(), ttl);
+
+                String userTokensKey = AuthTokenConstants.REDIS_USER_TOKENS_PREFIX + userId.toString();
+                redisTemplate.opsForSet().add(userTokensKey, jti);
+                redisTemplate.expire(userTokensKey, ttl);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract/store JTI for access token", e);
+        }
+
         storeAccessTokenCalls.increment();
     }
 
@@ -75,6 +85,17 @@ public class RedisTokenService {
         Duration ttl = Duration.ofMillis(jwtService.getRefreshTokenExpirationMs());
 
         redisTemplate.opsForValue().set(key, refreshToken, ttl);
+
+        try {
+            String jti = jwtService.extractJtiFromRefreshToken(refreshToken);
+            if (jti != null) {
+                String jtiKey = AuthTokenConstants.REDIS_REFRESH_JTI_PREFIX + jti;
+                redisTemplate.opsForValue().set(jtiKey, userId.toString(), ttl);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract/store JTI for refresh token", e);
+        }
+
         storeRefreshTokenCalls.increment();
     }
 
@@ -121,12 +142,44 @@ public class RedisTokenService {
 
     public void deleteAccessToken(String accessToken) {
         String key = AuthTokenConstants.REDIS_ACCESS_TOKEN_PREFIX + accessToken;
+
+        try {
+            String jti = jwtService.extractJtiFromAccessToken(accessToken);
+            if (jti != null) {
+                UUID userId = getUserIdFromAccessToken(accessToken);
+
+                String jtiKey = AuthTokenConstants.REDIS_ACCESS_JTI_PREFIX + jti;
+                redisTemplate.delete(jtiKey);
+
+                if (userId != null) {
+                    String userTokensKey = AuthTokenConstants.REDIS_USER_TOKENS_PREFIX + userId.toString();
+                    redisTemplate.opsForSet().remove(userTokensKey, jti);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to clean up JTI data for access token", e);
+        }
+
         redisTemplate.delete(key);
         deleteAccessTokenCalls.increment();
     }
 
     public void deleteRefreshToken(UUID userId) {
         String key = AuthTokenConstants.REDIS_REFRESH_TOKEN_PREFIX + userId.toString();
+
+        try {
+            String refreshToken = getRefreshToken(userId);
+            if (refreshToken != null) {
+                String jti = jwtService.extractJtiFromRefreshToken(refreshToken);
+                if (jti != null) {
+                    String jtiKey = AuthTokenConstants.REDIS_REFRESH_JTI_PREFIX + jti;
+                    redisTemplate.delete(jtiKey);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to clean up JTI data for refresh token", e);
+        }
+
         redisTemplate.delete(key);
         deleteRefreshTokenCalls.increment();
     }
@@ -165,5 +218,58 @@ public class RedisTokenService {
         if (redisTemplate.hasKey(key)) {
             redisTemplate.expire(key, newTTL);
         }
+    }
+
+    public void revokeAccessTokenByJti(String jti) {
+        String jtiKey = AuthTokenConstants.REDIS_ACCESS_JTI_PREFIX + jti;
+        String userIdStr = (String) redisTemplate.opsForValue().get(jtiKey);
+
+        if (userIdStr != null) {
+            try {
+                UUID userId = UUID.fromString(userIdStr);
+                String userTokensKey = AuthTokenConstants.REDIS_USER_TOKENS_PREFIX + userId.toString();
+                redisTemplate.opsForSet().remove(userTokensKey, jti);
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid UUID format in JTI mapping: {}", userIdStr, e);
+            }
+        }
+
+        redisTemplate.delete(jtiKey);
+        log.info("Revoked access token with JTI: {}", jti);
+    }
+
+    public void revokeRefreshTokenByJti(String jti) {
+        String jtiKey = AuthTokenConstants.REDIS_REFRESH_JTI_PREFIX + jti;
+        redisTemplate.delete(jtiKey);
+        log.info("Revoked refresh token with JTI: {}", jti);
+    }
+
+    public java.util.Set<Object> getUserActiveTokenJtis(UUID userId) {
+        String userTokensKey = AuthTokenConstants.REDIS_USER_TOKENS_PREFIX + userId.toString();
+        return redisTemplate.opsForSet().members(userTokensKey);
+    }
+
+    public void revokeAllUserAccessTokens(UUID userId) {
+        String userTokensKey = AuthTokenConstants.REDIS_USER_TOKENS_PREFIX + userId.toString();
+        java.util.Set<Object> jtis = redisTemplate.opsForSet().members(userTokensKey);
+
+        if (jtis != null && !jtis.isEmpty()) {
+            for (Object jti : jtis) {
+                String jtiKey = AuthTokenConstants.REDIS_ACCESS_JTI_PREFIX + jti.toString();
+                redisTemplate.delete(jtiKey);
+            }
+            redisTemplate.delete(userTokensKey);
+            log.info("Revoked {} access tokens for user: {}", jtis.size(), userId);
+        }
+    }
+
+    public boolean isAccessTokenValidByJti(String jti) {
+        String jtiKey = AuthTokenConstants.REDIS_ACCESS_JTI_PREFIX + jti;
+        return redisTemplate.hasKey(jtiKey);
+    }
+
+    public boolean isRefreshTokenValidByJti(String jti) {
+        String jtiKey = AuthTokenConstants.REDIS_REFRESH_JTI_PREFIX + jti;
+        return redisTemplate.hasKey(jtiKey);
     }
 }

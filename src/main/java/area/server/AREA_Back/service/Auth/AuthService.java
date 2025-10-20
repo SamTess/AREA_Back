@@ -352,6 +352,8 @@ public class AuthService {
             throw new RuntimeException("Refresh token not found");
         }
 
+        String oldAccessToken = getTokenFromCookie(request, AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME);
+
         UUID userId;
         try {
             userId = jwtService.extractUserIdFromRefreshToken(refreshToken);
@@ -380,12 +382,22 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
 
+        if (oldAccessToken != null && !oldAccessToken.isEmpty()) {
+            try {
+                redisTokenService.deleteAccessToken(oldAccessToken);
+                log.debug("Revoked old access token during refresh for user: {}", user.getEmail());
+            } catch (Exception e) {
+                log.warn("Failed to revoke old access token during refresh: {}", e.getMessage());
+            }
+        }
+
         redisTokenService.storeAccessToken(newAccessToken, user.getId());
         redisTokenService.rotateRefreshToken(user.getId(), newRefreshToken);
 
         setTokenCookies(response, newAccessToken, newRefreshToken);
 
-        log.info("Refreshed tokens for user: { }", user.getEmail());
+        log.info("Refreshed tokens for user: {} (old token revoked: {})",
+            user.getEmail(), oldAccessToken != null);
 
         return new AuthResponse(
             "Tokens refreshed successfully",

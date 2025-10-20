@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
@@ -49,6 +50,9 @@ class OAuthGithubServiceTest {
     @Mock
     private AuthService authService;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGithubService oauthGithubService;
 
@@ -63,7 +67,8 @@ class OAuthGithubServiceTest {
             meterRegistry,
             redisTokenService,
             passwordEncoder,
-            authService
+            authService,
+            restTemplate
         );
         // Manually initialize metrics since @PostConstruct won't run in tests
         try {

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -44,6 +45,9 @@ class OAuthDiscordServiceTest {
     @Mock
     private AuthService authService;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthDiscordService oauthDiscordService;
 
@@ -61,7 +65,8 @@ class OAuthDiscordServiceTest {
             tokenEncryptionService,
             userOAuthIdentityRepository,
             userRepository,
-            authService
+            authService,
+            restTemplate
         );
 
         try {

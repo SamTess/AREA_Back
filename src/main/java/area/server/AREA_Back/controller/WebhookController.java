@@ -4,6 +4,7 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.service.Webhook.GitHubWebhookService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
+import area.server.AREA_Back.service.Webhook.WebhookSecretService;
 import area.server.AREA_Back.service.Webhook.WebhookSignatureValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +36,7 @@ public class WebhookController {
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;
+    private final WebhookSecretService webhookSecretService;
 
     /**
      * Generic webhook receiver endpoint
@@ -57,6 +59,8 @@ public class WebhookController {
         String eventId = extractEventId(service, request, payload);
         log.info("Received webhook: service={}, action={}, eventId={}, userId={}",
                 service, action, eventId, userId);
+        log.info("Webhook payload: {}", payload);
+        log.debug("Webhook headers: {}", getRequestHeaders(request));
 
         try {
             if (!validateSignature(service, request, payload)) {
@@ -260,10 +264,7 @@ public class WebhookController {
      * Gets webhook secret for the service
      */
     private String getWebhookSecret(String service) {
-        // Try to get from service account configuration
-        // For now, return null to allow unsigned webhooks
-        // FIXME: Implement proper secret management
-        return null;
+        return webhookSecretService.getServiceSecret(service);
     }
 
     /**

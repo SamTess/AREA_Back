@@ -18,9 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Service for processing webhook events and triggering AREA executions
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,15 +29,6 @@ public class WebhookEventProcessingService {
     private final ExecutionService executionService;
     private final PayloadMappingService payloadMappingService;
 
-    /**
-     * Processes a webhook event and triggers matching action instances
-     *
-     * @param service The service that sent the webhook (e.g., "github", "slack")
-     * @param action The action type (e.g., "issues", "pull_request", "message")
-     * @param payload The webhook payload
-     * @param userId Optional user ID to scope the search
-     * @return List of created executions
-     */
     @Transactional
     public List<Execution> processWebhookEvent(String service, String action,
                                              Map<String, Object> payload, UUID userId) {
@@ -55,38 +43,18 @@ public class WebhookEventProcessingService {
             .toList();
     }
 
-    /**
-     * Processes a webhook event for a specific user
-     *
-     * @param service The service that sent the webhook
-     * @param action The action type
-     * @param payload The webhook payload
-     * @param userId The user ID
-     * @return List of created executions
-     */
     @Transactional
     public List<Execution> processWebhookEventForUser(String service, String action,
                                                     Map<String, Object> payload, UUID userId) {
         return processWebhookEvent(service, action, payload, userId);
     }
 
-    /**
-     * Processes a webhook event globally (for all users)
-     *
-     * @param service The service that sent the webhook
-     * @param action The action type
-     * @param payload The webhook payload
-     * @return List of created executions
-     */
     @Transactional
     public List<Execution> processWebhookEventGlobally(String service, String action,
                                                      Map<String, Object> payload) {
         return processWebhookEvent(service, action, payload, null);
     }
 
-    /**
-     * Finds action instances that should be triggered by this webhook
-     */
     private List<ActionInstance> findMatchingActionInstances(String service, String action, UUID userId) {
         List<ActionInstance> instances;
         if (userId != null) {
@@ -101,9 +69,6 @@ public class WebhookEventProcessingService {
             .toList();
     }
 
-    /**
-     * Checks if an action instance has webhook activation mode enabled
-     */
     private boolean hasWebhookActivationMode(ActionInstance instance) {
         List<ActivationMode> activationModes = activationModeRepository
             .findByActionInstanceAndEnabled(instance, true);
@@ -111,9 +76,6 @@ public class WebhookEventProcessingService {
             .anyMatch(mode -> mode.getType() == ActivationModeType.WEBHOOK);
     }
 
-    /**
-     * Checks if the action instance matches the webhook action type
-     */
     private boolean matchesActionType(ActionInstance instance, String action) {
         String actionKey = instance.getActionDefinition().getKey();
         if (actionKey.equals(action)) {
@@ -128,9 +90,6 @@ public class WebhookEventProcessingService {
         return actionKey.contains(action) || action.contains(actionKey);
     }
 
-    /**
-     * Maps GitHub webhook events to action definitions
-     */
     private boolean matchesGitHubAction(String actionKey, String webhookAction) {
         return switch (webhookAction.toLowerCase()) {
             case "issues" -> actionKey.equals("new_issue") || actionKey.equals("issue_updated");
@@ -144,9 +103,6 @@ public class WebhookEventProcessingService {
         };
     }
 
-    /**
-     * Maps Slack webhook events to action definitions
-     */
     private boolean matchesSlackAction(String actionKey, String webhookAction) {
         return switch (webhookAction.toLowerCase()) {
             case "message" -> actionKey.equals("new_message") || actionKey.equals("message_posted");
@@ -157,21 +113,14 @@ public class WebhookEventProcessingService {
         };
     }
 
-    /**
-     * Creates executions for a webhook event
-     * Instead of executing the trigger, we immediately trigger linked reactions
-     */
     private Execution createExecutionForWebhook(ActionInstance triggerInstance, Map<String, Object> payload) {
         try {
-            // Check if webhook activation mode exists for trigger
             List<ActivationMode> activationModes = activationModeRepository
                 .findByActionInstanceAndTypeAndEnabled(triggerInstance, ActivationModeType.WEBHOOK, true);
             if (activationModes.isEmpty()) {
                 log.warn("No webhook activation mode found for action instance {}", triggerInstance.getId());
                 return null;
             }
-
-            // Check if the event sub-type matches what this trigger expects
             String eventAction = payload.get("action") != null ? payload.get("action").toString() : null;
             if (!matchesEventSubType(triggerInstance, eventAction)) {
                 log.debug("Skipping webhook: event action '{}' does not match trigger expectations for instance {}",
@@ -179,9 +128,8 @@ public class WebhookEventProcessingService {
                 return null;
             }
 
-            // Find linked reactions
             List<ActionLink> links = actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(triggerInstance.getId());
-            
+
             if (links.isEmpty()) {
                 log.warn("No linked actions found for trigger action instance {}", triggerInstance.getId());
                 return null;
@@ -189,43 +137,39 @@ public class WebhookEventProcessingService {
 
             UUID correlationId = UUID.randomUUID();
             Execution firstExecution = null;
-            
-            // Create executions for each linked reaction
+
             for (ActionLink link : links) {
                 ActionInstance targetInstance = link.getTargetActionInstance();
-                
-                // Check if target has CHAIN activation mode
+
                 List<ActivationMode> chainModes = activationModeRepository
                     .findByActionInstanceAndTypeAndEnabled(targetInstance, ActivationModeType.CHAIN, true);
-                
+
                 if (chainModes.isEmpty()) {
                     log.warn("No CHAIN activation mode found for linked action instance {}", targetInstance.getId());
                     continue;
                 }
-                
+
                 ActivationMode chainActivationMode = chainModes.get(0);
-                
-                // Apply payload mapping if configured
+
                 Map<String, Object> mappedPayload = applyPayloadMapping(payload, link.getMapping());
-                
-                // Create execution for the reaction
+
                 Execution execution = executionService.createExecution(
                     targetInstance,
                     chainActivationMode,
                     mappedPayload,
                     correlationId
                 );
-                
+
                 if (firstExecution == null) {
                     firstExecution = execution;
                 }
-                
+
                 log.info("Created execution {} for linked reaction {} (correlation: {})",
                         execution.getId(), targetInstance.getId(), correlationId);
             }
-            
+
             return firstExecution;
-            
+
         } catch (Exception e) {
             log.error("Failed to create executions for trigger action instance {}: {}",
                      triggerInstance.getId(), e.getMessage(), e);
@@ -233,16 +177,8 @@ public class WebhookEventProcessingService {
         }
     }
 
-    /**
-     * Checks if the webhook event sub-type matches what the trigger expects
-     *
-     * @param triggerInstance The trigger action instance
-     * @param eventAction The event sub-type (e.g., "opened", "closed", "edited")
-     * @return true if matches or no specific sub-type check is needed
-     */
     private boolean matchesEventSubType(ActionInstance triggerInstance, String eventAction) {
         if (eventAction == null) {
-            // If no action specified, allow it (ping events, etc.)
             return true;
         }
 
@@ -257,13 +193,9 @@ public class WebhookEventProcessingService {
             return matchesSlackEventSubType(actionKey, eventAction);
         }
 
-        // For other services, accept all sub-types
         return true;
     }
 
-    /**
-     * Matches GitHub-specific event sub-types
-     */
     private boolean matchesGitHubEventSubType(String actionKey, String eventAction) {
         return switch (actionKey) {
             case "new_issue" -> "opened".equals(eventAction);
@@ -271,14 +203,11 @@ public class WebhookEventProcessingService {
             case "issue_closed" -> "closed".equals(eventAction);
             case "new_pull_request" -> "opened".equals(eventAction);
             case "pr_updated" -> "edited".equals(eventAction) || "synchronize".equals(eventAction);
-            case "pr_merged" -> "closed".equals(eventAction); // Check merged flag separately
-            default -> true; // Accept all sub-types for unknown action keys
+            case "pr_merged" -> "closed".equals(eventAction);
+            default -> true;
         };
     }
 
-    /**
-     * Matches Slack-specific event sub-types
-     */
     private boolean matchesSlackEventSubType(String actionKey, String eventAction) {
         return switch (actionKey) {
             case "new_message" -> "message".equals(eventAction);
@@ -288,16 +217,12 @@ public class WebhookEventProcessingService {
         };
     }
 
-    /**
-     * Applies payload mapping transformation if configured
-     */
     private Map<String, Object> applyPayloadMapping(Map<String, Object> sourcePayload, Map<String, Object> mappingConfig) {
         if (mappingConfig == null || mappingConfig.isEmpty()) {
             return sourcePayload;
         }
 
         try {
-            // Convert mapping config to JSON string
             String mappingJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(mappingConfig);
             return payloadMappingService.applyMapping(sourcePayload, mappingJson);
         } catch (Exception e) {
@@ -306,18 +231,10 @@ public class WebhookEventProcessingService {
         }
     }
 
-    /**
-     * Generates a deduplication key for a webhook event
-     *
-     * @param service The service name
-     * @param action The action type
-     * @param payload The webhook payload
-     * @return A unique deduplication key
-     */
     public String generateDeduplicationKey(String service, String action, Map<String, Object> payload) {
         Object eventId = extractEventId(service, payload);
         Object eventAction = payload.get("action");
-        
+
         return String.format("%s:%s:%s:%s",
                 service.toLowerCase(),
                 action.toLowerCase(),
@@ -325,9 +242,6 @@ public class WebhookEventProcessingService {
                 eventAction != null ? eventAction.toString() : "default");
     }
 
-    /**
-     * Extracts the event ID from a webhook payload
-     */
     private Object extractEventId(String service, Map<String, Object> payload) {
         return switch (service.toLowerCase()) {
             case "github" -> extractGitHubEventId(payload);
@@ -337,11 +251,7 @@ public class WebhookEventProcessingService {
         };
     }
 
-    /**
-     * Extracts GitHub event ID from payload
-     */
     private Object extractGitHubEventId(Map<String, Object> payload) {
-        // Try different ID fields based on event type
         if (payload.containsKey("issue")) {
             @SuppressWarnings("unchecked")
             Map<String, Object> issue = (Map<String, Object>) payload.get("issue");

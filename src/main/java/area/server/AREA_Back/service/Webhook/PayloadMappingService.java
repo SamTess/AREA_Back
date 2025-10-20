@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Service for transforming webhook payloads according to mapping configurations
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,13 +17,6 @@ public class PayloadMappingService {
 
     private final ObjectMapper objectMapper;
 
-    /**
-     * Applies a mapping transformation to a source payload
-     *
-     * @param sourcePayload The source payload from webhook
-     * @param mappingJson The mapping configuration in JSON format
-     * @return The transformed payload
-     */
     public Map<String, Object> applyMapping(Map<String, Object> sourcePayload, String mappingJson) {
         if (mappingJson == null || mappingJson.trim().isEmpty()) {
             log.debug("No mapping configuration provided, returning original payload");
@@ -56,41 +46,23 @@ public class PayloadMappingService {
 
         } catch (Exception e) {
             log.error("Error applying payload mapping: {}", e.getMessage(), e);
-            // Return original payload on error
             return sourcePayload;
         }
     }
 
-    /**
-     * Merges a mapped payload with the original payload
-     * This keeps unmapped fields from the original
-     *
-     * @param sourcePayload The original payload
-     * @param mappingJson The mapping configuration
-     * @return The merged payload
-     */
     public Map<String, Object> applyMappingWithMerge(Map<String, Object> sourcePayload, String mappingJson) {
         Map<String, Object> mapped = applyMapping(sourcePayload, mappingJson);
-        
+
         if (mapped.isEmpty()) {
             return sourcePayload;
         }
 
-        // Merge: mapped fields override source fields
         Map<String, Object> result = new HashMap<>(sourcePayload);
         result.putAll(mapped);
-        
+
         return result;
     }
 
-    /**
-     * Extracts a value from a nested map using dot notation
-     * Example: "issue.number" extracts payload.get("issue").get("number")
-     *
-     * @param map The source map
-     * @param path The path in dot notation
-     * @return The extracted value or null if not found
-     */
     private Object extractValue(Map<String, Object> map, String path) {
         if (path == null || path.trim().isEmpty()) {
             return null;
@@ -109,7 +81,6 @@ public class PayloadMappingService {
                 Map<String, Object> currentMap = (Map<String, Object>) current;
                 current = currentMap.get(part);
             } else {
-                // Try to access as a property using reflection (for complex objects)
                 try {
                     current = getPropertyValue(current, part);
                 } catch (Exception e) {
@@ -122,26 +93,16 @@ public class PayloadMappingService {
         return current;
     }
 
-    /**
-     * Gets a property value from an object using reflection
-     *
-     * @param obj The object
-     * @param propertyName The property name
-     * @return The property value
-     * @throws Exception if property cannot be accessed
-     */
     private Object getPropertyValue(Object obj, String propertyName) throws Exception {
         if (obj == null) {
             return null;
         }
 
-        // Try getter method
         String getterName = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             java.lang.reflect.Method getter = obj.getClass().getMethod(getterName);
             return getter.invoke(obj);
         } catch (NoSuchMethodException e) {
-            // Try direct field access
             try {
                 java.lang.reflect.Field field = obj.getClass().getDeclaredField(propertyName);
                 field.setAccessible(true);
@@ -153,12 +114,6 @@ public class PayloadMappingService {
         }
     }
 
-    /**
-     * Creates a mapping for GitHub issue events to comment_issue action
-     * Example mapping for new_issue -> comment_issue
-     *
-     * @return A sample mapping JSON string
-     */
     public String createGitHubIssueToCommentMapping() {
         return """
             {
@@ -170,11 +125,6 @@ public class PayloadMappingService {
             """;
     }
 
-    /**
-     * Creates a mapping for GitHub pull request events
-     *
-     * @return A sample mapping JSON string
-     */
     public String createGitHubPRMapping() {
         return """
             {

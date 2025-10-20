@@ -126,8 +126,8 @@ class EmailVerificationFilterTest {
     }
 
     @Test
-    void shouldDenyAccessWhenLocalIdentityNotFound() throws Exception {
-        // Given - User authenticated but no local identity (data inconsistency)
+    void shouldAllowAccessWhenLocalIdentityNotFound() throws Exception {
+        // Given - User authenticated but no local identity (OAuth2 user)
         setupAuthenticatedUser();
 
         when(userLocalIdentityRepository.findByUserId(userId)).thenReturn(Optional.empty());
@@ -136,13 +136,12 @@ class EmailVerificationFilterTest {
 
         // When
         emailVerificationFilter.doFilterInternal(request, response, (req, res) -> {
-            // This should not be called
-            fail("Filter chain should not continue when local identity not found");
+            // Filter chain should continue for OAuth2 users
         });
 
         // Then
-        // User with no local identity should be denied (data inconsistency)
-        assertEquals(401, response.getStatus());
+        // User with no local identity is allowed (OAuth2 user, verified by provider)
+        assertEquals(200, response.getStatus());
     }
 
     private void setupAuthenticatedUser() {

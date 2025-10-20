@@ -70,3 +70,6 @@ replay_pid*
 .redis_password_backup
 Docker/redis/dump.rdb
 Docker/redis/appendonly.aof
+
+# Doxygen generated documentation
+docusaurus/static/doxygen/

@@ -1,0 +1,8 @@
+{
+  "label": "Service Providers",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Integration guides for external service providers like GitHub, Slack, Discord, and Google."
+  }
+}

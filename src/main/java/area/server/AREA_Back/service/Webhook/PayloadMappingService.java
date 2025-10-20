@@ -98,6 +98,11 @@ public class PayloadMappingService {
             return null;
         }
 
+        if (propertyName == null || propertyName.isEmpty()) {
+            log.debug("Property name is null or empty");
+            return null;
+        }
+
         String getterName = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             java.lang.reflect.Method getter = obj.getClass().getMethod(getterName);

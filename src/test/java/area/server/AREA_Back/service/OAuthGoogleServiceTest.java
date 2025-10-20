@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
@@ -59,6 +60,9 @@ class OAuthGoogleServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGoogleService oauthGoogleService;
 
@@ -75,7 +79,8 @@ class OAuthGoogleServiceTest {
             passwordEncoder,
             tokenEncryptionService,
             userOAuthIdentityRepository,
-            userRepository
+            userRepository,
+            restTemplate
         );
 
         // Manually initialize metrics since @PostConstruct won't run in tests

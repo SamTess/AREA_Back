@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +33,9 @@ class GitHubActionServiceTest {
     @Mock
     private ServiceAccountService serviceAccountService;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     private SimpleMeterRegistry meterRegistry;
     private GitHubActionService gitHubActionService;
 
@@ -43,6 +47,7 @@ class GitHubActionServiceTest {
             userRepository,
             tokenEncryptionService,
             serviceAccountService,
+            restTemplate,
             meterRegistry
         );
         // Manually initialize metrics since @PostConstruct won't run in tests

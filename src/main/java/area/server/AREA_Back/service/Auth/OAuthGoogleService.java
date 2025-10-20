@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class OAuthGoogleService extends OAuthService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final String redirectBaseUrl;
     private final TokenEncryptionService tokenEncryptionService;
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
@@ -66,6 +66,7 @@ public class OAuthGoogleService extends OAuthService {
      * @param tokenEncryptionService Token encryption service
      * @param userOAuthIdentityRepository OAuth identity repository
      * @param userRepository User repository
+     * @param restTemplate Configured RestTemplate bean
      */
     @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
@@ -79,7 +80,8 @@ public class OAuthGoogleService extends OAuthService {
         final PasswordEncoder passwordEncoder,
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
-        final UserRepository userRepository
+        final UserRepository userRepository,
+        final RestTemplate restTemplate
     ) {
         super(
             "google",
@@ -109,6 +111,7 @@ public class OAuthGoogleService extends OAuthService {
         this.tokenEncryptionService = tokenEncryptionService;
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.userRepository = userRepository;
+        this.restTemplate = restTemplate;
     }
 
     @PostConstruct

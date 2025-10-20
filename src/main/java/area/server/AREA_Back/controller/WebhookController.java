@@ -123,49 +123,6 @@ public class WebhookController {
     }
 
     /**
-     * GitHub-specific webhook endpoint (backward compatibility)
-     */
-    @PostMapping("/github/user/{userId}")
-    @Operation(summary = "Handle GitHub webhook events",
-               description = "Receives and processes GitHub webhook events for a specific user")
-    public ResponseEntity<Map<String, Object>> handleGitHubWebhook(
-            @Parameter(description = "User ID for which to process the webhook")
-            @PathVariable UUID userId,
-
-            @Parameter(description = "GitHub event type (e.g., issues, pull_request, push)")
-            @RequestHeader(value = "X-GitHub-Event", required = false) String eventType,
-
-            @Parameter(description = "GitHub webhook signature for verification")
-            @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
-
-            @Parameter(description = "GitHub webhook delivery ID")
-            @RequestHeader(value = "X-GitHub-Delivery", required = false) String deliveryId,
-
-            @RequestBody Map<String, Object> payload) {
-
-        try {
-            log.info("Received GitHub webhook for user {}, event type: {}, delivery: {}",
-                    userId, eventType, deliveryId);
-
-            Map<String, Object> result = gitHubWebhookService.processWebhook(
-                userId, eventType, signature, payload
-            );
-
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            log.error("Failed to process GitHub webhook for user {}: {}", userId, e.getMessage(), e);
-
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Webhook processing failed",
-                "message", e.getMessage(),
-                "userId", userId.toString(),
-                "eventType", eventType != null ? eventType : "unknown"
-            ));
-        }
-    }
-
-    /**
      * Test endpoint for webhook validation
      */
     @PostMapping("/test/{service}")

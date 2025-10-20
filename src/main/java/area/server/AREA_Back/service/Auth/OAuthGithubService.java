@@ -37,7 +37,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 @Service
 public class OAuthGithubService extends OAuthService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final String redirectBaseUrl;
 
     @Autowired
@@ -69,7 +69,8 @@ public class OAuthGithubService extends OAuthService {
         MeterRegistry meterRegistry,
         RedisTokenService redisTokenService,
         PasswordEncoder passwordEncoder,
-        AuthService authService
+        AuthService authService,
+        RestTemplate restTemplate
     ) {
         super(
             "github",
@@ -84,6 +85,7 @@ public class OAuthGithubService extends OAuthService {
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;
         this.authService = authService;
+        this.restTemplate = restTemplate;
     }
 
     @PostConstruct

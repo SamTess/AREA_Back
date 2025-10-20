@@ -75,7 +75,7 @@ public class OAuthDiscordService extends OAuthService {
             "https://discord.com/api/oauth2/authorize?client_id=" + discordClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"
-                + "&scope=identify%20email%20guilds%20messages.read%20bot",
+                + "&scope=identify%20email%20guilds%20messages.read",
             discordClientId,
             discordClientSecret,
             jwtService

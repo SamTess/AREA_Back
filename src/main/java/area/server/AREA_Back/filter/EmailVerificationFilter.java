@@ -53,8 +53,8 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
                 .orElse(null);
 
             if (localIdentity == null) {
-                log.warn("No local identity found for user: {}", userId);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                log.debug("No local identity found for user {}, allowing access (OAuth2 user)", userId);
+                filterChain.doFilter(request, response);
                 return;
             }
 

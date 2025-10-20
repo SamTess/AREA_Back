@@ -41,7 +41,7 @@ public class GitHubActionService {
     private final UserRepository userRepository;
     private final TokenEncryptionService tokenEncryptionService;
     private final ServiceAccountService serviceAccountService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private final MeterRegistry meterRegistry;
     private Counter githubActionsExecuted;

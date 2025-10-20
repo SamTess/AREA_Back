@@ -125,7 +125,7 @@ public class WebhookController {
     /**
      * GitHub-specific webhook endpoint (backward compatibility)
      */
-    @PostMapping("/github/{userId}")
+    @PostMapping("/github/user/{userId}")
     @Operation(summary = "Handle GitHub webhook events",
                description = "Receives and processes GitHub webhook events for a specific user")
     public ResponseEntity<Map<String, Object>> handleGitHubWebhook(

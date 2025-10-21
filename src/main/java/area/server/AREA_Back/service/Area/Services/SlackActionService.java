@@ -542,12 +542,24 @@ public class SlackActionService {
             return null;
         }
 
-        String encryptedToken = oauthIdentity.get().getAccessTokenEnc();
+        UserOAuthIdentity identity = oauthIdentity.get();
+
+        Map<String, Object> tokenMeta = identity.getTokenMeta();
+        if (tokenMeta != null && tokenMeta.containsKey("bot_access_token_enc")) {
+            String encryptedBotToken = tokenMeta.get("bot_access_token_enc").toString();
+            if (encryptedBotToken != null && !encryptedBotToken.isEmpty()) {
+                log.debug("Using bot token for user: {}", userId);
+                return tokenEncryptionService.decryptToken(encryptedBotToken);
+            }
+        }
+
+        String encryptedToken = identity.getAccessTokenEnc();
         if (encryptedToken == null || encryptedToken.isEmpty()) {
             log.warn("Slack token is empty for user: {}", userId);
             return null;
         }
 
+        log.debug("Using user token for user: {}", userId);
         return tokenEncryptionService.decryptToken(encryptedToken);
     }
 

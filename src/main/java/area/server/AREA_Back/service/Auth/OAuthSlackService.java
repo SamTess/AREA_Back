@@ -78,9 +78,12 @@ public class OAuthSlackService extends OAuthService {
             "https://slack.com/oauth/v2/authorize?client_id=" + slackClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&user_scope=identity.basic,identity.email,identity.avatar"
-                + "&scope=channels:history,channels:read,chat:write"
-                + ",reactions:write,reactions:read,users:read"
-                + ",files:read,pins:write,im:read,im:write,im:history",
+                + "&scope=channels:history,channels:read,channels:manage"
+                + ",chat:write,reactions:write,reactions:read"
+                + ",users:read,users.profile:read"
+                + ",files:read,pins:write"
+                + ",im:read,im:write,im:history"
+                + ",groups:history,mpim:history",
             slackClientId,
             slackClientSecret,
             jwtService,
@@ -266,6 +269,10 @@ public class OAuthSlackService extends OAuthService {
         tokenMeta.put("avatar_url", profileData.avatarUrl);
         tokenMeta.put("team_id", tokenResponse.teamId);
         tokenMeta.put("team_name", tokenResponse.teamName);
+
+        if (tokenResponse.botAccessToken != null && !tokenResponse.botAccessToken.isEmpty()) {
+            tokenMeta.put("bot_access_token_enc", tokenEncryptionService.encryptToken(tokenResponse.botAccessToken));
+        }
         return tokenMeta;
     }
 
@@ -355,12 +362,16 @@ public class OAuthSlackService extends OAuthService {
                 teamName = teamNameObj != null ? teamNameObj.toString() : null;
             }
 
+            Object botAccessTokenObj = responseBody.get("access_token");
+            String botAccessToken = botAccessTokenObj != null ? botAccessTokenObj.toString() : null;
+
             return new SlackTokenResponse(
                 accessTokenObj.toString(),
                 refreshToken,
                 expiresIn,
                 teamId,
-                teamName
+                teamName,
+                botAccessToken
             );
         } catch (Exception e) {
             tokenExchangeFailures.increment();
@@ -451,14 +462,16 @@ public class OAuthSlackService extends OAuthService {
         final Integer expiresIn;
         final String teamId;
         final String teamName;
+        final String botAccessToken;
 
         SlackTokenResponse(String accessToken, String refreshToken, Integer expiresIn,
-                          String teamId, String teamName) {
+                          String teamId, String teamName, String botAccessToken) {
             this.accessToken = accessToken;
             this.refreshToken = refreshToken;
             this.expiresIn = expiresIn;
             this.teamId = teamId;
             this.teamName = teamName;
+            this.botAccessToken = botAccessToken;
         }
     }
 

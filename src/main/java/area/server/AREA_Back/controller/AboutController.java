@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +33,33 @@ public class AboutController {
     @GetMapping("/about.json")
     @Operation(summary = "Information about available services",
                description = "Returns the list of services, actions and reactions available in the API")
-    public ResponseEntity<Map<String, Object>> getAbout() {
+    public ResponseEntity<Map<String, Object>> getAbout(HttpServletRequest request) {
         Map<String, Object> about = new HashMap<>();
-        about.put("client", Map.of("host", "localhost:8080"));
-        about.put("server", Map.of("current_time", LocalDateTime.now().toString()));
-        about.put("services", buildServicesInfo());
+
+        Map<String, Object> client = new HashMap<>();
+        client.put("host", getClientIpAddress(request));
+        about.put("client", client);
+
+        Map<String, Object> server = new HashMap<>();
+        server.put("current_time", Instant.now().getEpochSecond());
+        server.put("services", buildServicesInfo());
+        about.put("server", server);
 
         return ResponseEntity.ok(about);
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+
+        return request.getRemoteAddr();
     }
 
     private List<Map<String, Object>> buildServicesInfo() {
@@ -47,7 +68,6 @@ public class AboutController {
         return services.stream().map(service -> {
             Map<String, Object> serviceInfo = new HashMap<>();
             serviceInfo.put("name", service.getName());
-            serviceInfo.put("key", service.getKey());
 
             List<ActionDefinition> actions = actionDefinitionRepository
                 .findByServiceKey(service.getKey())
@@ -74,7 +94,6 @@ public class AboutController {
     private Map<String, Object> mapActionDefinition(ActionDefinition actionDef) {
         Map<String, Object> mapped = new HashMap<>();
         mapped.put("name", actionDef.getName());
-        mapped.put("key", actionDef.getKey());
         mapped.put("description", actionDef.getDescription());
         return mapped;
     }

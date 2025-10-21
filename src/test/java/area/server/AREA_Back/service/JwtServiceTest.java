@@ -35,7 +35,7 @@ class JwtServiceTest {
         jwtCookieProperties.setAccessTokenExpiry(900);      // 15 minutes in seconds
         jwtCookieProperties.setRefreshTokenExpiry(604800);  // 7 days in seconds
         jwtCookieProperties.setSecure(false);
-        jwtCookieProperties.setSameSite("Strict");
+        jwtCookieProperties.setSameSite("None");
 
         jwtService = new JwtService(jwtCookieProperties, meterRegistry);
 

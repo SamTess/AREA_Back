@@ -30,7 +30,7 @@ public class AboutController {
     @Autowired
     private ActionDefinitionRepository actionDefinitionRepository;
 
-        @GetMapping("/about.json")
+    @GetMapping("/about.json")
     @Operation(summary = "Information about available services",
                description = "Returns the list of services, actions and reactions available in the API")
     public ResponseEntity<Map<String, Object>> getAbout(HttpServletRequest request) {

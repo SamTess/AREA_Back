@@ -5,6 +5,7 @@ import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.entity.ActionDefinition;
 import area.server.AREA_Back.entity.Service;
+import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
@@ -79,9 +80,14 @@ class ReactionExecutorTest {
         actionDefinition.setIsExecutable(true);
         actionDefinition.setService(service);
 
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setEmail("test@example.com");
+
         actionInstance = new ActionInstance();
         actionInstance.setId(UUID.randomUUID());
         actionInstance.setActionDefinition(actionDefinition);
+        actionInstance.setUser(user);
         actionInstance.setParams(Map.of(
             "to", "test@example.com",
             "subject", "Test Subject"
@@ -130,10 +136,18 @@ class ReactionExecutorTest {
     void executeReactionSlackService() {
         // Given
         service.setKey("slack");
-        actionDefinition.setKey("post_message");
+        actionDefinition.setKey("send_message");
         actionInstance.setParams(Map.of(
             "channel", "#general",
-            "message", "Test message"
+            "text", "Test message"
+        ));
+
+        when(slackActionService.executeSlackAction(
+            any(), any(), any(), any()
+        )).thenReturn(Map.of(
+            "success", true,
+            "channel", "#general",
+            "ts", "1234567890.123456"
         ));
 
         // When
@@ -142,11 +156,9 @@ class ReactionExecutorTest {
         // Then
         assertEquals(ExecutionStatus.OK, result.getStatus());
         assertNotNull(result.getOutputPayload());
-        assertEquals("slack", result.getOutputPayload().get("type"));
-        assertEquals("post_message", result.getOutputPayload().get("action"));
+        assertTrue((Boolean) result.getOutputPayload().get("success"));
         assertEquals("#general", result.getOutputPayload().get("channel"));
-        assertEquals("Test message", result.getOutputPayload().get("message"));
-        assertEquals("posted", result.getOutputPayload().get("status"));
+        assertNotNull(result.getOutputPayload().get("ts"));
     }
 
     @Test

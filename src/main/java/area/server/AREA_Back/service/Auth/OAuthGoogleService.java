@@ -56,30 +56,36 @@ public class OAuthGoogleService extends OAuthService {
     private Counter tokenExchangeFailures;
 
     /**
-     * Constructs OAuth Google Service with dependencies
-     * @param googleClientId Google OAuth2 client ID
-     * @param googleClientSecret Google OAuth2 client secret
-     * @param redirectBaseUrl Base URL for OAuth redirects
-     * @param jwtService JWT token service
-     * @param meterRegistry Metrics registry
-     * @param redisTokenService Redis token service
-     * @param passwordEncoder Password encoder
-     * @param tokenEncryptionService Token encryption service
-     * @param userOAuthIdentityRepository OAuth identity repository
-     * @param userRepository User repository
-     * @param restTemplate Configured RestTemplate bean
+     * Constructs an OAuthGoogleService instance with all required dependencies for Google OAuth2 authentication.
+     * <p>
+     * This constructor initializes the Google OAuth service with comprehensive OAuth2 scopes including:
+     * Gmail (read, send, modify), Google Calendar, Google Drive, and Google Sheets access.
+     * The service is configured for offline access with consent prompts to obtain refresh tokens.
+     * </p>
+     *
+     * @param googleClientId The Google OAuth2 client identifier from application configuration
+     * @param googleClientSecret The Google OAuth2 client secret from application configuration
+     * @param redirectBaseUrl The base URL for OAuth callback redirects (defaults to http://localhost:3000)
+     * @param jwtService Service for JWT token generation and validation
+     * @param jwtCookieProperties Configuration properties for JWT cookies
+     * @param meterRegistry Metrics registry for monitoring OAuth operations
+     * @param redisTokenService Service for managing OAuth tokens in Redis cache
+     * @param passwordEncoder Password encoder bean (kept for dependency injection symmetry, not actively used)
+     * @param tokenEncryptionService Service for encrypting and decrypting OAuth tokens
+     * @param userOAuthIdentityRepository Repository for managing user OAuth identity associations
+     * @param userRepository Repository for user data access
+     * @param restTemplate Configured REST template for external API calls
      */
     @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
         @Value("${spring.security.oauth2.client.registration.google.client-id}") final String googleClientId,
-        @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-        final String googleClientSecret,
+        @Value("${spring.security.oauth2.client.registration.google.client-secret}") final String googleClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") final String redirectBaseUrl,
         final JwtService jwtService,
         final JwtCookieProperties jwtCookieProperties,
         final MeterRegistry meterRegistry,
         final RedisTokenService redisTokenService,
-        final PasswordEncoder passwordEncoder,
+        final PasswordEncoder passwordEncoder, // gardé pour symétrie DI même si non utilisé
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,
@@ -89,7 +95,8 @@ public class OAuthGoogleService extends OAuthService {
             "google",
             "Google",
             "https://img.icons8.com/?size=100&id=17949&format=png&color=000000",
-            "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId
+            "https://accounts.google.com/o/oauth2/v2/auth"
+                + "?client_id=" + googleClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"
                 + "&scope=openid%20email%20profile"
@@ -141,43 +148,50 @@ public class OAuthGoogleService extends OAuthService {
     }
 
     @Override
-    public AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response) {
+    public AuthResponse authenticate(final OAuthLoginRequest request, final HttpServletResponse response) {
         authenticateCalls.increment();
         try {
-            GoogleTokenResponse tokenResponse = exchangeCodeForToken(request.getAuthorizationCode());
+            log.info("Starting Google OAuth authentication");
+            final GoogleTokenResponse tokenResponse = exchangeCodeForToken(request.getAuthorizationCode());
+            log.info("Successfully exchanged code for Google tokens");
 
-            UserProfileData profileData = fetchUserProfile(tokenResponse.accessToken);
+            final UserProfileData profileData = fetchUserProfile(tokenResponse.accessToken);
+            log.info("Fetched Google user profile (email={}, id={})", profileData.email, profileData.userIdentifier);
 
             if (profileData.email == null || profileData.email.isEmpty()) {
                 oauthLoginFailureCounter.increment();
                 throw new RuntimeException("Google account email is required for authentication");
             }
 
-            UserOAuthIdentity oauth = handleUserAuthentication(
+            final UserOAuthIdentity oauth = handleUserAuthentication(
                 profileData,
                 tokenResponse.accessToken,
                 tokenResponse.refreshToken,
                 tokenResponse.expiresIn
             );
 
+            final AuthResponse out = generateAuthResponse(oauth, response);
+
             oauthLoginSuccessCounter.increment();
-            return generateAuthResponse(oauth, response);
+            log.info("Google OAuth authentication completed successfully for user {}", oauth.getUser().getId());
+            return out;
+
         } catch (Exception e) {
             oauthLoginFailureCounter.increment();
             log.error("Google OAuth authentication failed", e);
-            throw e;
+            throw new RuntimeException("OAuth authentication failed: " + e.getMessage(), e);
         }
     }
 
-    public UserOAuthIdentity linkToExistingUser(User existingUser, String authorizationCode) {
-        GoogleTokenResponse tokenResponse = exchangeCodeForToken(authorizationCode);
-        UserProfileData profileData = fetchUserProfile(tokenResponse.accessToken);
+    public UserOAuthIdentity linkToExistingUser(final User existingUser, final String authorizationCode) {
+        final GoogleTokenResponse tokenResponse = exchangeCodeForToken(authorizationCode);
+        final UserProfileData profileData = fetchUserProfile(tokenResponse.accessToken);
 
         if (profileData.email == null || profileData.email.isEmpty()) {
             throw new RuntimeException("Google account email is required for account linking");
         }
 
-        Optional<UserOAuthIdentity> existingOAuth = userOAuthIdentityRepository
+        final Optional<UserOAuthIdentity> existingOAuth = userOAuthIdentityRepository
             .findByProviderAndProviderUserId(this.providerKey, profileData.userIdentifier);
 
         if (existingOAuth.isPresent() && !existingOAuth.get().getUser().getId().equals(existingUser.getId())) {
@@ -210,18 +224,18 @@ public class OAuthGoogleService extends OAuthService {
             oauth.setCreatedAt(LocalDateTime.now());
             oauth.setUpdatedAt(LocalDateTime.now());
         }
-        Map<String, Object> tokenMeta = new HashMap<>();
+        final Map<String, Object> tokenMeta = new HashMap<>();
         tokenMeta.put("name", profileData.name);
         tokenMeta.put("given_name", profileData.givenName);
         tokenMeta.put("family_name", profileData.familyName);
         tokenMeta.put("picture", profileData.picture);
         tokenMeta.put("locale", profileData.locale);
+        tokenMeta.put("verified_email", profileData.verifiedEmail);
         oauth.setTokenMeta(tokenMeta);
 
         try {
             oauth = this.userOAuthIdentityRepository.save(oauth);
-            log.info("Successfully linked Google account {} to user {}",
-                    profileData.userIdentifier, existingUser.getId());
+            log.info("Successfully linked Google account {} to user {}", profileData.userIdentifier, existingUser.getId());
             return oauth;
         } catch (Exception e) {
             log.error("Failed to link Google account to existing user", e);
@@ -229,81 +243,96 @@ public class OAuthGoogleService extends OAuthService {
         }
     }
 
-    private GoogleTokenResponse exchangeCodeForToken(String authorizationCode) {
+    private GoogleTokenResponse exchangeCodeForToken(final String authorizationCode) {
         tokenExchangeCalls.increment();
         try {
-            String tokenUrl = "https://oauth2.googleapis.com/token";
+            final String tokenUrl = "https://oauth2.googleapis.com/token";
 
-            HttpHeaders headers = new HttpHeaders();
+            final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.set("User-Agent", "AREA-Backend/1.0");
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            final MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             body.add("code", authorizationCode);
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
             body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
             body.add("grant_type", "authorization_code");
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+            final HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map<String, Object>> tokenResponse = restTemplate.exchange(
+            final ResponseEntity<Map<String, Object>> tokenResponse = restTemplate.exchange(
                 tokenUrl,
                 HttpMethod.POST,
                 request,
-                new ParameterizedTypeReference<Map<String, Object>>() { }
+                new ParameterizedTypeReference<Map<String, Object>>() {}
             );
 
             if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
                 tokenExchangeFailures.increment();
-                throw new RuntimeException("Failed to exchange token with Google");
+                throw new RuntimeException("Failed to exchange token with Google (http "
+                    + tokenResponse.getStatusCode().value() + ")");
             }
 
-            Map<String, Object> responseBody = tokenResponse.getBody();
-            String accessToken = (String) responseBody.get("access_token");
-            String refreshToken = (String) responseBody.get("refresh_token");
-            Integer expiresIn = (Integer) responseBody.get("expires_in");
+            final Map<String, Object> responseBody = tokenResponse.getBody();
+            if (responseBody == null) {
+                tokenExchangeFailures.increment();
+                throw new RuntimeException("Google token response body is null");
+            }
+            final String accessToken = (String) responseBody.get("access_token");
+            final String refreshToken = (String) responseBody.get("refresh_token");
+            final Integer expiresIn = (responseBody.get("expires_in") instanceof Number)
+                ? ((Number) responseBody.get("expires_in")).intValue()
+                : null;
 
             if (accessToken == null) {
                 tokenExchangeFailures.increment();
-                throw new RuntimeException("No access_token in Google response");
+                final Object err = responseBody.get("error_description");
+                final String desc = (err != null) ? err.toString() : "No access_token in Google response";
+                throw new RuntimeException(desc);
             }
 
             return new GoogleTokenResponse(accessToken, refreshToken, expiresIn);
         } catch (Exception e) {
             tokenExchangeFailures.increment();
-            log.error("Failed to exchange authorization code for token", e);
+            log.error("Failed to exchange authorization code for Google token", e);
             throw new RuntimeException("Token exchange failed: " + e.getMessage(), e);
         }
     }
 
-    private UserProfileData fetchUserProfile(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
+    private UserProfileData fetchUserProfile(final String accessToken) {
+        final HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
+        headers.set("User-Agent", "AREA-Backend/1.0");
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        HttpEntity<Void> request = new HttpEntity<>(headers);
+        final HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<Map<String, Object>> userResponse = restTemplate.exchange(
+        final ResponseEntity<Map<String, Object>> userResponse = restTemplate.exchange(
             "https://www.googleapis.com/oauth2/v2/userinfo",
             HttpMethod.GET,
             request,
-            new ParameterizedTypeReference<Map<String, Object>>() { }
+            new ParameterizedTypeReference<Map<String, Object>>() {}
         );
 
         if (!userResponse.getStatusCode().is2xxSuccessful() || userResponse.getBody() == null) {
             throw new RuntimeException("Failed to fetch Google user profile");
         }
 
-        Map<String, Object> userBody = userResponse.getBody();
+        final Map<String, Object> userBody = userResponse.getBody();
+        if (userBody == null) {
+            throw new RuntimeException("Google user profile response body is null");
+        }
 
-        String email = (String) userBody.get("email");
-        String userIdentifier = (String) userBody.get("id");
-        String name = (String) userBody.getOrDefault("name", "");
-        String givenName = (String) userBody.getOrDefault("given_name", "");
-        String familyName = (String) userBody.getOrDefault("family_name", "");
-        String picture = (String) userBody.getOrDefault("picture", "");
-        String locale = (String) userBody.getOrDefault("locale", "");
-        Boolean verifiedEmail = (Boolean) userBody.getOrDefault("verified_email", false);
+        final String email = (String) userBody.get("email");
+        final String userIdentifier = (String) userBody.get("id");
+        final String name = (String) userBody.getOrDefault("name", "");
+        final String givenName = (String) userBody.getOrDefault("given_name", "");
+        final String familyName = (String) userBody.getOrDefault("family_name", "");
+        final String picture = (String) userBody.getOrDefault("picture", "");
+        final String locale = (String) userBody.getOrDefault("locale", "");
+        final Boolean verifiedEmail = (Boolean) userBody.getOrDefault("verified_email", Boolean.FALSE);
 
         if (userIdentifier == null) {
             throw new RuntimeException("Google user id is missing in profile response");
@@ -313,11 +342,11 @@ public class OAuthGoogleService extends OAuthService {
     }
 
     private UserOAuthIdentity handleUserAuthentication(
-            UserProfileData profileData,
-            String accessToken,
-            String refreshToken,
-            Integer expiresIn) {
-
+        final UserProfileData profileData,
+        final String accessToken,
+        final String refreshToken,
+        final Integer expiresIn
+    ) {
         Optional<User> userOpt = Optional.empty();
         if (profileData.email != null && !profileData.email.isEmpty()) {
             userOpt = userRepository.findByEmail(profileData.email);
@@ -331,7 +360,7 @@ public class OAuthGoogleService extends OAuthService {
             if (profileData.picture != null && !profileData.picture.isEmpty()) {
                 user.setAvatarUrl(profileData.picture);
             }
-            this.userRepository.save(user);
+            userRepository.save(user);
         } else {
             user = new User();
             user.setEmail(profileData.email);
@@ -341,7 +370,7 @@ public class OAuthGoogleService extends OAuthService {
             if (profileData.picture != null && !profileData.picture.isEmpty()) {
                 user.setAvatarUrl(profileData.picture);
             }
-            user = this.userRepository.save(user);
+            user = userRepository.save(user);
         }
 
         Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository
@@ -371,7 +400,7 @@ public class OAuthGoogleService extends OAuthService {
             oauth.setUpdatedAt(LocalDateTime.now());
         }
 
-        Map<String, Object> tokenMeta = new HashMap<>();
+        final Map<String, Object> tokenMeta = new HashMap<>();
         tokenMeta.put("name", profileData.name);
         tokenMeta.put("given_name", profileData.givenName);
         tokenMeta.put("family_name", profileData.familyName);
@@ -381,7 +410,7 @@ public class OAuthGoogleService extends OAuthService {
         oauth.setTokenMeta(tokenMeta);
 
         try {
-            oauth = this.userOAuthIdentityRepository.save(oauth);
+            oauth = userOAuthIdentityRepository.save(oauth);
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("duplicate key")) {
                 oauthOpt = userOAuthIdentityRepository.findByUserAndProvider(user, this.providerKey);
@@ -395,7 +424,7 @@ public class OAuthGoogleService extends OAuthService {
                     oauth.setExpiresAt(calculateExpirationTime(expiresIn));
                     oauth.setUpdatedAt(LocalDateTime.now());
                     oauth.setTokenMeta(tokenMeta);
-                    oauth = this.userOAuthIdentityRepository.save(oauth);
+                    oauth = userOAuthIdentityRepository.save(oauth);
                 } else {
                     throw new RuntimeException("Failed to handle OAuth identity: " + e.getMessage(), e);
                 }
@@ -407,10 +436,9 @@ public class OAuthGoogleService extends OAuthService {
         return oauth;
     }
 
-    private AuthResponse generateAuthResponse(UserOAuthIdentity oauth, HttpServletResponse response) {
-        User user = oauth.getUser();
-        UserResponse userResponse = new UserResponse();
-
+    private AuthResponse generateAuthResponse(final UserOAuthIdentity oauth, final HttpServletResponse response) {
+        final User user = oauth.getUser();
+        final UserResponse userResponse = new UserResponse();
         userResponse.setId(user.getId());
         userResponse.setEmail(user.getEmail());
         userResponse.setIsActive(user.getIsActive());
@@ -419,11 +447,11 @@ public class OAuthGoogleService extends OAuthService {
         userResponse.setLastLoginAt(user.getLastLoginAt());
         userResponse.setAvatarUrl(user.getAvatarUrl());
 
-        String accessToken;
-        String refreshToken;
+        final String accessToken;
+        final String refreshToken;
         try {
-            accessToken = this.jwtService.generateAccessToken(userResponse.getId(), userResponse.getEmail());
-            refreshToken = this.jwtService.generateRefreshToken(userResponse.getId(), userResponse.getEmail());
+            accessToken = jwtService.generateAccessToken(userResponse.getId(), userResponse.getEmail());
+            refreshToken = jwtService.generateRefreshToken(userResponse.getId(), userResponse.getEmail());
         } catch (Exception e) {
             log.error("JWT token generation failed", e);
             throw new RuntimeException("JWT token generation failed: " + e.getMessage(), e);
@@ -445,12 +473,12 @@ public class OAuthGoogleService extends OAuthService {
         }
 
         return new AuthResponse(
-            "Login successful",
+            "Login successful", 
             userResponse
-        );
+            );
     }
 
-    private LocalDateTime calculateExpirationTime(Integer expiresIn) {
+    private LocalDateTime calculateExpirationTime(final Integer expiresIn) {
         if (expiresIn == null) {
             return LocalDateTime.now().plusHours(1);
         }
@@ -458,11 +486,11 @@ public class OAuthGoogleService extends OAuthService {
     }
 
     private static class GoogleTokenResponse {
-        String accessToken;
-        String refreshToken;
-        Integer expiresIn;
+        final String accessToken;
+        final String refreshToken;
+        final Integer expiresIn;
 
-        GoogleTokenResponse(String accessToken, String refreshToken, Integer expiresIn) {
+        GoogleTokenResponse(final String accessToken, final String refreshToken, final Integer expiresIn) {
             this.accessToken = accessToken;
             this.refreshToken = refreshToken;
             this.expiresIn = expiresIn;
@@ -470,25 +498,26 @@ public class OAuthGoogleService extends OAuthService {
     }
 
     private static class UserProfileData {
-        String email;
-        String userIdentifier;
-        String name;
-        String givenName;
-        String familyName;
-        String picture;
-        String locale;
-        Boolean verifiedEmail;
+        final String email;
+        final String userIdentifier;
+        final String name;
+        final String givenName;
+        final String familyName;
+        final String picture;
+        final String locale;
+        final Boolean verifiedEmail;
 
         /**
-         * Constructs UserProfileData with all user profile information
-         * @param email User email address
-         * @param userIdentifier Unique user identifier from Google
-         * @param name Full name
-         * @param givenName First name
-         * @param familyName Last name
-         * @param picture Profile picture URL
-         * @param locale User locale
-         * @param verifiedEmail Email verification status
+         * Constructs a UserProfileData instance with comprehensive user profile information retrieved from Google OAuth.
+         *
+         * @param email the user's email address from their Google account
+         * @param userIdentifier the unique identifier for the user from Google's OAuth system
+         * @param name the user's full display name
+         * @param givenName the user's first name
+         * @param familyName the user's last name
+         * @param picture the URL to the user's profile picture
+         * @param locale the user's preferred locale/language setting
+         * @param verifiedEmail indicates whether the email address has been verified by Google
          */
         @SuppressWarnings("ParameterNumber")
         UserProfileData(

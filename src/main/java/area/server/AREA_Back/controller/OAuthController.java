@@ -9,19 +9,24 @@ import area.server.AREA_Back.dto.OAuthProvider;
 import area.server.AREA_Back.service.Auth.OAuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/api/oauth")
 @Tag(name = "OAuth", description = "API for managing oauth and providers")
@@ -42,37 +47,67 @@ public class OAuthController {
     }
 
     @GetMapping("/{provider}/authorize")
-    public ResponseEntity<String> authorize(@PathVariable("provider") String provider,
-                                          HttpServletResponse response) {
+    public ResponseEntity<String> authorize(
+            @PathVariable("provider") String provider,
+            @RequestParam(value = "app_redirect_uri", required = false) String appRedirectUri,
+            @RequestParam(value = "returnUrl", required = false, defaultValue = "/") String returnUrl,
+            HttpServletResponse response) {
 
         Optional<OAuthService> svc = oauthServices.stream()
             .filter(s -> s.getProviderKey().equalsIgnoreCase(provider))
             .findFirst();
 
         if (svc.isEmpty()) {
+            log.warn("Authorize: provider '{}' not found", provider);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Provider not found");
         }
 
         try {
-            String authorizationUrl = svc.get().getUserAuthUrl();
-            response.setHeader("Location", authorizationUrl);
+            String baseAuthorizeUrl = svc.get().getUserAuthUrl();
+            String finalAuthorizeUrl = baseAuthorizeUrl;
+
+            if (appRedirectUri != null && !appRedirectUri.isBlank()) {
+                Map<String, String> stateMap = new HashMap<>();
+                stateMap.put("app_redirect_uri", appRedirectUri);
+                stateMap.put("returnUrl", (returnUrl == null || returnUrl.isBlank()) ? "/" : returnUrl);
+                stateMap.put("provider", provider.toLowerCase());
+
+                String json = "{\"app_redirect_uri\":\"" + escapeJson(appRedirectUri) + "\","
+                        + "\"returnUrl\":\"" + escapeJson(stateMap.get("returnUrl")) + "\","
+                        + "\"provider\":\"" + escapeJson(stateMap.get("provider")) + "\"}";
+
+                String encoded = URLEncoder.encode(json, StandardCharsets.UTF_8);
+                finalAuthorizeUrl = baseAuthorizeUrl + (baseAuthorizeUrl.contains("?") ? "&" : "?") + "state=" + encoded;
+
+                log.debug("Authorize: adding state for mobile hints provider={}, app_redirect_uri={}, returnUrl={}",
+                        provider, appRedirectUri, returnUrl);
+            }
+
+            response.setHeader("Location", finalAuthorizeUrl);
             response.setStatus(HttpServletResponse.SC_FOUND);
             return ResponseEntity.status(HttpStatus.FOUND).body("Redirecting to " + provider + "...");
 
         } catch (Exception e) {
+            log.error("Authorize: failed to build redirect for provider={}, error={}", provider, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Failed to redirect to " + provider + ": " + e.getMessage());
         }
     }
 
+    private String escapeJson(String v) {
+        return v.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
     @PostMapping("/{provider}/exchange")
-    public ResponseEntity<AuthResponse> exchangeToken(@PathVariable("provider") String provider,
+    public ResponseEntity<Map<String, Object>> exchangeToken(@PathVariable("provider") String provider,
                                                         @RequestBody Map<String, String> requestBody,
                                                         HttpServletResponse response) {
 
         String authorizationCode = requestBody.get("code");
         if (authorizationCode == null || authorizationCode.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Exchange: missing authorization code for provider={}", provider);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Missing authorization code", "provider", provider));
         }
 
         Optional<OAuthService> svc = oauthServices.stream()
@@ -80,17 +115,32 @@ public class OAuthController {
             .findFirst();
 
         if (svc.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            log.warn("Exchange: provider '{}' not found", provider);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Provider not found", "provider", provider));
         }
 
         try {
             OAuthLoginRequest request = new OAuthLoginRequest(authorizationCode);
             AuthResponse result = svc.get().authenticate(request, response);
-            return ResponseEntity.ok(result);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", result.getMessage());
+            body.put("user", result.getUser());
+            body.put("provider", provider);
+            return ResponseEntity.ok(body);
+
         } catch (UnsupportedOperationException e) {
-            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+            log.warn("Exchange: provider '{}' not implemented", provider, e);
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(Map.of("message", "Provider not implemented", "provider", provider));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Exchange: OAuth failed for provider={}, error={}", provider, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message", "OAuth exchange failed",
+                            "error", e.getMessage(),
+                            "provider", provider));
         }
     }
 }

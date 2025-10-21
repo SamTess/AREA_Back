@@ -230,10 +230,11 @@ public class OAuthGithubService extends OAuthService {
     private String exchangeCodeForToken(String authorizationCode) {
         tokenExchangeCalls.increment();
         try {
-            String tokenUrl = "https://github.com/login/oauth/access_token";
+            final String tokenUrl = "https://github.com/login/oauth/access_token";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.set("User-Agent", "AREA-Backend/1.0");
             headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
@@ -253,13 +254,16 @@ public class OAuthGithubService extends OAuthService {
 
             if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
                 tokenExchangeFailures.increment();
-                throw new RuntimeException("Failed to exchange token with GitHub");
+                throw new RuntimeException("Failed to exchange token with GitHub (http "
+                    + tokenResponse.getStatusCode().value() + ")");
             }
 
             Object githubAccessTokenObj = tokenResponse.getBody().get("access_token");
             if (githubAccessTokenObj == null) {
                 tokenExchangeFailures.increment();
-                throw new RuntimeException("No access_token in GitHub response");
+                Object err = tokenResponse.getBody().get("error_description");
+                String desc = (err != null) ? err.toString() : "No access_token in GitHub response";
+                throw new RuntimeException(desc);
             }
             return githubAccessTokenObj.toString();
         } catch (Exception e) {
@@ -287,7 +291,8 @@ public class OAuthGithubService extends OAuthService {
     private UserProfileData fetchUserProfile(String githubAccessToken) {
         HttpHeaders authHeaders = new HttpHeaders();
         authHeaders.setBearerAuth(githubAccessToken);
-        authHeaders.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+        authHeaders.set("User-Agent", "AREA-Backend/1.0");
+        authHeaders.set("Accept", "application/vnd.github+json");
 
         HttpEntity<Void> authRequest = new HttpEntity<>(authHeaders);
 
@@ -303,27 +308,9 @@ public class OAuthGithubService extends OAuthService {
         }
 
         java.util.Map<String, Object> userBody = userResp.getBody();
-        Object avatarUrlObj = userBody.get("avatar_url");
-        String avatarUrl;
-        if (avatarUrlObj != null) {
-            avatarUrl = avatarUrlObj.toString();
-        } else {
-            avatarUrl = "";
-        }
-        Object nameObj = userBody.get("name");
-        String name;
-        if (nameObj != null) {
-            name = nameObj.toString();
-        } else {
-            name = "";
-        }
-        Object loginObj = userBody.get("login");
-        String login;
-        if (loginObj != null) {
-            login = loginObj.toString();
-        } else {
-            login = "";
-        }
+        String avatarUrl = userBody.getOrDefault("avatar_url", "").toString();
+        String name = userBody.getOrDefault("name", "").toString();
+        String login = userBody.getOrDefault("login", "").toString();
 
         Object idObj = userBody.get("id");
         if (idObj == null) {

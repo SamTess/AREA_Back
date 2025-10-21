@@ -1,8 +1,10 @@
 var classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService =
 [
-    [ "JwtService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a8602b30432419735cc1e78bfe1a30427", null ],
+    [ "JwtService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a6aeeadd35403566a48aad1012e2327b6", null ],
     [ "extractEmailFromAccessToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a4370bddbe6102f50cbd0baae5606f435", null ],
     [ "extractEmailFromRefreshToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a47b20dd3d75fdb734ea44a1802f935bb", null ],
+    [ "extractJtiFromAccessToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a691394dd8ca9cad91a676037662860e9", null ],
+    [ "extractJtiFromRefreshToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a5f418ede17bfc90634030d8c6597fbd9", null ],
     [ "extractUserIdFromAccessToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a7b7dfad6d320ab70cd916c244ccd0e69", null ],
     [ "extractUserIdFromRefreshToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a05886495bfab1908688734d8c3f8ce93", null ],
     [ "generateAccessToken", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ac0da167bdbed442e842cbfe9e4fa861e", null ],

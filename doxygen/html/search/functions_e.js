@@ -14,6 +14,9 @@ var searchData=
   ['resttemplate_11',['restTemplate',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1RestTemplateConfig.html#a41418e08056499940e2829ede31b054e',1,'area::server::AREA_Back::config::RestTemplateConfig']]],
   ['retrymanager_12',['RetryManager',['../classarea_1_1server_1_1AREA__Back_1_1worker_1_1RetryManager.html#aa958adac13066be22d5352d8634854c4',1,'area::server::AREA_Back::worker::RetryManager']]],
   ['retrystatistics_13',['RetryStatistics',['../classarea_1_1server_1_1AREA__Back_1_1worker_1_1RetryManager_1_1RetryStatistics.html#a70fb59c3ac171c5b5453052ceda62284',1,'area::server::AREA_Back::worker::RetryManager::RetryStatistics']]],
-  ['revokeserviceaccount_14',['revokeServiceAccount',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService.html#a0dd40673afa84bfb924484753f0ce5b3',1,'area::server::AREA_Back::service::Auth::ServiceAccountService']]],
-  ['rotaterefreshtoken_15',['rotateRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a82b0b2813ab7946e362374243c21da55',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]]
+  ['revokeaccesstokenbyjti_14',['revokeAccessTokenByJti',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#af4d3403a2c19359b267e9606734180a4',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]],
+  ['revokealluseraccesstokens_15',['revokeAllUserAccessTokens',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a32042205e646c12a771be3b2cd058b1c',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]],
+  ['revokerefreshtokenbyjti_16',['revokeRefreshTokenByJti',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#ad55a6af4df0fcd44af71c13829bc8ebd',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]],
+  ['revokeserviceaccount_17',['revokeServiceAccount',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService.html#a0dd40673afa84bfb924484753f0ce5b3',1,'area::server::AREA_Back::service::Auth::ServiceAccountService']]],
+  ['rotaterefreshtoken_18',['rotateRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a82b0b2813ab7946e362374243c21da55',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]]
 ];

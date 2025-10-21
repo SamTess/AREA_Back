@@ -131,6 +131,18 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4188e8ef150f25da4fa902e12b3748a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06d3d0b4c8ff06ca5b3f7245a50d6df0" id="r_a06d3d0b4c8ff06ca5b3f7245a50d6df0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a06d3d0b4c8ff06ca5b3f7245a50d6df0">extendAccessTokenTTL</a> (String accessToken, Duration newTTL)</td></tr>
 <tr class="separator:a06d3d0b4c8ff06ca5b3f7245a50d6df0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4d3403a2c19359b267e9606734180a4" id="r_af4d3403a2c19359b267e9606734180a4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#af4d3403a2c19359b267e9606734180a4">revokeAccessTokenByJti</a> (String jti)</td></tr>
+<tr class="separator:af4d3403a2c19359b267e9606734180a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad55a6af4df0fcd44af71c13829bc8ebd" id="r_ad55a6af4df0fcd44af71c13829bc8ebd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#ad55a6af4df0fcd44af71c13829bc8ebd">revokeRefreshTokenByJti</a> (String jti)</td></tr>
+<tr class="separator:ad55a6af4df0fcd44af71c13829bc8ebd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23ab35dbc8be48d78a5c90e3796d2046" id="r_a23ab35dbc8be48d78a5c90e3796d2046"><td class="memItemLeft" align="right" valign="top">java.util.Set&lt; Object &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a23ab35dbc8be48d78a5c90e3796d2046">getUserActiveTokenJtis</a> (UUID userId)</td></tr>
+<tr class="separator:a23ab35dbc8be48d78a5c90e3796d2046"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32042205e646c12a771be3b2cd058b1c" id="r_a32042205e646c12a771be3b2cd058b1c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a32042205e646c12a771be3b2cd058b1c">revokeAllUserAccessTokens</a> (UUID userId)</td></tr>
+<tr class="separator:a32042205e646c12a771be3b2cd058b1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa378d0fe284f2265149015358b3c0472" id="r_aa378d0fe284f2265149015358b3c0472"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#aa378d0fe284f2265149015358b3c0472">isAccessTokenValidByJti</a> (String jti)</td></tr>
+<tr class="separator:aa378d0fe284f2265149015358b3c0472"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afbfa7e19a191014b453d9309b5902914" id="r_afbfa7e19a191014b453d9309b5902914"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#afbfa7e19a191014b453d9309b5902914">isRefreshTokenValidByJti</a> (String jti)</td></tr>
+<tr class="separator:afbfa7e19a191014b453d9309b5902914"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a6a75704e2bb39d8c99089f38548b23c2" name="a6a75704e2bb39d8c99089f38548b23c2"></a>
@@ -296,6 +308,24 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a23ab35dbc8be48d78a5c90e3796d2046" name="a23ab35dbc8be48d78a5c90e3796d2046"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23ab35dbc8be48d78a5c90e3796d2046">&#9670;&#160;</a></span>getUserActiveTokenJtis()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">java.util.Set&lt; Object &gt; area.server.AREA_Back.service.Redis.RedisTokenService.getUserActiveTokenJtis </td>
+          <td>(</td>
+          <td class="paramtype">UUID&#160;</td>
+          <td class="paramname"><em>userId</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="acf28fb0e9906e8b1b9e5a0b6d09e7f19" name="acf28fb0e9906e8b1b9e5a0b6d09e7f19"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acf28fb0e9906e8b1b9e5a0b6d09e7f19">&#9670;&#160;</a></span>getUserIdFromAccessToken()</h2>
 
@@ -367,6 +397,24 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aa378d0fe284f2265149015358b3c0472" name="aa378d0fe284f2265149015358b3c0472"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa378d0fe284f2265149015358b3c0472">&#9670;&#160;</a></span>isAccessTokenValidByJti()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">boolean area.server.AREA_Back.service.Redis.RedisTokenService.isAccessTokenValidByJti </td>
+          <td>(</td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>jti</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a226c7a9dd332aa25ad680d282d9451ae" name="a226c7a9dd332aa25ad680d282d9451ae"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a226c7a9dd332aa25ad680d282d9451ae">&#9670;&#160;</a></span>isRefreshTokenValid()</h2>
 
@@ -389,6 +437,78 @@ Public Member Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afbfa7e19a191014b453d9309b5902914" name="afbfa7e19a191014b453d9309b5902914"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afbfa7e19a191014b453d9309b5902914">&#9670;&#160;</a></span>isRefreshTokenValidByJti()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">boolean area.server.AREA_Back.service.Redis.RedisTokenService.isRefreshTokenValidByJti </td>
+          <td>(</td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>jti</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af4d3403a2c19359b267e9606734180a4" name="af4d3403a2c19359b267e9606734180a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4d3403a2c19359b267e9606734180a4">&#9670;&#160;</a></span>revokeAccessTokenByJti()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void area.server.AREA_Back.service.Redis.RedisTokenService.revokeAccessTokenByJti </td>
+          <td>(</td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>jti</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a32042205e646c12a771be3b2cd058b1c" name="a32042205e646c12a771be3b2cd058b1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32042205e646c12a771be3b2cd058b1c">&#9670;&#160;</a></span>revokeAllUserAccessTokens()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void area.server.AREA_Back.service.Redis.RedisTokenService.revokeAllUserAccessTokens </td>
+          <td>(</td>
+          <td class="paramtype">UUID&#160;</td>
+          <td class="paramname"><em>userId</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad55a6af4df0fcd44af71c13829bc8ebd" name="ad55a6af4df0fcd44af71c13829bc8ebd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad55a6af4df0fcd44af71c13829bc8ebd">&#9670;&#160;</a></span>revokeRefreshTokenByJti()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void area.server.AREA_Back.service.Redis.RedisTokenService.revokeRefreshTokenByJti </td>
+          <td>(</td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>jti</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -488,7 +608,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><b>area</b></li><li class="navelem"><b>server</b></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back.html">AREA_Back</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1service.html">service</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Redis.html">Redis</a></li><li class="navelem"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html">RedisTokenService</a></li>
-    <li class="footer">Generated on Mon Oct 20 2025 16:09:51 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
+    <li class="footer">Generated on Tue Oct 21 2025 07:47:52 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
   </ul>
 </div>
 </body>

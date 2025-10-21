@@ -39,6 +39,8 @@ var searchData=
   ['extendaccesstokenttl_36',['extendAccessTokenTTL',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a06d3d0b4c8ff06ca5b3f7245a50d6df0',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]],
   ['extractemailfromaccesstoken_37',['extractEmailFromAccessToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a4370bddbe6102f50cbd0baae5606f435',1,'area::server::AREA_Back::service::Auth::JwtService']]],
   ['extractemailfromrefreshtoken_38',['extractEmailFromRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a47b20dd3d75fdb734ea44a1802f935bb',1,'area::server::AREA_Back::service::Auth::JwtService']]],
-  ['extractuseridfromaccesstoken_39',['extractUserIdFromAccessToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a7b7dfad6d320ab70cd916c244ccd0e69',1,'area::server::AREA_Back::service::Auth::JwtService']]],
-  ['extractuseridfromrefreshtoken_40',['extractUserIdFromRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a05886495bfab1908688734d8c3f8ce93',1,'area::server::AREA_Back::service::Auth::JwtService']]]
+  ['extractjtifromaccesstoken_39',['extractJtiFromAccessToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a691394dd8ca9cad91a676037662860e9',1,'area::server::AREA_Back::service::Auth::JwtService']]],
+  ['extractjtifromrefreshtoken_40',['extractJtiFromRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a5f418ede17bfc90634030d8c6597fbd9',1,'area::server::AREA_Back::service::Auth::JwtService']]],
+  ['extractuseridfromaccesstoken_41',['extractUserIdFromAccessToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a7b7dfad6d320ab70cd916c244ccd0e69',1,'area::server::AREA_Back::service::Auth::JwtService']]],
+  ['extractuseridfromrefreshtoken_42',['extractUserIdFromRefreshToken',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a05886495bfab1908688734d8c3f8ce93',1,'area::server::AREA_Back::service::Auth::JwtService']]]
 ];

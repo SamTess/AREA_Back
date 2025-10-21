@@ -47,9 +47,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "AboutController_8java.html",
-"classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#ac6e61e8a0222bfb06541c0b623204837",
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html#a272ef86f21a74cea2b0bb6bdef322a4b",
-"functions.html"
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a02c1004a0b0fccb712dd83a81790091d",
+"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html#a60db5d57d381b7174bd9d29600ca58d6",
+"enumarea_1_1server_1_1AREA__Back_1_1entity_1_1enums_1_1ExecutionStatus.html#a1039bfa22ecadeab1322104aa38e9957"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

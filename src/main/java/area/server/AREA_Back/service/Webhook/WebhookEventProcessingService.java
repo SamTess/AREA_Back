@@ -95,8 +95,8 @@ public class WebhookEventProcessingService {
 
     private boolean matchesGitHubAction(String actionKey, String webhookAction) {
         return switch (webhookAction.toLowerCase()) {
-            case "issues" -> actionKey.equals("new_issue") || actionKey.equals("issue_updated");
-            case "pull_request" -> actionKey.equals("new_pull_request") || actionKey.equals("pr_updated");
+            case "issues", "issue" -> actionKey.equals("new_issue") || actionKey.equals("issue_updated");
+            case "pull_request", "pull_requests" -> actionKey.equals("new_pull_request") || actionKey.equals("pr_updated");
             case "push" -> actionKey.equals("push_to_branch") || actionKey.equals("commit_pushed");
             case "release" -> actionKey.equals("new_release");
             case "star" -> actionKey.equals("repository_starred");

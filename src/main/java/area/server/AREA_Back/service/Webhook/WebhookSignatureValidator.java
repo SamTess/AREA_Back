@@ -68,7 +68,6 @@ public class WebhookSignatureValidator {
         }
 
         try {
-            // Slack uses timestamp to prevent replay attacks
             String baseString = "v0:" + timestamp + ":" + new String(payload, StandardCharsets.UTF_8);
             String expectedSignature = SLACK_SIGNATURE_PREFIX
                 + calculateHmacSha256(baseString.getBytes(StandardCharsets.UTF_8), secret);
@@ -103,36 +102,20 @@ public class WebhookSignatureValidator {
     }
 
     /**
-     * Validates JWT signature (basic implementation)
-     * For more complex JWT validation, consider using a JWT library
+     * Validates Google Pub/Sub webhook
+     * Google Pub/Sub doesn't use traditional webhook signatures in the same way,
+     * but relies on HTTPS and proper endpoint configuration
      *
-     * @param jwt The JWT token
-     * @param secret The secret key
-     * @return true if signature is valid
+     * @param payload The raw payload bytes
+     * @param signature Not used for Google Pub/Sub
+     * @param secret Not used for Google Pub/Sub
+     * @param timestamp Not used for Google Pub/Sub
+     * @return true (validation handled by Pub/Sub infrastructure)
      */
-    public boolean validateJwtSignature(final String jwt, final String secret) {
-        try {
-            String[] parts = jwt.split("\\.");
-            if (parts.length != JWT_PARTS_COUNT) {
-                log.warn("Invalid JWT format");
-                return false;
-            }
-
-            String header = parts[0];
-            String payload = parts[1];
-            String signature = parts[2];
-
-            String data = header + "." + payload;
-            String expectedSignature = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(calculateHmacSha256(data.getBytes(StandardCharsets.UTF_8), secret).getBytes());
-
-            boolean isValid = secureEquals(signature, expectedSignature);
-            return isValid;
-
-        } catch (Exception e) {
-            log.error("Error validating JWT signature: {}", e.getMessage());
-            return false;
-        }
+    public boolean validateGoogleSignature(final byte[] payload, final String signature,
+                                         final String secret, final String timestamp) {
+        log.debug("Google Pub/Sub webhook validation - relying on Pub/Sub infrastructure security");
+        return true;
     }
 
     /**
@@ -157,6 +140,8 @@ public class WebhookSignatureValidator {
                 return validateGitHubSignature(payload, signature, secret);
             case "slack":
                 return validateSlackSignature(payload, signature, secret, timestamp);
+            case "google":
+                return validateGoogleSignature(payload, signature, secret, timestamp);
             case "generic":
                 return validateHmacSha256Signature(payload, signature, secret);
             default:

@@ -1,6 +1,11 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.entity.Execution;
+import area.server.AREA_Back.entity.UserOAuthIdentity;
+import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
+import area.server.AREA_Back.service.Webhook.GitHubWebhookService;
+import area.server.AREA_Back.service.Webhook.GoogleWatchService;
+import area.server.AREA_Back.service.Webhook.GoogleWebhookService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
 import area.server.AREA_Back.service.Webhook.WebhookSecretService;
@@ -17,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,10 +37,14 @@ import java.util.UUID;
 @Slf4j
 public class WebhookController {
 
+    private final GitHubWebhookService gitHubWebhookService;
+    private final GoogleWebhookService googleWebhookService;
+    private final GoogleWatchService googleWatchService;
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;
     private final WebhookSecretService webhookSecretService;
+    private final UserOAuthIdentityRepository userOAuthIdentityRepository;
 
     /**
      * Generic webhook receiver endpoint
@@ -84,26 +94,67 @@ public class WebhookController {
             }
 
             List<Execution> executions;
+            Map<String, Object> serviceResult = new HashMap<>();
+
+            if (userId == null) {
+                if ("github".equalsIgnoreCase(service)) {
+                    userId = identifyGitHubUser(payload);
+                } else if ("google".equalsIgnoreCase(service)) {
+                    serviceResult = googleWebhookService.processWebhook(payload);
+                    executions = List.of();
+
+                    long processingTime = System.currentTimeMillis() - startTime;
+                    log.info("Google webhook processed: action={}, time={}ms", action, processingTime);
+
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "processed");
+                    response.put("service", service);
+                    response.put("action", action);
+                    response.put("eventId", eventId);
+                    response.put("processingTimeMs", processingTime);
+                    response.put("timestamp", LocalDateTime.now().toString());
+                    response.put("serviceResult", serviceResult);
+                    return ResponseEntity.ok(response);
+                }
+
+                if (userId != null) {
+                    log.info("Identified user {} from {} webhook payload", userId, service);
+                }
+            }
+
             if (userId != null) {
                 executions = eventProcessingService.processWebhookEventForUser(service, action, payload, userId);
             } else {
-                executions = eventProcessingService.processWebhookEventGlobally(service, action, payload);
+                log.warn("Could not identify user for {} webhook, skipping processing", service);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "User identification failed",
+                    "message", "Could not identify which user this webhook belongs to",
+                    "service", service,
+                    "action", action,
+                    "eventId", eventId,
+                    "timestamp", LocalDateTime.now().toString()
+                ));
             }
 
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms",
                     service, action, executions.size(), processingTime);
 
-            return ResponseEntity.ok(Map.of(
-                "status", "processed",
-                "service", service,
-                "action", action,
-                "eventId", eventId,
-                "executionsCreated", executions.size(),
-                "executionIds", executions.stream().map(e -> e.getId().toString()).toList(),
-                "processingTimeMs", processingTime,
-                "timestamp", LocalDateTime.now().toString()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "processed");
+            response.put("service", service);
+            response.put("action", action);
+            response.put("eventId", eventId);
+            response.put("executionsCreated", executions.size());
+            response.put("executionIds", executions.stream().map(e -> e.getId().toString()).toList());
+            response.put("processingTimeMs", processingTime);
+            response.put("timestamp", LocalDateTime.now().toString());
+
+            if (!serviceResult.isEmpty()) {
+                response.put("serviceResult", serviceResult);
+            }
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("Failed to process webhook: service={}, action={}, error={}",
@@ -121,27 +172,74 @@ public class WebhookController {
     }
 
     /**
-     * Test endpoint for webhook validation
+     * Start Gmail watch for a user
      */
-    @PostMapping("/test/{service}")
-    @Operation(summary = "Test webhook endpoint",
-               description = "Test endpoint for webhook validation without processing")
-    public ResponseEntity<Map<String, Object>> testWebhook(
-            @PathVariable String service,
-            @RequestParam(required = false) UUID userId,
-            @RequestBody(required = false) Map<String, Object> payload,
-            HttpServletRequest request) {
+    @PostMapping("/google/gmail/watch/start")
+    @Operation(summary = "Start Gmail watch channel",
+               description = "Starts watching Gmail for new emails and changes")
+    public ResponseEntity<Map<String, Object>> startGmailWatch(
+            @RequestParam String userId,
+            @RequestParam(required = false) String[] labelIds) {
 
-        log.info("Test webhook called for service: {}, userId: {}", service, userId);
+        log.info("Starting Gmail watch for user: {}", userId);
+        try {
+            Map<String, Object> result = googleWatchService.startGmailWatch(UUID.fromString(userId), labelIds);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Failed to start Gmail watch for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Failed to start Gmail watch",
+                "message", e.getMessage(),
+                "userId", userId
+            ));
+        }
+    }
 
-        return ResponseEntity.ok(Map.of(
-            "status", "success",
-            "message", "Webhook endpoint is working",
-            "service", service,
-            "userId", userId != null ? userId.toString() : "none",
-            "headersReceived", getRequestHeaders(request),
-            "timestamp", LocalDateTime.now().toString()
-        ));
+    /**
+     * Stop Gmail watch channel
+     */
+    @PostMapping("/google/gmail/watch/stop")
+    @Operation(summary = "Stop Gmail watch channel",
+               description = "Stops watching Gmail for changes")
+    public ResponseEntity<Map<String, Object>> stopGmailWatch(@RequestParam String userId) {
+
+        log.info("Stopping Gmail watch for user: {}", userId);
+        try {
+            Map<String, Object> result = googleWatchService.stopGmailWatch(UUID.fromString(userId));
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Failed to stop Gmail watch for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Failed to stop Gmail watch",
+                "message", e.getMessage(),
+                "userId", userId
+            ));
+        }
+    }
+
+    /**
+     * Refresh Gmail watch channel
+     */
+    @PostMapping("/google/gmail/watch/refresh")
+    @Operation(summary = "Refresh Gmail watch channel",
+               description = "Refreshes an expired Gmail watch channel")
+    public ResponseEntity<Map<String, Object>> refreshGmailWatch(
+            @RequestParam String userId,
+            @RequestParam(required = false) String[] labelIds) {
+
+        log.info("Refreshing Gmail watch for user: {}", userId);
+        try {
+            String[] labels = labelIds != null ? labelIds : new String[0];
+            Map<String, Object> result = googleWatchService.refreshGmailWatch(UUID.fromString(userId), labels);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Failed to refresh Gmail watch for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "Failed to refresh Gmail watch",
+                "message", e.getMessage(),
+                "userId", userId
+            ));
+        }
     }
 
     /**
@@ -181,6 +279,16 @@ public class WebhookController {
                     return deliveryId;
                 }
                 break;
+            case "google":
+                @SuppressWarnings("unchecked")
+                Map<String, Object> message = (Map<String, Object>) payload.get("message");
+                if (message != null) {
+                    String messageId = (String) message.get("messageId");
+                    if (messageId != null) {
+                        return messageId;
+                    }
+                }
+                break;
             case "slack":
                 Object eventId = payload.get("event_id");
                 if (eventId != null) {
@@ -201,6 +309,7 @@ public class WebhookController {
         return switch (service.toLowerCase()) {
             case "github" -> request.getHeader("X-Hub-Signature-256");
             case "slack" -> request.getHeader("X-Slack-Signature");
+            case "google" -> null;
             default -> request.getHeader("X-Signature");
         };
     }
@@ -242,5 +351,51 @@ public class WebhookController {
         request.getHeaderNames().asIterator()
             .forEachRemaining(name -> headers.put(name, request.getHeader(name)));
         return headers;
+    }
+
+    /**
+     * Identify GitHub user from webhook payload based on repository owner
+     */
+    private UUID identifyGitHubUser(Map<String, Object> payload) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> repository = (Map<String, Object>) payload.get("repository");
+            if (repository == null) {
+                log.warn("No repository information in GitHub webhook payload");
+                return null;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> owner = (Map<String, Object>) repository.get("owner");
+            if (owner == null) {
+                log.warn("No owner information in GitHub webhook repository");
+                return null;
+            }
+
+            String githubLogin = (String) owner.get("login");
+            if (githubLogin == null) {
+                log.warn("No login in GitHub webhook repository owner");
+                return null;
+            }
+
+            log.debug("Looking up user with GitHub login: {}", githubLogin);
+
+            List<UserOAuthIdentity> githubIdentities = userOAuthIdentityRepository.findByProvider("github");
+
+            for (UserOAuthIdentity identity : githubIdentities) {
+                Map<String, Object> tokenMeta = identity.getTokenMeta();
+                if (tokenMeta != null && githubLogin.equals(tokenMeta.get("login"))) {
+                    log.info("Found GitHub user {} for login {}", identity.getUser().getId(), githubLogin);
+                    return identity.getUser().getId();
+                }
+            }
+
+            log.warn("No user found with GitHub login: {}", githubLogin);
+            return null;
+
+        } catch (Exception e) {
+            log.error("Error identifying GitHub user from webhook: {}", e.getMessage());
+            return null;
+        }
     }
 }

@@ -28,6 +28,8 @@ class RegisterRequestTest {
         registerRequest = new RegisterRequest();
         registerRequest.setEmail("test@example.com");
         registerRequest.setPassword("password123");
+        registerRequest.setFirstName("John");
+        registerRequest.setLastName("Doe");
         registerRequest.setAvatarUrl("https://example.com/avatar.jpg");
     }
 
@@ -97,14 +99,20 @@ class RegisterRequestTest {
     void testGettersAndSetters() {
         String testEmail = "getter@example.com";
         String testPassword = "getterPassword123";
+        String testFirstName = "Jane";
+        String testLastName = "Smith";
         String testAvatarUrl = "https://example.com/getter-avatar.jpg";
 
         registerRequest.setEmail(testEmail);
         registerRequest.setPassword(testPassword);
+        registerRequest.setFirstName(testFirstName);
+        registerRequest.setLastName(testLastName);
         registerRequest.setAvatarUrl(testAvatarUrl);
 
         assertEquals(testEmail, registerRequest.getEmail());
         assertEquals(testPassword, registerRequest.getPassword());
+        assertEquals(testFirstName, registerRequest.getFirstName());
+        assertEquals(testLastName, registerRequest.getLastName());
         assertEquals(testAvatarUrl, registerRequest.getAvatarUrl());
     }
 
@@ -115,17 +123,23 @@ class RegisterRequestTest {
         assertNotNull(noArgsRequest);
         assertNull(noArgsRequest.getEmail());
         assertNull(noArgsRequest.getPassword());
+        assertNull(noArgsRequest.getFirstName());
+        assertNull(noArgsRequest.getLastName());
         assertNull(noArgsRequest.getAvatarUrl());
 
         // Test all-args constructor
         String testEmail = "constructor@example.com";
         String testPassword = "constructorPassword123";
+        String testFirstName = "Alice";
+        String testLastName = "Johnson";
         String testAvatarUrl = "https://example.com/constructor-avatar.jpg";
 
-        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, testAvatarUrl);
+        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, testFirstName, testLastName, testAvatarUrl);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
+        assertEquals(testFirstName, allArgsRequest.getFirstName());
+        assertEquals(testLastName, allArgsRequest.getLastName());
         assertEquals(testAvatarUrl, allArgsRequest.getAvatarUrl());
     }
 
@@ -138,13 +152,61 @@ class RegisterRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", "https://example.com/avatar.jpg");
-        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", "https://example.com/avatar.jpg");
-        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", "https://example.com/avatar.jpg");
+        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", "John", "Doe", "https://example.com/avatar.jpg");
+        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", "John", "Doe", "https://example.com/avatar.jpg");
+        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", "Jane", "Smith", "https://example.com/avatar.jpg");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());
 
         assertFalse(request1.equals(request3));
+    }
+
+    @Test
+    void testRegisterRequestWithNullFirstName() {
+        registerRequest.setFirstName(null);
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("First name is required")));
+    }
+
+    @Test
+    void testRegisterRequestWithBlankFirstName() {
+        registerRequest.setFirstName("   ");
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("First name is required")));
+    }
+
+    @Test
+    void testRegisterRequestWithNullLastName() {
+        registerRequest.setLastName(null);
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Last name is required")));
+    }
+
+    @Test
+    void testRegisterRequestWithBlankLastName() {
+        registerRequest.setLastName("   ");
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Last name is required")));
+    }
+
+    @Test
+    void testRegisterRequestWithLongFirstName() {
+        registerRequest.setFirstName("A".repeat(101));
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("First name must not exceed 100 characters")));
+    }
+
+    @Test
+    void testRegisterRequestWithLongLastName() {
+        registerRequest.setLastName("B".repeat(101));
+        Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Last name must not exceed 100 characters")));
     }
 }

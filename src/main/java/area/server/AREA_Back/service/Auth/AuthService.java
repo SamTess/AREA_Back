@@ -124,6 +124,8 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setFirstname(request.getFirstName());
+        user.setLastname(request.getLastName());
         user.setAvatarUrl(request.getAvatarUrl());
         user.setIsActive(true);
         user.setIsAdmin(false);

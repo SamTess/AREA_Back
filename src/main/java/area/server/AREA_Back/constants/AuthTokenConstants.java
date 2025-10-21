@@ -31,6 +31,21 @@ public final class AuthTokenConstants {
     public static final String REDIS_REFRESH_TOKEN_PREFIX = "refresh:";
 
     /**
+     * Redis prefix for access token JTI mapping
+     */
+    public static final String REDIS_ACCESS_JTI_PREFIX = "access:jti:";
+
+    /**
+     * Redis prefix for refresh token JTI mapping
+     */
+    public static final String REDIS_REFRESH_JTI_PREFIX = "refresh:jti:";
+
+    /**
+     * Redis prefix for user active tokens set
+     */
+    public static final String REDIS_USER_TOKENS_PREFIX = "user:tokens:";
+
+    /**
      * Token type in the JWT payload for access tokens
      */
     public static final String ACCESS_TOKEN_TYPE = "access";

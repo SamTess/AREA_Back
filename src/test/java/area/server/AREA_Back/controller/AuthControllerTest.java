@@ -94,7 +94,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnCreatedWhenRegistrationSuccessful() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -115,7 +115,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenEmailAlreadyExists() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 
@@ -134,7 +134,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
@@ -151,7 +151,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenServiceThrowsRuntimeException() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Service error"));
 
@@ -168,7 +168,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnCreatedWhenSuccessful() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -186,7 +186,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnConflictWhenEmailExists() {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 
@@ -203,7 +203,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleEmptyEmail() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("", "password123", null);
+            RegisterRequest request = new RegisterRequest("", "password123", "John", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -218,7 +218,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleShortPassword() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "123", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "123", "John", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -233,7 +233,67 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleInvalidEmailFormat() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("invalid-email", "password123", null);
+            RegisterRequest request = new RegisterRequest("invalid-email", "password123", "John", "Doe", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleEmptyFirstName() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "", "Doe", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleEmptyLastName() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleNullFirstName() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, "Doe", null);
+
+            // When
+            String requestJson = objectMapper.writeValueAsString(request);
+
+            // Then
+            mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void registerShouldHandleNullLastName() throws Exception {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", null, null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);

@@ -5,6 +5,7 @@ import area.server.AREA_Back.dto.ServiceConnectionStatus;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.service.Auth.AuthService;
+import area.server.AREA_Back.service.Auth.OAuthDiscordService;
 import area.server.AREA_Back.service.Auth.OAuthGithubService;
 import area.server.AREA_Back.service.Auth.OAuthGoogleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class OAuthLinkController {
 
     private final AuthService authService;
+    private final OAuthDiscordService oauthDiscordService;
     private final OAuthGithubService oauthGithubService;
     private final OAuthGoogleService oauthGoogleService;
 
@@ -54,6 +56,9 @@ public class OAuthLinkController {
 
             UserOAuthIdentity linkedIdentity;
             switch (provider.toLowerCase()) {
+                case "discord":
+                    linkedIdentity = oauthDiscordService.linkToExistingUser(currentUser, authorizationCode);
+                    break;
                 case "github":
                     linkedIdentity = oauthGithubService.linkToExistingUser(currentUser, authorizationCode);
                     break;
@@ -100,6 +105,7 @@ public class OAuthLinkController {
 
     private String getServiceDisplayName(String provider) {
         return switch (provider.toLowerCase()) {
+            case "discord" -> "Discord";
             case "github" -> "GitHub";
             case "google" -> "Google";
             case "microsoft" -> "Microsoft";
@@ -109,6 +115,7 @@ public class OAuthLinkController {
 
     private String getServiceIconUrl(String provider) {
         return switch (provider.toLowerCase()) {
+            case "discord" -> "https://cdn.simpleicons.org/discord/5865F2";
             case "github" -> "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg";
             case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
             case "microsoft" -> "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg";

@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
@@ -22,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class OAuthGithubServiceTest {
@@ -53,17 +55,29 @@ class OAuthGithubServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private JwtCookieProperties jwtCookieProperties;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGithubService oauthGithubService;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
+
+        // Setup JwtCookieProperties mock with lenient() to avoid UnnecessaryStubbingException
+        lenient().when(jwtCookieProperties.getAccessTokenExpiry()).thenReturn(900);
+        lenient().when(jwtCookieProperties.getRefreshTokenExpiry()).thenReturn(604800);
+        lenient().when(jwtCookieProperties.isSecure()).thenReturn(false);
+        lenient().when(jwtCookieProperties.getSameSite()).thenReturn("Strict");
+        lenient().when(jwtCookieProperties.getDomain()).thenReturn(null);
+
         oauthGithubService = new OAuthGithubService(
             "test-client-id",
             "test-client-secret",
             "http://localhost:3000",
             jwtService,
+            jwtCookieProperties,
             meterRegistry,
             redisTokenService,
             passwordEncoder,

@@ -20,6 +20,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.UserResponse;
@@ -75,6 +76,7 @@ public class OAuthGoogleService extends OAuthService {
         final String googleClientSecret,
         @Value("${OAUTH_REDIRECT_BASE_URL:http://localhost:3000}") final String redirectBaseUrl,
         final JwtService jwtService,
+        final JwtCookieProperties jwtCookieProperties,
         final MeterRegistry meterRegistry,
         final RedisTokenService redisTokenService,
         final PasswordEncoder passwordEncoder,
@@ -103,7 +105,8 @@ public class OAuthGoogleService extends OAuthService {
                 + "&prompt=consent",
             googleClientId,
             googleClientSecret,
-            jwtService
+            jwtService,
+            jwtCookieProperties
         );
         this.redirectBaseUrl = redirectBaseUrl;
         this.meterRegistry = meterRegistry;

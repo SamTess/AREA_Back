@@ -1,5 +1,6 @@
 package area.server.AREA_Back.service;
 
+import area.server.AREA_Back.config.JwtCookieProperties;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
@@ -30,7 +31,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 /**
  * Unit tests for OAuthGoogleService
@@ -63,17 +64,29 @@ class OAuthGoogleServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private JwtCookieProperties jwtCookieProperties;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGoogleService oauthGoogleService;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
+
+        // Setup JwtCookieProperties mock with lenient() to avoid UnnecessaryStubbingException
+        lenient().when(jwtCookieProperties.getAccessTokenExpiry()).thenReturn(900);
+        lenient().when(jwtCookieProperties.getRefreshTokenExpiry()).thenReturn(604800);
+        lenient().when(jwtCookieProperties.isSecure()).thenReturn(false);
+        lenient().when(jwtCookieProperties.getSameSite()).thenReturn("Strict");
+        lenient().when(jwtCookieProperties.getDomain()).thenReturn(null);
+
         oauthGoogleService = new OAuthGoogleService(
             "test-google-client-id",
             "test-google-client-secret",
             "http://localhost:3000",
             jwtService,
+            jwtCookieProperties,
             meterRegistry,
             redisTokenService,
             passwordEncoder,
@@ -121,7 +134,7 @@ class OAuthGoogleServiceTest {
     @Test
     void testUserAuthUrlContainsRequiredScopes() {
         String authUrl = oauthGoogleService.getUserAuthUrl();
-        
+
         // Verify the URL contains all required scopes
         assertTrue(authUrl.contains("openid"));
         assertTrue(authUrl.contains("email"));
@@ -136,7 +149,7 @@ class OAuthGoogleServiceTest {
     @Test
     void testUserAuthUrlContainsOfflineAccess() {
         String authUrl = oauthGoogleService.getUserAuthUrl();
-        
+
         // Verify offline access for refresh tokens
         assertTrue(authUrl.contains("access_type=offline"));
         assertTrue(authUrl.contains("prompt=consent"));

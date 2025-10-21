@@ -9,17 +9,10 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -28,15 +21,9 @@ import java.util.Map;
 @Slf4j
 public class SlackWebhookService {
 
-    private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final String SLACK_SIGNATURE_VERSION = "v0";
-
     private final MeterRegistry meterRegistry;
     private final ActionInstanceRepository actionInstanceRepository;
     private final ExecutionTriggerService executionTriggerService;
-
-    @Value("${app.webhook.slack.secret:}")
-    private String slackWebhookSecret;
 
     private Counter webhookCounter;
     private Counter messageEventCounter;
@@ -82,8 +69,7 @@ public class SlackWebhookService {
                 .register(meterRegistry);
     }
 
-    public Map<String, Object> processWebhook(String slackSignature, String timestamp,
-                                               Map<String, Object> payload) {
+    public Map<String, Object> processWebhook(Map<String, Object> payload) {
         webhookCounter.increment();
         log.info("Processing Slack webhook");
 
@@ -97,15 +83,6 @@ public class SlackWebhookService {
             if ("url_verification".equals(type)) {
                 urlVerificationCounter.increment();
                 return handleUrlVerification(payload);
-            }
-
-            if (slackWebhookSecret != null && !slackWebhookSecret.isEmpty()) {
-                if (!verifySlackSignature(slackSignature, timestamp, payload)) {
-                    webhookProcessingFailures.increment();
-                    result.put("status", "error");
-                    result.put("error", "Invalid signature");
-                    return result;
-                }
             }
 
             if ("event_callback".equals(type)) {
@@ -133,31 +110,6 @@ public class SlackWebhookService {
         Map<String, Object> result = new HashMap<>();
         result.put("challenge", payload.get("challenge"));
         return result;
-    }
-
-    private boolean verifySlackSignature(String slackSignature, String timestamp, Map<String, Object> payload) {
-        if (slackSignature == null || timestamp == null) {
-            log.warn("Missing Slack signature or timestamp");
-            return false;
-        }
-
-        try {
-            String baseString = String.format("%s:%s:%s", SLACK_SIGNATURE_VERSION, timestamp, payload.toString());
-
-            Mac mac = Mac.getInstance(HMAC_SHA256);
-            SecretKeySpec secretKeySpec = new SecretKeySpec(
-                slackWebhookSecret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256);
-            mac.init(secretKeySpec);
-
-            byte[] hash = mac.doFinal(baseString.getBytes(StandardCharsets.UTF_8));
-            String computedSignature = SLACK_SIGNATURE_VERSION + "=" + HexFormat.of().formatHex(hash);
-
-            return computedSignature.equals(slackSignature);
-
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("Error verifying Slack signature: {}", e.getMessage(), e);
-            return false;
-        }
     }
 
     private Map<String, Object> processEvent(String eventType, Map<String, Object> event,

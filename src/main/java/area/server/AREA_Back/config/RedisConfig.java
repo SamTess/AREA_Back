@@ -146,9 +146,6 @@ public class RedisConfig {
         cacheConfigurations.put("services-catalog", defaultConfig
                 .entryTtl(Duration.ofHours(SERVICES_CATALOG_TTL_HOURS)));
 
-        cacheConfigurations.put("area-drafts", defaultConfig
-                .entryTtl(Duration.ofHours(24)));
-
         cacheConfigurations.put("actionDefinitions", defaultConfig
                 .entryTtl(Duration.ofMinutes(DEFAULT_TTL_MINUTES)));
 

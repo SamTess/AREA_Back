@@ -71,8 +71,6 @@ public class SlackActionService {
                     return addReaction(slackToken, inputPayload, actionParams);
                 case "pin_message":
                     return pinMessage(slackToken, inputPayload, actionParams);
-                case "set_status":
-                    return setStatus(slackToken, inputPayload, actionParams);
                 case "invite_to_channel":
                     return inviteToChannel(slackToken, inputPayload, actionParams);
                 default:
@@ -259,40 +257,6 @@ public class SlackActionService {
         return result;
     }
 
-    private Map<String, Object> setStatus(String token, Map<String, Object> input, Map<String, Object> params) {
-        String statusText = getRequiredParam(params, "status_text", String.class);
-        String statusEmoji = getOptionalParam(params, "status_emoji", String.class, ":speech_balloon:");
-
-        String url = String.format("%s/users.profile.set", SLACK_API_BASE);
-
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("status_text", statusText);
-        profile.put("status_emoji", statusEmoji);
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("profile", profile);
-
-        HttpHeaders headers = createSlackHeaders(token);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-            url, HttpMethod.POST, request,
-            new ParameterizedTypeReference<Map<String, Object>>() { }
-        );
-
-        Map<String, Object> responseBody = response.getBody();
-        if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
-            throw new RuntimeException("Failed to set Slack status: "
-                + errorMsg);
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("status_text", statusText);
-        return result;
-    }
-
     private Map<String, Object> inviteToChannel(String token, Map<String, Object> input, Map<String, Object> params) {
         String channel = getRequiredParam(params, "channel", String.class);
         String users = getRequiredParam(params, "users", String.class);
@@ -342,7 +306,13 @@ public class SlackActionService {
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
             String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
-            log.warn("Failed to fetch Slack messages: {}", errorMsg);
+            if ("channel_not_found".equals(errorMsg)) {
+                log.warn("Failed to fetch Slack messages for channel '{}': {}. "
+                    + "Make sure the AREA bot has been invited to this channel. "
+                    + "Use the command '/invite @AREA' in the channel.", channel, errorMsg);
+            } else {
+                log.warn("Failed to fetch Slack messages from channel '{}': {}", channel, errorMsg);
+            }
             return Collections.emptyList();
         }
 

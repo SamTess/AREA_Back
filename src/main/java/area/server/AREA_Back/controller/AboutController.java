@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,17 +30,17 @@ public class AboutController {
     @Autowired
     private ActionDefinitionRepository actionDefinitionRepository;
 
-    @GetMapping("/about.json")
+        @GetMapping("/about.json")
     @Operation(summary = "Information about available services",
                description = "Returns the list of services, actions and reactions available in the API")
     public ResponseEntity<Map<String, Object>> getAbout(HttpServletRequest request) {
-        Map<String, Object> about = new HashMap<>();
+        Map<String, Object> about = new LinkedHashMap<>();
 
-        Map<String, Object> client = new HashMap<>();
+        Map<String, Object> client = new LinkedHashMap<>();
         client.put("host", getClientIpAddress(request));
         about.put("client", client);
 
-        Map<String, Object> server = new HashMap<>();
+        Map<String, Object> server = new LinkedHashMap<>();
         server.put("current_time", Instant.now().getEpochSecond());
         server.put("services", buildServicesInfo());
         about.put("server", server);
@@ -66,7 +66,7 @@ public class AboutController {
         List<Service> services = serviceRepository.findAllEnabledServices();
 
         return services.stream().map(service -> {
-            Map<String, Object> serviceInfo = new HashMap<>();
+            Map<String, Object> serviceInfo = new LinkedHashMap<>();
             serviceInfo.put("name", service.getName());
 
             List<ActionDefinition> actions = actionDefinitionRepository
@@ -92,7 +92,7 @@ public class AboutController {
     }
 
     private Map<String, Object> mapActionDefinition(ActionDefinition actionDef) {
-        Map<String, Object> mapped = new HashMap<>();
+        Map<String, Object> mapped = new LinkedHashMap<>();
         mapped.put("name", actionDef.getName());
         mapped.put("description", actionDef.getDescription());
         return mapped;

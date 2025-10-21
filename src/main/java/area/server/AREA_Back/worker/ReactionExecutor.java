@@ -7,6 +7,7 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
+import area.server.AREA_Back.service.Area.Services.SlackActionService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class ReactionExecutor {
     private final GitHubActionService gitHubActionService;
     private final GoogleActionService googleActionService;
     private final DiscordActionService discordActionService;
+    private final SlackActionService slackActionService;
     private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
@@ -123,7 +125,7 @@ public class ReactionExecutor {
                 result.putAll(executeEmailAction(actionKey, inputPayload, actionParams));
                 break;
             case "slack":
-                result.putAll(executeSlackAction(actionKey, inputPayload, actionParams));
+                result.putAll(executeSlackAction(actionKey, inputPayload, actionParams, execution));
                 break;
             case "github":
                 result.putAll(executeGitHubAction(actionKey, inputPayload, actionParams, execution));
@@ -165,17 +167,22 @@ public class ReactionExecutor {
     }
 
     private Map<String, Object> executeSlackAction(final String actionKey, final Map<String, Object> input,
-                                                  final Map<String, Object> params) {
-        simulateLatency(SLACK_MIN_LATENCY, SLACK_MAX_LATENCY);
+                                                  final Map<String, Object> params, final Execution execution) {
+        UUID userId = execution.getActionInstance().getUser().getId();
 
-        return Map.of(
-            "type", "slack",
-            "action", actionKey,
-            "channel", params.getOrDefault("channel", "#general"),
-            "message", params.getOrDefault("message", "AREA triggered"),
-            "status", "posted",
-            "timestamp", System.currentTimeMillis() / MILLIS_TO_SECONDS
-        );
+        try {
+            return slackActionService.executeSlackAction(actionKey, input, params, userId);
+        } catch (Exception e) {
+            log.error("Failed to execute Slack action: {}", e.getMessage(), e);
+            simulateLatency(SLACK_MIN_LATENCY, SLACK_MAX_LATENCY);
+            return Map.of(
+                "type", "slack",
+                "action", actionKey,
+                "status", "failed",
+                "error", e.getMessage(),
+                "timestamp", System.currentTimeMillis() / MILLIS_TO_SECONDS
+            );
+        }
     }
 
     private Map<String, Object> executeWebhookAction(final String actionKey, final Map<String, Object> input,

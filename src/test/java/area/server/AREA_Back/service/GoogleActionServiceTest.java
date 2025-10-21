@@ -2,10 +2,7 @@ package area.server.AREA_Back.service;
 
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import area.server.AREA_Back.service.Area.Services.Google.GoogleApiUtils;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleCalendarService;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleDriveService;
 import area.server.AREA_Back.service.Area.Services.Google.GoogleGmailService;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleSheetsService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,15 +33,6 @@ class GoogleActionServiceTest {
 
     @Mock
     private GoogleGmailService gmailService;
-
-    @Mock
-    private GoogleCalendarService calendarService;
-
-    @Mock
-    private GoogleDriveService driveService;
-
-    @Mock
-    private GoogleSheetsService sheetsService;
 
     private SimpleMeterRegistry meterRegistry;
     private GoogleActionService googleActionService;
@@ -219,57 +207,6 @@ class GoogleActionServiceTest {
     }
 
     @Test
-    void testCalendarCreateEventActionKey() {
-        // Given
-        UUID userId = UUID.randomUUID();
-        Map<String, Object> inputPayload = new HashMap<>();
-        Map<String, Object> actionParams = new HashMap<>();
-
-        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
-        when(calendarService.createCalendarEvent(anyString(), any(), any()))
-            .thenThrow(new RuntimeException("Missing required parameter"));
-
-        // When & Then - should fail due to missing params or API call
-        assertThrows(RuntimeException.class, () -> {
-            googleActionService.executeGoogleAction("calendar_create_event", inputPayload, actionParams, userId);
-        });
-    }
-
-    @Test
-    void testDriveCreateFolderActionKey() {
-        // Given
-        UUID userId = UUID.randomUUID();
-        Map<String, Object> inputPayload = new HashMap<>();
-        Map<String, Object> actionParams = new HashMap<>();
-
-        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
-        when(driveService.createDriveFolder(anyString(), any(), any()))
-            .thenThrow(new RuntimeException("Missing required parameter"));
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> {
-            googleActionService.executeGoogleAction("drive_create_folder", inputPayload, actionParams, userId);
-        });
-    }
-
-    @Test
-    void testSheetsAddRowActionKey() {
-        // Given
-        UUID userId = UUID.randomUUID();
-        Map<String, Object> inputPayload = new HashMap<>();
-        Map<String, Object> actionParams = new HashMap<>();
-
-        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
-        when(sheetsService.addSheetRow(anyString(), any(), any()))
-            .thenThrow(new RuntimeException("Missing required parameter"));
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> {
-            googleActionService.executeGoogleAction("sheets_add_row", inputPayload, actionParams, userId);
-        });
-    }
-
-    @Test
     void testCheckNewGmailMessagesEventKey() {
         // Given
         UUID userId = UUID.randomUUID();
@@ -286,46 +223,6 @@ class GoogleActionServiceTest {
         );
 
         // Then - returns empty list on API failure
-        assertNotNull(events);
-    }
-
-    @Test
-    void testCheckNewCalendarEventsEventKey() {
-        // Given
-        UUID userId = UUID.randomUUID();
-        Map<String, Object> actionParams = new HashMap<>();
-        LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
-
-        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
-        when(calendarService.checkNewCalendarEvents(anyString(), any(), any()))
-            .thenReturn(Collections.emptyList());
-
-        // When
-        List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
-            "calendar_new_event", actionParams, userId, lastCheck
-        );
-
-        // Then
-        assertNotNull(events);
-    }
-
-    @Test
-    void testCheckNewDriveFilesEventKey() {
-        // Given
-        UUID userId = UUID.randomUUID();
-        Map<String, Object> actionParams = new HashMap<>();
-        LocalDateTime lastCheck = LocalDateTime.now().minusMinutes(5);
-
-        when(googleApiUtils.getGoogleToken(userId)).thenReturn("valid-token");
-        when(driveService.checkNewDriveFiles(anyString(), any(), any()))
-            .thenReturn(Collections.emptyList());
-
-        // When
-        List<Map<String, Object>> events = googleActionService.checkGoogleEvents(
-            "drive_new_file", actionParams, userId, lastCheck
-        );
-
-        // Then
         assertNotNull(events);
     }
 }

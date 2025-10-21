@@ -140,15 +140,13 @@ class OAuthGoogleServiceTest {
     void testUserAuthUrlContainsRequiredScopes() {
         String authUrl = oauthGoogleService.getUserAuthUrl();
 
-        // Verify the URL contains all required scopes
+        // Verify the URL contains all required scopes (Gmail only)
         assertTrue(authUrl.contains("openid"));
         assertTrue(authUrl.contains("email"));
         assertTrue(authUrl.contains("profile"));
         assertTrue(authUrl.contains("gmail.readonly"));
         assertTrue(authUrl.contains("gmail.send"));
-        assertTrue(authUrl.contains("calendar"));
-        assertTrue(authUrl.contains("drive"));
-        assertTrue(authUrl.contains("spreadsheets"));
+        assertTrue(authUrl.contains("gmail.modify"));
     }
 
     @Test

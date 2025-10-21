@@ -15,5 +15,8 @@ var searchData=
   ['servicetokenrequest_12',['ServiceTokenRequest',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1ServiceTokenRequest.html',1,'area::server::AREA_Back::dto']]],
   ['servicetokenresponse_13',['ServiceTokenResponse',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1ServiceTokenResponse.html',1,'area::server::AREA_Back::dto']]],
   ['servicetokenstatusresponse_14',['ServiceTokenStatusResponse',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1ServiceTokenStatusResponse.html',1,'area::server::AREA_Back::dto']]],
-  ['storetokenrequest_15',['StoreTokenRequest',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1StoreTokenRequest.html',1,'area::server::AREA_Back::dto']]]
+  ['slackactionservice_15',['SlackActionService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html',1,'area::server::AREA_Back::service::Area::Services']]],
+  ['slackeventpollingservice_16',['SlackEventPollingService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html',1,'area::server::AREA_Back::service::Polling']]],
+  ['slackwebhookservice_17',['SlackWebhookService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService.html',1,'area::server::AREA_Back::service::Webhook']]],
+  ['storetokenrequest_18',['StoreTokenRequest',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1StoreTokenRequest.html',1,'area::server::AREA_Back::dto']]]
 ];

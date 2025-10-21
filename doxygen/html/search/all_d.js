@@ -8,7 +8,7 @@ var searchData=
   ['oauthdiscordservice_2ejava_5',['OAuthDiscordService.java',['../OAuthDiscordService_8java.html',1,'']]],
   ['oauthgithubservice_6',['oauthgithubservice',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html',1,'area.server.AREA_Back.service.Auth.OAuthGithubService'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html#af665ccd316c6d2038e536240c83f3f84',1,'area.server.AREA_Back.service.Auth.OAuthGithubService.OAuthGithubService()']]],
   ['oauthgithubservice_2ejava_7',['OAuthGithubService.java',['../OAuthGithubService_8java.html',1,'']]],
-  ['oauthgoogleservice_8',['oauthgoogleservice',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html#add54788881f1be8ca769858b9f7616fd',1,'area.server.AREA_Back.service.Auth.OAuthGoogleService.OAuthGoogleService()'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html',1,'area.server.AREA_Back.service.Auth.OAuthGoogleService']]],
+  ['oauthgoogleservice_8',['oauthgoogleservice',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html',1,'area.server.AREA_Back.service.Auth.OAuthGoogleService'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html#add54788881f1be8ca769858b9f7616fd',1,'area.server.AREA_Back.service.Auth.OAuthGoogleService.OAuthGoogleService()']]],
   ['oauthgoogleservice_2ejava_9',['OAuthGoogleService.java',['../OAuthGoogleService_8java.html',1,'']]],
   ['oauthlinkcontroller_10',['OAuthLinkController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthLinkController.html',1,'area::server::AREA_Back::controller']]],
   ['oauthlinkcontroller_2ejava_11',['OAuthLinkController.java',['../OAuthLinkController_8java.html',1,'']]],
@@ -21,7 +21,9 @@ var searchData=
   ['oauthprovider_2ejava_18',['OAuthProvider.java',['../OAuthProvider_8java.html',1,'']]],
   ['oauthservice_19',['oauthservice',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html',1,'area.server.AREA_Back.service.Auth.OAuthService'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html#a4ae35c4f2dff486bc795444d1c05530a',1,'area.server.AREA_Back.service.Auth.OAuthService.OAuthService()']]],
   ['oauthservice_2ejava_20',['OAuthService.java',['../OAuthService_8java.html',1,'']]],
-  ['ok_21',['OK',['../enumarea_1_1server_1_1AREA__Back_1_1entity_1_1enums_1_1ExecutionStatus.html#a1039bfa22ecadeab1322104aa38e9957',1,'area::server::AREA_Back::entity::enums::ExecutionStatus']]],
-  ['openapiconfig_22',['OpenApiConfig',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1OpenApiConfig.html',1,'area::server::AREA_Back::config']]],
-  ['openapiconfig_2ejava_23',['OpenApiConfig.java',['../OpenApiConfig_8java.html',1,'']]]
+  ['oauthslackservice_21',['oauthslackservice',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html',1,'area.server.AREA_Back.service.Auth.OAuthSlackService'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html#add08d87a42da4a0a91d509a675f66d05',1,'area.server.AREA_Back.service.Auth.OAuthSlackService.OAuthSlackService()']]],
+  ['oauthslackservice_2ejava_22',['OAuthSlackService.java',['../OAuthSlackService_8java.html',1,'']]],
+  ['ok_23',['OK',['../enumarea_1_1server_1_1AREA__Back_1_1entity_1_1enums_1_1ExecutionStatus.html#a1039bfa22ecadeab1322104aa38e9957',1,'area::server::AREA_Back::entity::enums::ExecutionStatus']]],
+  ['openapiconfig_24',['OpenApiConfig',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1OpenApiConfig.html',1,'area::server::AREA_Back::config']]],
+  ['openapiconfig_2ejava_25',['OpenApiConfig.java',['../OpenApiConfig_8java.html',1,'']]]
 ];

@@ -131,7 +131,8 @@ var annotated_dup =
                 ] ],
                 [ "DiscordActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService" ],
                 [ "GitHubActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService" ],
-                [ "GoogleActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService" ]
+                [ "GoogleActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService" ],
+                [ "SlackActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService" ]
               ] ],
               [ "ActionLinkService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1ActionLinkService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1ActionLinkService" ],
               [ "AreaOrchestrationService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaOrchestrationService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaOrchestrationService" ],
@@ -148,6 +149,7 @@ var annotated_dup =
               [ "OAuthGithubService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService" ],
               [ "OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService" ],
               [ "OAuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService" ],
+              [ "OAuthSlackService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService" ],
               [ "ServiceAccountService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService" ],
               [ "ServiceCacheService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceCacheService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceCacheService" ],
               [ "TokenEncryptionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1TokenEncryptionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1TokenEncryptionService" ],
@@ -156,7 +158,8 @@ var annotated_dup =
             [ "Polling", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Polling.html", [
               [ "DiscordEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService" ],
               [ "GitHubEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService" ],
-              [ "GoogleEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService" ]
+              [ "GoogleEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService" ],
+              [ "SlackEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService" ]
             ] ],
             [ "Redis", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Redis.html", [
               [ "RedisEventService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisEventService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisEventService" ],
@@ -167,6 +170,7 @@ var annotated_dup =
               [ "GoogleWatchService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService" ],
               [ "GoogleWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService" ],
               [ "PayloadMappingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService" ],
+              [ "SlackWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService" ],
               [ "WebhookDeduplicationService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService" ],
               [ "WebhookEventProcessingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookEventProcessingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookEventProcessingService" ],
               [ "WebhookSecretService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSecretService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSecretService" ],

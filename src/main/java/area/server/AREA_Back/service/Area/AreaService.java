@@ -290,6 +290,7 @@ public class AreaService {
         response.setUserEmail(area.getUser().getEmail());
         response.setActions(area.getActions());
         response.setReactions(area.getReactions());
+        response.setLinks(actionLinkService.getActionLinksByArea(area.getId()));
         response.setCreatedAt(area.getCreatedAt());
         response.setUpdatedAt(area.getUpdatedAt());
         return response;

@@ -160,7 +160,11 @@ public class DiscordActionService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("message_id", response.getBody() != null ? response.getBody().get("id") : null);
+        Object messageId = null;
+        if (response.getBody() != null) {
+            messageId = response.getBody().get("id");
+        }
+        result.put("message_id", messageId);
         result.put("channel_id", channelId);
         return result;
     }
@@ -194,7 +198,11 @@ public class DiscordActionService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
-        result.put("channel_id", response.getBody() != null ? response.getBody().get("id") : null);
+        Object channelIdResult = null;
+        if (response.getBody() != null) {
+            channelIdResult = response.getBody().get("id");
+        }
+        result.put("channel_id", channelIdResult);
         result.put("channel_name", name);
         return result;
     }
@@ -266,7 +274,11 @@ public class DiscordActionService {
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("user_id", userId);
-        result.put("message_id", messageResponse.getBody() != null ? messageResponse.getBody().get("id") : null);
+        Object messageIdResult = null;
+        if (messageResponse.getBody() != null) {
+            messageIdResult = messageResponse.getBody().get("id");
+        }
+        result.put("message_id", messageIdResult);
         return result;
     }
 

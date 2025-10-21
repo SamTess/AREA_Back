@@ -29,6 +29,7 @@ import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
+import area.server.AREA_Back.service.Webhook.GoogleWatchService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -48,6 +49,7 @@ public class OAuthGoogleService extends OAuthService {
     private final UserRepository userRepository;
     private final RedisTokenService redisTokenService;
     private final MeterRegistry meterRegistry;
+    private final GoogleWatchService googleWatchService;
 
     private Counter oauthLoginSuccessCounter;
     private Counter oauthLoginFailureCounter;
@@ -68,6 +70,7 @@ public class OAuthGoogleService extends OAuthService {
      * @param userOAuthIdentityRepository OAuth identity repository
      * @param userRepository User repository
      * @param restTemplate Configured RestTemplate bean
+     * @param googleWatchService Google watch service for auto-starting webhooks
      */
     @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
@@ -83,7 +86,8 @@ public class OAuthGoogleService extends OAuthService {
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,
-        final RestTemplate restTemplate
+        final RestTemplate restTemplate,
+        final GoogleWatchService googleWatchService
     ) {
         super(
             "google",
@@ -96,11 +100,6 @@ public class OAuthGoogleService extends OAuthService {
                 + "%20https://www.googleapis.com/auth/gmail.readonly"
                 + "%20https://www.googleapis.com/auth/gmail.send"
                 + "%20https://www.googleapis.com/auth/gmail.modify"
-                + "%20https://www.googleapis.com/auth/calendar"
-                + "%20https://www.googleapis.com/auth/calendar.events"
-                + "%20https://www.googleapis.com/auth/drive"
-                + "%20https://www.googleapis.com/auth/drive.file"
-                + "%20https://www.googleapis.com/auth/spreadsheets"
                 + "&access_type=offline"
                 + "&prompt=consent",
             googleClientId,
@@ -115,6 +114,7 @@ public class OAuthGoogleService extends OAuthService {
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.userRepository = userRepository;
         this.restTemplate = restTemplate;
+        this.googleWatchService = googleWatchService;
     }
 
     @PostConstruct
@@ -161,6 +161,14 @@ public class OAuthGoogleService extends OAuthService {
             );
 
             oauthLoginSuccessCounter.increment();
+
+            try {
+                googleWatchService.startGmailWatch(oauth.getUser().getId());
+                log.info("Auto-started Gmail watch for user {}", oauth.getUser().getId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-start Gmail watch for user {}: {}", oauth.getUser().getId(), e.getMessage());
+            }
+
             return generateAuthResponse(oauth, response);
         } catch (Exception e) {
             oauthLoginFailureCounter.increment();
@@ -222,6 +230,18 @@ public class OAuthGoogleService extends OAuthService {
             oauth = this.userOAuthIdentityRepository.save(oauth);
             log.info("Successfully linked Google account {} to user {}",
                     profileData.userIdentifier, existingUser.getId());
+
+            try {
+                googleWatchService.startGmailWatch(existingUser.getId());
+                log.info("Auto-started Gmail watch for linked user {}", existingUser.getId());
+            } catch (Exception e) {
+                log.warn(
+                    "Failed to auto-start Gmail watch for linked user {}: {}",
+                    existingUser.getId(),
+                    e.getMessage()
+                );
+            }
+
             return oauth;
         } catch (Exception e) {
             log.error("Failed to link Google account to existing user", e);

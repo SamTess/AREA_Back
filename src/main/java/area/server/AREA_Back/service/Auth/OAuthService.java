@@ -26,6 +26,7 @@ public abstract class OAuthService {
     protected UserRepository userRepository;
     protected RedisTokenService redisTokenService;
 
+    @SuppressWarnings("ParameterNumber")
     protected OAuthService(
         String providerKey,
         String providerLabel,
@@ -75,10 +76,15 @@ public abstract class OAuthService {
     public abstract AuthResponse authenticate(OAuthLoginRequest request, HttpServletResponse response);
 
     protected void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        String secureFlag = jwtCookieProperties.isSecure() ? "Secure; " : "";
-        String domainAttribute = (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty())
-            ? "Domain=" + jwtCookieProperties.getDomain() + "; "
-            : "";
+        String secureFlag = "";
+        if (jwtCookieProperties.isSecure()) {
+            secureFlag = "Secure; ";
+        }
+        
+        String domainAttribute = "";
+        if (jwtCookieProperties.getDomain() != null && !jwtCookieProperties.getDomain().isEmpty()) {
+            domainAttribute = "Domain=" + jwtCookieProperties.getDomain() + "; ";
+        }
 
         response.setHeader("Set-Cookie", String.format(
             "%s=%s; Path=/; Max-Age=%d; HttpOnly; %s%sSameSite=%s",

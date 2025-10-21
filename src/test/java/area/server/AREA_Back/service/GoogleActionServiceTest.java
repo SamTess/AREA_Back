@@ -55,9 +55,6 @@ class GoogleActionServiceTest {
         googleActionService = new GoogleActionService(
             googleApiUtils,
             gmailService,
-            calendarService,
-            driveService,
-            sheetsService,
             meterRegistry
         );
 

@@ -91,7 +91,7 @@ var searchData=
   ['gettotalworkers_88',['getTotalWorkers',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1WorkerTrackingService.html#a08acccee39421dcbc5f49283460f5a26',1,'area::server::AREA_Back::service::WorkerTrackingService']]],
   ['getuser_89',['getUser',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1CustomUserDetailsService_1_1CustomUserPrincipal.html#a94f38cae41fb1e57ac8853564b80e7d7',1,'area::server::AREA_Back::service::CustomUserDetailsService::CustomUserPrincipal']]],
   ['getuseractivetokenjtis_90',['getUserActiveTokenJtis',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html#a23ab35dbc8be48d78a5c90e3796d2046',1,'area::server::AREA_Back::service::Redis::RedisTokenService']]],
-  ['getuserauthurl_91',['getuserauthurl',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html#a968c358b8bab63e65b92d9c117cea710',1,'area.server.AREA_Back.service.Auth.OAuthService.getUserAuthUrl()'],['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html#a7eba6137449e43a2b97bc2576d374ff4',1,'area.server.AREA_Back.dto.OAuthProvider.getUserAuthUrl()']]],
+  ['getuserauthurl_91',['getuserauthurl',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html#a7eba6137449e43a2b97bc2576d374ff4',1,'area.server.AREA_Back.dto.OAuthProvider.getUserAuthUrl()'],['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html#a968c358b8bab63e65b92d9c117cea710',1,'area.server.AREA_Back.service.Auth.OAuthService.getUserAuthUrl()']]],
   ['getuserbyid_92',['getUserById',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1UserController.html#a8b8d021c91b714578cfa305c2c8ed212',1,'area::server::AREA_Back::controller::UserController']]],
   ['getusercreationtype_93',['getUserCreationType',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1UserIdentityService.html#a6026fb24731bc8066b5500222770a622',1,'area::server::AREA_Back::service::Auth::UserIdentityService']]],
   ['getuserid_94',['getUserId',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1CustomUserDetailsService_1_1CustomUserPrincipal.html#a9bfa07a1341e42da65c43c974da6a650',1,'area::server::AREA_Back::service::CustomUserDetailsService::CustomUserPrincipal']]],
@@ -127,5 +127,9 @@ var searchData=
   ['googlegmailservice_124',['GoogleGmailService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html',1,'area::server::AREA_Back::service::Area::Services::Google']]],
   ['googlegmailservice_2ejava_125',['GoogleGmailService.java',['../GoogleGmailService_8java.html',1,'']]],
   ['googlesheetsservice_126',['GoogleSheetsService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService.html',1,'area::server::AREA_Back::service::Area::Services::Google']]],
-  ['googlesheetsservice_2ejava_127',['GoogleSheetsService.java',['../GoogleSheetsService_8java.html',1,'']]]
+  ['googlesheetsservice_2ejava_127',['GoogleSheetsService.java',['../GoogleSheetsService_8java.html',1,'']]],
+  ['googlewatchservice_128',['GoogleWatchService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html',1,'area::server::AREA_Back::service::Webhook']]],
+  ['googlewatchservice_2ejava_129',['GoogleWatchService.java',['../GoogleWatchService_8java.html',1,'']]],
+  ['googlewebhookservice_130',['GoogleWebhookService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html',1,'area::server::AREA_Back::service::Webhook']]],
+  ['googlewebhookservice_2ejava_131',['GoogleWebhookService.java',['../GoogleWebhookService_8java.html',1,'']]]
 ];

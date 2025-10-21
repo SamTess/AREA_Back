@@ -105,9 +105,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a34b29e20f4dfbcd82f83182eef0bd56c" id="r_a34b29e20f4dfbcd82f83182eef0bd56c"><td class="memItemLeft" align="right" valign="top">ResponseEntity&lt; Map&lt; String, Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#a34b29e20f4dfbcd82f83182eef0bd56c">handleWebhook</a> ( @Parameter(description=&quot;Service name (github, slack, etc.)&quot;) @PathVariable String service, @Parameter(description=&quot;Action type (issues, pull_request, message, etc.)&quot;) @PathVariable String action, @Parameter(description=&quot;Optional user ID to scope the webhook&quot;) @RequestParam(required=false) UUID userId, @RequestBody Map&lt; String, Object &gt; payload, HttpServletRequest request)</td></tr>
 <tr class="memdesc:a34b29e20f4dfbcd82f83182eef0bd56c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generic webhook receiver endpoint POST /api/hooks/{service}/{action}.  <br /></td></tr>
 <tr class="separator:a34b29e20f4dfbcd82f83182eef0bd56c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78dbcdbc0bdebb1d514de12e9baf5366" id="r_a78dbcdbc0bdebb1d514de12e9baf5366"><td class="memItemLeft" align="right" valign="top">ResponseEntity&lt; Map&lt; String, Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#a78dbcdbc0bdebb1d514de12e9baf5366">testWebhook</a> ( @PathVariable String service, @RequestParam(required=false) UUID userId, @RequestBody(required=false) Map&lt; String, Object &gt; payload, HttpServletRequest request)</td></tr>
-<tr class="memdesc:a78dbcdbc0bdebb1d514de12e9baf5366"><td class="mdescLeft">&#160;</td><td class="mdescRight">Test endpoint for webhook validation.  <br /></td></tr>
-<tr class="separator:a78dbcdbc0bdebb1d514de12e9baf5366"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2b2f219e39c6d4cc7cd2e5eb8d8466a" id="r_ab2b2f219e39c6d4cc7cd2e5eb8d8466a"><td class="memItemLeft" align="right" valign="top">ResponseEntity&lt; Map&lt; String, Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#ab2b2f219e39c6d4cc7cd2e5eb8d8466a">startGmailWatch</a> ( @RequestParam String userId, @RequestParam(required=false) String[] labelIds)</td></tr>
+<tr class="memdesc:ab2b2f219e39c6d4cc7cd2e5eb8d8466a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start Gmail watch for a user.  <br /></td></tr>
+<tr class="separator:ab2b2f219e39c6d4cc7cd2e5eb8d8466a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac23525dfcaa109b649f18c4620776c83" id="r_ac23525dfcaa109b649f18c4620776c83"><td class="memItemLeft" align="right" valign="top">ResponseEntity&lt; Map&lt; String, Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#ac23525dfcaa109b649f18c4620776c83">stopGmailWatch</a> (@RequestParam String userId)</td></tr>
+<tr class="memdesc:ac23525dfcaa109b649f18c4620776c83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop Gmail watch channel.  <br /></td></tr>
+<tr class="separator:ac23525dfcaa109b649f18c4620776c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb7538b3b386ce4f0e8ba926d06cfe70" id="r_adb7538b3b386ce4f0e8ba926d06cfe70"><td class="memItemLeft" align="right" valign="top">ResponseEntity&lt; Map&lt; String, Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#adb7538b3b386ce4f0e8ba926d06cfe70">refreshGmailWatch</a> ( @RequestParam String userId, @RequestParam(required=false) String[] labelIds)</td></tr>
+<tr class="memdesc:adb7538b3b386ce4f0e8ba926d06cfe70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Refresh Gmail watch channel.  <br /></td></tr>
+<tr class="separator:adb7538b3b386ce4f0e8ba926d06cfe70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Controller for handling webhooks from external services. </p>
@@ -160,35 +166,23 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a78dbcdbc0bdebb1d514de12e9baf5366" name="a78dbcdbc0bdebb1d514de12e9baf5366"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a78dbcdbc0bdebb1d514de12e9baf5366">&#9670;&#160;</a></span>testWebhook()</h2>
+<a id="adb7538b3b386ce4f0e8ba926d06cfe70" name="adb7538b3b386ce4f0e8ba926d06cfe70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb7538b3b386ce4f0e8ba926d06cfe70">&#9670;&#160;</a></span>refreshGmailWatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">ResponseEntity&lt; Map&lt; String, Object &gt; &gt; area.server.AREA_Back.controller.WebhookController.testWebhook </td>
+          <td class="memname">ResponseEntity&lt; Map&lt; String, Object &gt; &gt; area.server.AREA_Back.controller.WebhookController.refreshGmailWatch </td>
           <td>(</td>
-          <td class="paramtype">@PathVariable String&#160;</td>
-          <td class="paramname"><em>service</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">@RequestParam(required=false) UUID&#160;</td>
+          <td class="paramtype">@RequestParam String&#160;</td>
           <td class="paramname"><em>userId</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">@RequestBody(required=false) Map&lt; String, Object &gt;&#160;</td>
-          <td class="paramname"><em>payload</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HttpServletRequest&#160;</td>
-          <td class="paramname"><em>request</em>&#160;</td>
+          <td class="paramtype">@RequestParam(required=false) String[]&#160;</td>
+          <td class="paramname"><em>labelIds</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -198,7 +192,57 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Test endpoint for webhook validation. </p>
+<p>Refresh Gmail watch channel. </p>
+
+</div>
+</div>
+<a id="ab2b2f219e39c6d4cc7cd2e5eb8d8466a" name="ab2b2f219e39c6d4cc7cd2e5eb8d8466a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2b2f219e39c6d4cc7cd2e5eb8d8466a">&#9670;&#160;</a></span>startGmailWatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">ResponseEntity&lt; Map&lt; String, Object &gt; &gt; area.server.AREA_Back.controller.WebhookController.startGmailWatch </td>
+          <td>(</td>
+          <td class="paramtype">@RequestParam String&#160;</td>
+          <td class="paramname"><em>userId</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">@RequestParam(required=false) String[]&#160;</td>
+          <td class="paramname"><em>labelIds</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Start Gmail watch for a user. </p>
+
+</div>
+</div>
+<a id="ac23525dfcaa109b649f18c4620776c83" name="ac23525dfcaa109b649f18c4620776c83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac23525dfcaa109b649f18c4620776c83">&#9670;&#160;</a></span>stopGmailWatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">ResponseEntity&lt; Map&lt; String, Object &gt; &gt; area.server.AREA_Back.controller.WebhookController.stopGmailWatch </td>
+          <td>(</td>
+          <td class="paramtype">@RequestParam String&#160;</td>
+          <td class="paramname"><em>userId</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Stop Gmail watch channel. </p>
 
 </div>
 </div>
@@ -211,7 +255,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><b>area</b></li><li class="navelem"><b>server</b></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back.html">AREA_Back</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1controller.html">controller</a></li><li class="navelem"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html">WebhookController</a></li>
-    <li class="footer">Generated on Tue Oct 21 2025 16:34:55 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
+    <li class="footer">Generated on Tue Oct 21 2025 16:42:44 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
   </ul>
 </div>
 </body>

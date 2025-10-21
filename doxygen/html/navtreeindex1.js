@@ -1,5 +1,7 @@
 var NAVTREEINDEX1 =
 {
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1AuthController.html#aed0dbf430bf75f61fd3a9c16bd0dabb3":[1,0,0,0,0,2,6,0],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html":[1,0,0,0,0,2,7],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a02c1004a0b0fccb712dd83a81790091d":[1,0,0,0,0,2,7,1],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a4a68928e2d9b6f9dcb89990112b02a31":[1,0,0,0,0,2,7,0],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#abbf35029644042e083799fbda1e15cdf":[1,0,0,0,0,2,7,3],
@@ -37,7 +39,9 @@ var NAVTREEINDEX1 =
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1UserServiceConnectionController.html#aa8defd49d76341e0f8255476a3a59526":[1,0,0,0,0,2,13,1],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html":[1,0,0,0,0,2,14],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#a34b29e20f4dfbcd82f83182eef0bd56c":[1,0,0,0,0,2,14,0],
-"classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#a78dbcdbc0bdebb1d514de12e9baf5366":[1,0,0,0,0,2,14,1],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#ab2b2f219e39c6d4cc7cd2e5eb8d8466a":[1,0,0,0,0,2,14,2],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#ac23525dfcaa109b649f18c4620776c83":[1,0,0,0,0,2,14,3],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1WebhookController.html#adb7538b3b386ce4f0e8ba926d06cfe70":[1,0,0,0,0,2,14,1],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1WorkerController.html":[1,0,0,0,0,2,15],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1WorkerController.html#a23f47adbea956c170122ee41b320b80a":[1,0,0,0,0,2,15,1],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1WorkerController.html#a9b31953dccf98f40779a98fe7d09fada":[1,0,0,0,0,2,15,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX1 =
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a6aeeadd35403566a48aad1012e2327b6":[1,0,0,0,0,8,1,2,0],
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a7b7dfad6d320ab70cd916c244ccd0e69":[1,0,0,0,0,8,1,2,5],
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#a83daf0d956bb6466f5f43f5f310883b7":[1,0,0,0,0,8,1,2,16],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ab0b232fe71979548a9eeab9d7ad335bc":[1,0,0,0,0,8,1,2,15],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ac0da167bdbed442e842cbfe9e4fa861e":[1,0,0,0,0,8,1,2,7],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ac58a56b7685b85bca6c88ccfc9341895":[1,0,0,0,0,8,1,2,8],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ad6c3bab5c291a9d8236e98eaf2d23864":[1,0,0,0,0,8,1,2,9],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html":[1,0,0,0,0,8,1,3]
+"classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1JwtService.html#ab0b232fe71979548a9eeab9d7ad335bc":[1,0,0,0,0,8,1,2,15]
 };

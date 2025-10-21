@@ -164,6 +164,8 @@ var annotated_dup =
             ] ],
             [ "Webhook", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Webhook.html", [
               [ "GitHubWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService" ],
+              [ "GoogleWatchService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService" ],
+              [ "GoogleWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService" ],
               [ "PayloadMappingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService" ],
               [ "WebhookDeduplicationService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService" ],
               [ "WebhookEventProcessingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookEventProcessingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookEventProcessingService" ],

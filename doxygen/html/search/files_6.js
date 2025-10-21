@@ -9,5 +9,7 @@ var searchData=
   ['googledriveservice_2ejava_6',['GoogleDriveService.java',['../GoogleDriveService_8java.html',1,'']]],
   ['googleeventpollingservice_2ejava_7',['GoogleEventPollingService.java',['../GoogleEventPollingService_8java.html',1,'']]],
   ['googlegmailservice_2ejava_8',['GoogleGmailService.java',['../GoogleGmailService_8java.html',1,'']]],
-  ['googlesheetsservice_2ejava_9',['GoogleSheetsService.java',['../GoogleSheetsService_8java.html',1,'']]]
+  ['googlesheetsservice_2ejava_9',['GoogleSheetsService.java',['../GoogleSheetsService_8java.html',1,'']]],
+  ['googlewatchservice_2ejava_10',['GoogleWatchService.java',['../GoogleWatchService_8java.html',1,'']]],
+  ['googlewebhookservice_2ejava_11',['GoogleWebhookService.java',['../GoogleWebhookService_8java.html',1,'']]]
 ];

@@ -21,6 +21,7 @@ public class AreaResponse {
     private String userEmail;
     private List<Map<String, Object>> actions;
     private List<Map<String, Object>> reactions;
+    private List<ActionLinkResponse> links;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

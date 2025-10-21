@@ -22,7 +22,7 @@ public class AreaDraftCacheService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String DRAFT_PREFIX = "area:draft:";
-    private static final Duration DRAFT_TTL = Duration.ofHours(24);
+    private static final Duration DRAFT_TTL = Duration.ofHours(1);
 
     public String saveDraft(UUID userId, AreaDraftRequest draft) {
         try {

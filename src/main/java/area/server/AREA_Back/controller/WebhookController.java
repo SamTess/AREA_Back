@@ -1,7 +1,6 @@
 package area.server.AREA_Back.controller;
 
 import area.server.AREA_Back.entity.Execution;
-import area.server.AREA_Back.service.Webhook.GitHubWebhookService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
 import area.server.AREA_Back.service.Webhook.WebhookSecretService;

@@ -9,6 +9,7 @@ import area.server.AREA_Back.service.Auth.JwtService;
 import area.server.AREA_Back.service.Auth.OAuthGoogleService;
 import area.server.AREA_Back.service.Auth.TokenEncryptionService;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
+import area.server.AREA_Back.service.Webhook.GoogleWatchService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +68,9 @@ class OAuthGoogleServiceTest {
     @Mock
     private JwtCookieProperties jwtCookieProperties;
 
+    @Mock
+    private GoogleWatchService googleWatchService;
+
     private SimpleMeterRegistry meterRegistry;
     private OAuthGoogleService oauthGoogleService;
 
@@ -93,7 +97,8 @@ class OAuthGoogleServiceTest {
             tokenEncryptionService,
             userOAuthIdentityRepository,
             userRepository,
-            restTemplate
+            restTemplate,
+            googleWatchService
         );
 
         // Manually initialize metrics since @PostConstruct won't run in tests
@@ -135,15 +140,13 @@ class OAuthGoogleServiceTest {
     void testUserAuthUrlContainsRequiredScopes() {
         String authUrl = oauthGoogleService.getUserAuthUrl();
 
-        // Verify the URL contains all required scopes
+        // Verify the URL contains all required scopes (Gmail only)
         assertTrue(authUrl.contains("openid"));
         assertTrue(authUrl.contains("email"));
         assertTrue(authUrl.contains("profile"));
         assertTrue(authUrl.contains("gmail.readonly"));
         assertTrue(authUrl.contains("gmail.send"));
-        assertTrue(authUrl.contains("calendar"));
-        assertTrue(authUrl.contains("drive"));
-        assertTrue(authUrl.contains("spreadsheets"));
+        assertTrue(authUrl.contains("gmail.modify"));
     }
 
     @Test

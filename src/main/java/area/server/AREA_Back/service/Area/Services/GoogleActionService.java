@@ -1,10 +1,7 @@
 package area.server.AREA_Back.service.Area.Services;
 
 import area.server.AREA_Back.service.Area.Services.Google.GoogleApiUtils;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleCalendarService;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleDriveService;
 import area.server.AREA_Back.service.Area.Services.Google.GoogleGmailService;
-import area.server.AREA_Back.service.Area.Services.Google.GoogleSheetsService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -26,9 +23,6 @@ public class GoogleActionService {
 
     private final GoogleApiUtils googleApiUtils;
     private final GoogleGmailService gmailService;
-    private final GoogleCalendarService calendarService;
-    private final GoogleDriveService driveService;
-    private final GoogleSheetsService sheetsService;
     private final MeterRegistry meterRegistry;
 
     private Counter googleActionsExecuted;
@@ -52,24 +46,11 @@ public class GoogleActionService {
         actionHandlers = new HashMap<>();
         actionHandlers.put("gmail_send_email", gmailService::sendGmail);
         actionHandlers.put("gmail_add_label", gmailService::addGmailLabel);
-        actionHandlers.put("calendar_create_event", calendarService::createCalendarEvent);
-        actionHandlers.put("calendar_delete_event", calendarService::deleteCalendarEvent);
-        actionHandlers.put("drive_create_folder", driveService::createDriveFolder);
-        actionHandlers.put("drive_upload_file", driveService::uploadDriveFile);
-        actionHandlers.put("drive_share_file", driveService::shareDriveFile);
-        actionHandlers.put("sheets_add_row", sheetsService::addSheetRow);
-        actionHandlers.put("sheets_update_cell", sheetsService::updateSheetCell);
-        actionHandlers.put("sheets_create_spreadsheet", sheetsService::createSpreadsheet);
     }
 
     private void initializeEventHandlers() {
         eventHandlers = new HashMap<>();
         eventHandlers.put("gmail_new_email", gmailService::checkNewGmailMessages);
-        eventHandlers.put("calendar_new_event", calendarService::checkNewCalendarEvents);
-        eventHandlers.put("calendar_event_starting", calendarService::checkUpcomingCalendarEvents);
-        eventHandlers.put("drive_new_file", driveService::checkNewDriveFiles);
-        eventHandlers.put("drive_file_modified", driveService::checkModifiedDriveFiles);
-        eventHandlers.put("sheets_row_added", sheetsService::checkNewSheetRows);
     }
 
     @FunctionalInterface

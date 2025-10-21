@@ -6,8 +6,6 @@ import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Auth.TokenEncryptionService;
-import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
-import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
@@ -15,7 +13,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -153,10 +155,15 @@ public class GoogleWebhookService {
         Map<String, Object> result = new HashMap<>();
         result.put("eventType", "gmail");
 
-        String emailAddress = notification.has("emailAddress") ?
-            notification.get("emailAddress").asText() : null;
-        String historyId = notification.has("historyId") ?
-            notification.get("historyId").asText() : null;
+        String emailAddress = null;
+        if (notification.has("emailAddress")) {
+            emailAddress = notification.get("emailAddress").asText();
+        }
+        
+        String historyId = null;
+        if (notification.has("historyId")) {
+            historyId = notification.get("historyId").asText();
+        }
 
         result.put("emailAddress", emailAddress);
         result.put("historyId", historyId);
@@ -174,7 +181,11 @@ public class GoogleWebhookService {
 
                     String dedupeKey = "gmail_" + userId + "_" + historyId;
                     if (deduplicationService.checkAndMark(dedupeKey, "google")) {
-                        log.info("Duplicate Gmail event detected for user {} historyId {}, skipping", userId, historyId);
+                        log.info(
+                            "Duplicate Gmail event detected for user {} historyId {}, skipping",
+                            userId,
+                            historyId
+                        );
                         result.put("status", "duplicate");
                         result.put("executionsTriggered", 0);
                         return result;
@@ -239,7 +250,6 @@ public class GoogleWebhookService {
 
                 for (JsonNode message : messages) {
                     String messageId = message.get("id").asText();
-                    String threadId = message.has("threadId") ? message.get("threadId").asText() : messageId;
 
                     String messageDedupeKey = "gmail_message_" + userId + "_" + messageId;
                     if (deduplicationService.checkAndMark(messageDedupeKey, "google")) {
@@ -247,10 +257,15 @@ public class GoogleWebhookService {
                         continue;
                     }
 
+                    String threadId = null;
+                    if (message.has("threadId")) {
+                        threadId = message.get("threadId").asText();
+                    }
+
                     Map<String, Object> payload = new HashMap<>();
                     payload.put("action", "message_received");
                     payload.put("messageId", messageId);
-                    payload.put("threadId", message.has("threadId") ? message.get("threadId").asText() : null);
+                    payload.put("threadId", threadId);
                     payload.put("historyId", historyId);
 
                     List<Execution> executions = webhookEventProcessingService
@@ -259,7 +274,11 @@ public class GoogleWebhookService {
                     allExecutions.addAll(executions);
 
                     if (!allExecutions.isEmpty()) {
-                        log.info("Processed first new message {} for user {}, stopping to prevent spam", messageId, userId);
+                        log.info(
+                            "Processed first new message {} for user {}, stopping to prevent spam",
+                            messageId,
+                            userId
+                        );
                         break;
                     }
                 }

@@ -40,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class OAuthDiscordService extends OAuthService {
 
+    private static final int DEFAULT_TOKEN_EXPIRY_DAYS = 7;
+
     private final RestTemplate restTemplate;
     private final String redirectBaseUrl;
     private final TokenEncryptionService tokenEncryptionService;
@@ -269,7 +271,7 @@ public class OAuthDiscordService extends OAuthService {
 
     private LocalDateTime calculateExpirationTime(Integer expiresIn) {
         if (expiresIn == null || expiresIn <= 0) {
-            return LocalDateTime.now().plusDays(7);
+            return LocalDateTime.now().plusDays(DEFAULT_TOKEN_EXPIRY_DAYS);
         }
         return LocalDateTime.now().plusSeconds(expiresIn);
     }
@@ -311,7 +313,10 @@ public class OAuthDiscordService extends OAuthService {
             }
 
             Object refreshTokenObj = body2.get("refresh_token");
-            String refreshToken = refreshTokenObj != null ? refreshTokenObj.toString() : null;
+            String refreshToken = null;
+            if (refreshTokenObj != null) {
+                refreshToken = refreshTokenObj.toString();
+            }
 
             Object expiresInObj = body2.get("expires_in");
             Integer expiresIn = null;
@@ -359,16 +364,28 @@ public class OAuthDiscordService extends OAuthService {
         }
 
         Object emailObj = userBody.get("email");
-        String email = emailObj != null ? emailObj.toString() : null;
+        String email = null;
+        if (emailObj != null) {
+            email = emailObj.toString();
+        }
 
         Object usernameObj = userBody.get("username");
-        String username = usernameObj != null ? usernameObj.toString() : "";
+        String username = "";
+        if (usernameObj != null) {
+            username = usernameObj.toString();
+        }
 
         Object discriminatorObj = userBody.get("discriminator");
-        String discriminator = discriminatorObj != null ? discriminatorObj.toString() : "0";
+        String discriminator = "0";
+        if (discriminatorObj != null) {
+            discriminator = discriminatorObj.toString();
+        }
 
         Object globalNameObj = userBody.get("global_name");
-        String globalName = globalNameObj != null ? globalNameObj.toString() : "";
+        String globalName = "";
+        if (globalNameObj != null) {
+            globalName = globalNameObj.toString();
+        }
 
         Object avatarObj = userBody.get("avatar");
         String avatarUrl = "";

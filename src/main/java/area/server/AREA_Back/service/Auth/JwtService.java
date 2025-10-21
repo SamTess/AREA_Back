@@ -77,7 +77,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.ACCESS_TOKEN_TYPE);
-        claims.put("jti", UUID.randomUUID().toString()); // JWT ID for traceability
+        claims.put("jti", UUID.randomUUID().toString());
         return generateToken(claims, userId.toString(), getAccessTokenExpiration(), getAccessTokenSigningKey());
     }
     public String generateRefreshToken(UUID userId, String email) {
@@ -85,7 +85,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
         claims.put("type", AuthTokenConstants.REFRESH_TOKEN_TYPE);
-        claims.put("jti", UUID.randomUUID().toString()); // JWT ID for traceability
+        claims.put("jti", UUID.randomUUID().toString());
         return generateToken(claims, userId.toString(), getRefreshTokenExpiration(), getRefreshTokenSigningKey());
     }
 

@@ -1,3 +1,9 @@
+-- ============================================
+-- AREA - Slack Service and Actions
+-- Add Slack service and basic action/reaction definitions
+-- ============================================
+
+-- Add Slack service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url)
 VALUES ('slack', 'Slack', 'OAUTH2', true, 'https://api.slack.com/docs',
         'https://cdn.simpleicons.org/slack/4A154B',
@@ -10,10 +16,12 @@ ON CONFLICT (key) DO UPDATE SET
     icon_light_url = EXCLUDED.icon_light_url,
     icon_dark_url = EXCLUDED.icon_dark_url;
 
+-- Get Slack service ID for references
 WITH slack_service AS (
     SELECT id FROM area.a_services WHERE key = 'slack'
 )
 
+-- Insert Slack Actions (Event-capable) and Reactions (Executable)
 INSERT INTO area.a_action_definitions (
     service_id, key, name, description,
     is_event_capable, is_executable, version,
@@ -21,6 +29,7 @@ INSERT INTO area.a_action_definitions (
     default_poll_interval_seconds
 )
 
+-- Slack: New Message (event)
 SELECT
     ss.id,
     'new_message',
@@ -51,6 +60,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack: New Channel (event)
 SELECT
     ss.id,
     'new_channel',
@@ -77,6 +87,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack: User Joined Channel (event)
 SELECT
     ss.id,
     'user_joined',
@@ -105,6 +116,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack: Reaction Added (event)
 SELECT
     ss.id,
     'reaction_added',
@@ -135,6 +147,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack: File Shared (event)
 SELECT
     ss.id,
     'file_shared',
@@ -165,6 +178,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Send Message (executable)
 SELECT
     ss.id,
     'send_message',
@@ -196,6 +210,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Create Channel (executable)
 SELECT
     ss.id,
     'create_channel',
@@ -225,6 +240,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Add Reaction (executable)
 SELECT
     ss.id,
     'add_reaction',
@@ -254,6 +270,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Pin Message (executable)
 SELECT
     ss.id,
     'pin_message',
@@ -281,6 +298,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Set Status (executable)
 SELECT
     ss.id,
     'set_status',
@@ -309,6 +327,7 @@ FROM slack_service ss
 
 UNION ALL
 
+-- Slack Reaction: Invite to Channel (executable)
 SELECT
     ss.id,
     'invite_to_channel',
@@ -335,6 +354,7 @@ SELECT
     NULL
 FROM slack_service ss
 
+-- Update existing actions if they already exist
 ON CONFLICT (service_id, key, version) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,

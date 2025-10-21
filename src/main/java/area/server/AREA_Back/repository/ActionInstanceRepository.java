@@ -66,6 +66,18 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
            + "AND am.enabled = true")
     List<ActionInstance> findActiveDiscordActionInstances();
 
+    @Query("SELECT DISTINCT ai FROM ActionInstance ai "
+           + "JOIN FETCH ai.actionDefinition ad "
+           + "JOIN FETCH ad.service s "
+           + "JOIN FETCH ai.user u "
+           + "JOIN ActivationMode am ON am.actionInstance = ai "
+           + "WHERE s.key = 'slack' "
+           + "AND ad.isEventCapable = true "
+           + "AND ai.enabled = true "
+           + "AND am.type = 'POLL' "
+           + "AND am.enabled = true")
+    List<ActionInstance> findActiveSlackActionInstances();
+
     @Query("SELECT ai FROM ActionInstance ai "
            + "JOIN ai.actionDefinition ad "
            + "JOIN ad.service s "

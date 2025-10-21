@@ -235,7 +235,11 @@ public class OAuthGoogleService extends OAuthService {
                 googleWatchService.startGmailWatch(existingUser.getId());
                 log.info("Auto-started Gmail watch for linked user {}", existingUser.getId());
             } catch (Exception e) {
-                log.warn("Failed to auto-start Gmail watch for linked user {}: {}", existingUser.getId(), e.getMessage());
+                log.warn(
+                    "Failed to auto-start Gmail watch for linked user {}: {}",
+                    existingUser.getId(),
+                    e.getMessage()
+                );
             }
 
             return oauth;

@@ -28,6 +28,7 @@ public class JwtService {
     private static final int MIN_KEY_LENGTH_BYTES = 32;
     private static final int BITS_PER_BYTE = 8;
     private static final int LOG_TOKEN_PREFIX_LENGTH = 20;
+    private static final long MILLISECONDS_PER_SECOND = 1000L;
 
     @Value("${JWT_ACCESS_SECRET:}")
     private String accessTokenSecret;
@@ -162,11 +163,11 @@ public class JwtService {
     }
 
     public long getAccessTokenExpirationMs() {
-        return jwtCookieProperties.getAccessTokenExpiry() * 1000L;
+        return jwtCookieProperties.getAccessTokenExpiry() * MILLISECONDS_PER_SECOND;
     }
 
     public long getRefreshTokenExpirationMs() {
-        return jwtCookieProperties.getRefreshTokenExpiry() * 1000L;
+        return jwtCookieProperties.getRefreshTokenExpiry() * MILLISECONDS_PER_SECOND;
     }
 
     public static String generateSecureKey() {

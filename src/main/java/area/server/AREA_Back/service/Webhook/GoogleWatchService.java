@@ -11,13 +11,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -87,7 +87,12 @@ public class GoogleWatchService {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("topicName", gmailTopicName);
 
-            String[] labels = labelIds.length > 0 ? labelIds : new String[]{"INBOX"};
+            String[] labels;
+            if (labelIds.length > 0) {
+                labels = labelIds;
+            } else {
+                labels = new String[]{"INBOX"};
+            }
             requestBody.put("labelIds", labels);
             requestBody.put("labelFilterAction", "include");
 

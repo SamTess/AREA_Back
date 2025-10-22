@@ -14,9 +14,13 @@ public class ServiceConnectionStatus {
     private String iconUrl;
     @JsonProperty("isConnected")
     private boolean isConnected;
-    private String connectionType; //* "LOCAL", "OAUTH", "BOTH", "NONE"
+    private String connectionType;
     private String userEmail;
     private String userName;
     private String avatarUrl;
-    private String providerUserId; //* For OAuth connections
+    private String providerUserId;
+    @JsonProperty("canDisconnect")
+    private boolean canDisconnect;
+    @JsonProperty("isPrimaryAuth")
+    private boolean isPrimaryAuth;
 }

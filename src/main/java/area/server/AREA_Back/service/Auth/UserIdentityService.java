@@ -23,7 +23,17 @@ public class UserIdentityService {
      * Check if user has local identity (email/password)
      */
     public boolean hasLocalIdentity(UUID userId) {
-        return userLocalIdentityRepository.findByUserId(userId).isPresent();
+        return userLocalIdentityRepository.findByUserId(userId)
+                .map(identity -> {
+                    String hash = identity.getPasswordHash();
+                    boolean hasValidPassword = hash != null &&
+                                              !hash.isEmpty() &&
+                                              hash.startsWith("$2");
+                    log.debug("User {} hasLocalIdentity check: passwordHash exists={}, isValidBcrypt={}",
+                            userId, hash != null, hasValidPassword);
+                    return hasValidPassword;
+                })
+                .orElse(false);
     }
 
     /**
@@ -82,6 +92,28 @@ public class UserIdentityService {
         return identities.stream()
                 .min((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
                 .map(UserOAuthIdentity::getProvider);
+    }
+
+    public boolean canDisconnectService(UUID userId, String provider) {
+        Optional<String> primaryProvider = getPrimaryOAuthProvider(userId);
+
+        log.debug("Checking canDisconnect for user {} provider {}: primaryProvider={}",
+                userId, provider, primaryProvider.orElse("none"));
+
+        if (primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(provider)) {
+            log.debug("Provider {} is primary, cannot disconnect", provider);
+            return false;
+        }
+
+        log.debug("Provider {} is not primary, can disconnect: true", provider);
+        return true;
+    }
+
+    public void disconnectService(UUID userId, String provider) {
+        if (!canDisconnectService(userId, provider)) {
+            throw new IllegalStateException("Cannot disconnect primary authentication provider");
+        }
+        userOAuthIdentityRepository.deleteByUserIdAndProvider(userId, provider);
     }
 
     public enum UserCreationType {

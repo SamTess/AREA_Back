@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Slf4j
 @RestController
@@ -33,6 +35,7 @@ import java.util.Optional;
 public class OAuthController {
 
     private final List<OAuthService> oauthServices;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OAuthController(List<OAuthService> oauthServices) {
         this.oauthServices = oauthServices;
@@ -72,9 +75,13 @@ public class OAuthController {
                 stateMap.put("returnUrl", (returnUrl == null || returnUrl.isBlank()) ? "/" : returnUrl);
                 stateMap.put("provider", provider.toLowerCase());
 
-                String json = "{\"app_redirect_uri\":\"" + escapeJson(appRedirectUri) + "\","
-                        + "\"returnUrl\":\"" + escapeJson(stateMap.get("returnUrl")) + "\","
-                        + "\"provider\":\"" + escapeJson(stateMap.get("provider")) + "\"}";
+                String json;
+                try {
+                    json = objectMapper.writeValueAsString(stateMap);
+                } catch (JsonProcessingException e) {
+                    log.error("Authorize: failed to serialize state for provider={}, error={}", provider, e.getMessage(), e);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to build state");
+                }
 
                 String encoded = URLEncoder.encode(json, StandardCharsets.UTF_8);
                 finalAuthorizeUrl = baseAuthorizeUrl + (baseAuthorizeUrl.contains("?") ? "&" : "?") + "state=" + encoded;
@@ -94,9 +101,6 @@ public class OAuthController {
         }
     }
 
-    private String escapeJson(String v) {
-        return v.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
 
     @PostMapping("/{provider}/exchange")
     public ResponseEntity<Map<String, Object>> exchangeToken(@PathVariable("provider") String provider,

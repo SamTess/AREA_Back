@@ -232,9 +232,13 @@ public class AreaDraftController {
 
             AreaResponse areaResponse = areaService.createAreaWithActionsAndLinks(areaRequest);
 
-            draftCacheService.deleteDraft(userId, draftId);
-
-            log.info("Draft committed and area created: {}", areaResponse.getId());
+            try {
+                draftCacheService.deleteDraft(userId, draftId);
+                log.info("Draft committed and area created: {}", areaResponse.getId());
+            } catch (Exception e) {
+                log.warn("Area created successfully but failed to delete draft {}: {}",
+                    draftId, e.getMessage());
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(areaResponse);
         } catch (IllegalArgumentException e) {

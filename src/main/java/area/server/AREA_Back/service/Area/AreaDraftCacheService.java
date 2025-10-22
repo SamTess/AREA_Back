@@ -191,9 +191,17 @@ public class AreaDraftCacheService {
 
     public void extendDraftTTL(UUID userId, String draftId) {
         try {
-            String key = DRAFT_PREFIX + userId + ":" + draftId;
-            redisTemplate.expire(key, DRAFT_TTL);
-            log.debug("Draft TTL extended: {} for user: {}", draftId, userId);
+            String keyNew = DRAFT_PREFIX + "new:" + userId + ":" + draftId;
+            Boolean extendedNew = redisTemplate.expire(keyNew, DRAFT_TTL);
+
+            String keyEdit = DRAFT_PREFIX + "edit:" + draftId + ":" + userId;
+            Boolean extendedEdit = redisTemplate.expire(keyEdit, DRAFT_TTL);
+
+            if (Boolean.TRUE.equals(extendedNew) || Boolean.TRUE.equals(extendedEdit)) {
+                log.debug("Draft TTL extended: {} for user: {}", draftId, userId);
+            } else {
+                log.warn("No draft found to extend TTL: {} for user: {}", draftId, userId);
+            }
         } catch (RedisConnectionFailureException e) {
             log.error("Redis connection failed while extending draft TTL: {}", e.getMessage());
         } catch (Exception e) {

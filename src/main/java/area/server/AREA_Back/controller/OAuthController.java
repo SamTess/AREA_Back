@@ -79,31 +79,50 @@ public class OAuthController {
                 try {
                     json = objectMapper.writeValueAsString(stateMap);
                 } catch (JsonProcessingException e) {
-                    log.error("Authorize: failed to serialize state for provider={}, error={}", provider, e.getMessage(), e);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to build state");
+                    log.error(
+                        "Authorize: failed to serialize state for provider={}, error={}",
+                        provider,
+                        e.getMessage(),
+                        e
+                    );
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to build state");
                 }
 
                 String encoded = URLEncoder.encode(json, StandardCharsets.UTF_8);
-                finalAuthorizeUrl = baseAuthorizeUrl + (baseAuthorizeUrl.contains("?") ? "&" : "?") + "state=" + encoded;
+                finalAuthorizeUrl = baseAuthorizeUrl
+                    + (baseAuthorizeUrl.contains("?") ? "&" : "?")
+                    + "state=" + encoded;
 
-                log.debug("Authorize: adding state for mobile hints provider={}, app_redirect_uri={}, returnUrl={}",
-                        provider, appRedirectUri, returnUrl);
+                log.debug(
+                    "Authorize: adding state for mobile hints provider={}, app_redirect_uri={}, returnUrl={}",
+                    provider, appRedirectUri, returnUrl
+                );
             }
 
             response.setHeader("Location", finalAuthorizeUrl);
             response.setStatus(HttpServletResponse.SC_FOUND);
             return ResponseEntity.status(HttpStatus.FOUND).body("Redirecting to " + provider + "...");
 
-        } catch (Exception e) {
-            log.error("Authorize: failed to build redirect for provider={}, error={}", provider, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to redirect to " + provider + ": " + e.getMessage());
-        }
+            } catch (Exception e) {
+                log.error(
+                    "Authorize: failed to build redirect for provider={}, error={}",
+                    provider,
+                    e.getMessage(),
+                    e
+                );
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to redirect to " + provider + ": " + e.getMessage());
+            }
+    }
+
+    public ResponseEntity<String> authorize(String provider, HttpServletResponse response) {
+        return authorize(provider, null, "/", response);
     }
 
 
     @PostMapping("/{provider}/exchange")
-    public ResponseEntity<Map<String, Object>> exchangeToken(@PathVariable("provider") String provider,
+    public ResponseEntity<AuthResponse> exchangeToken(@PathVariable("provider") String provider,
                                                         @RequestBody Map<String, String> requestBody,
                                                         HttpServletResponse response) {
 
@@ -111,7 +130,7 @@ public class OAuthController {
         if (authorizationCode == null || authorizationCode.trim().isEmpty()) {
             log.warn("Exchange: missing authorization code for provider={}", provider);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", "Missing authorization code", "provider", provider));
+                .body(new AuthResponse("Missing authorization code", null));
         }
 
         Optional<OAuthService> svc = oauthServices.stream()
@@ -121,30 +140,22 @@ public class OAuthController {
         if (svc.isEmpty()) {
             log.warn("Exchange: provider '{}' not found", provider);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", "Provider not found", "provider", provider));
+                .body(new AuthResponse("Provider not found", null));
         }
 
         try {
             OAuthLoginRequest request = new OAuthLoginRequest(authorizationCode);
             AuthResponse result = svc.get().authenticate(request, response);
-
-            Map<String, Object> body = new HashMap<>();
-            body.put("message", result.getMessage());
-            body.put("user", result.getUser());
-            body.put("provider", provider);
-            return ResponseEntity.ok(body);
+            return ResponseEntity.ok(result);
 
         } catch (UnsupportedOperationException e) {
             log.warn("Exchange: provider '{}' not implemented", provider, e);
             return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(Map.of("message", "Provider not implemented", "provider", provider));
+                .body(new AuthResponse("Provider not implemented", null));
         } catch (Exception e) {
             log.error("Exchange: OAuth failed for provider={}, error={}", provider, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "message", "OAuth exchange failed",
-                            "error", e.getMessage(),
-                            "provider", provider));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new AuthResponse("OAuth exchange failed: " + e.getMessage(), null));
         }
     }
 }

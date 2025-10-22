@@ -226,13 +226,21 @@ public class OAuthGoogleService extends OAuthService {
 
         try {
             oauth = this.userOAuthIdentityRepository.save(oauth);
-            log.info("Successfully linked Google account {} to user {}", profileData.userIdentifier, existingUser.getId());
+            log.info(
+                "Successfully linked Google account {} to user {}",
+                profileData.userIdentifier,
+                existingUser.getId()
+            );
 
             try {
                 googleWatchService.startGmailWatch(existingUser.getId());
                 log.info("Auto-started Gmail watch for linked user {}", existingUser.getId());
             } catch (Exception e) {
-                log.warn("Failed to auto-start Gmail watch for linked user {}: {}", existingUser.getId(), e.getMessage());
+                log.warn(
+                    "Failed to auto-start Gmail watch for linked user {}: {}",
+                    existingUser.getId(),
+                    e.getMessage()
+                );
             }
 
             return oauth;
@@ -265,7 +273,7 @@ public class OAuthGoogleService extends OAuthService {
                 tokenUrl,
                 HttpMethod.POST,
                 request,
-                new ParameterizedTypeReference<Map<String, Object>>() {}
+                new ParameterizedTypeReference<Map<String, Object>>() { }
             );
 
             if (!tokenResponse.getStatusCode().is2xxSuccessful() || tokenResponse.getBody() == null) {
@@ -281,14 +289,22 @@ public class OAuthGoogleService extends OAuthService {
             }
             final String accessToken = (String) responseBody.get("access_token");
             final String refreshToken = (String) responseBody.get("refresh_token");
-            final Integer expiresIn = (responseBody.get("expires_in") instanceof Number)
-                ? ((Number) responseBody.get("expires_in")).intValue()
-                : null;
+            final Integer expiresIn;
+            if (responseBody.get("expires_in") instanceof Number) {
+                expiresIn = ((Number) responseBody.get("expires_in")).intValue();
+            } else {
+                expiresIn = null;
+            }
 
             if (accessToken == null) {
                 tokenExchangeFailures.increment();
                 final Object err = responseBody.get("error_description");
-                final String desc = (err != null) ? err.toString() : "No access_token in Google response";
+                final String desc;
+                if (err != null) {
+                    desc = err.toString();
+                } else {
+                    desc = "No access_token in Google response";
+                }
                 throw new RuntimeException(desc);
             }
 
@@ -312,7 +328,7 @@ public class OAuthGoogleService extends OAuthService {
             "https://www.googleapis.com/oauth2/v2/userinfo",
             HttpMethod.GET,
             request,
-            new ParameterizedTypeReference<Map<String, Object>>() {}
+            new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
         if (!userResponse.getStatusCode().is2xxSuccessful() || userResponse.getBody() == null) {

@@ -6,7 +6,12 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.Area;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.enums.ExecutionStatus;
-import area.server.AREA_Back.repository.*;
+import area.server.AREA_Back.repository.ActionDefinitionRepository;
+import area.server.AREA_Back.repository.ActionInstanceRepository;
+import area.server.AREA_Back.repository.AreaRepository;
+import area.server.AREA_Back.repository.ExecutionRepository;
+import area.server.AREA_Back.repository.ServiceRepository;
+import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.WorkerTrackingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-
-import org.springframework.data.domain.Sort;
 
 /**
  * Unit tests for AdminController

@@ -24,19 +24,33 @@ public class AreaDraftCacheService {
     private static final Duration DRAFT_TTL = Duration.ofHours(1);
 
     public String saveDraft(UUID userId, AreaDraftRequest draft) {
-        try {
-            String draftId = draft.getDraftId() != null && !draft.getDraftId().isEmpty()
-                ? draft.getDraftId()
-                : UUID.randomUUID().toString();
+        return saveDraft(userId, draft, null);
+    }
 
-            String key = DRAFT_PREFIX + userId + ":" + draftId;
+    public String saveDraft(UUID userId, AreaDraftRequest draft, UUID areaId) {
+        try {
+            String key;
+            String draftId;
+
+            if (areaId != null) {
+                key = DRAFT_PREFIX + "edit:" + areaId + ":" + userId;
+                draftId = areaId.toString();
+                log.info("Saving edit draft for area: {} (userId: {})", areaId, userId);
+            } else {
+                draftId = draft.getDraftId() != null && !draft.getDraftId().isEmpty()
+                    ? draft.getDraftId()
+                    : UUID.randomUUID().toString();
+                key = DRAFT_PREFIX + "new:" + userId + ":" + draftId;
+                log.info("Saving new draft with draftId: {} (userId: {})", draftId, userId);
+            }
 
             if (draft.getSavedAt() == null) {
                 draft.setSavedAt(LocalDateTime.now());
             }
 
+            log.info("Saving draft with key: {}", key);
             redisTemplate.opsForValue().set(key, draft, DRAFT_TTL);
-            log.info("Draft saved: {} for user: {}", draftId, userId);
+            log.info("Draft saved successfully");
 
             return draftId;
         } catch (RedisConnectionFailureException e) {
@@ -50,14 +64,24 @@ public class AreaDraftCacheService {
 
     public Optional<AreaDraftResponse> getDraft(UUID userId, String draftId) {
         try {
-            String key = DRAFT_PREFIX + userId + ":" + draftId;
-            Object draft = redisTemplate.opsForValue().get(key);
+            String keyNew = DRAFT_PREFIX + "new:" + userId + ":" + draftId;
+            Object draft = redisTemplate.opsForValue().get(keyNew);
 
             if (draft instanceof AreaDraftRequest) {
                 AreaDraftRequest draftRequest = (AreaDraftRequest) draft;
-                AreaDraftResponse response = convertToResponse(userId, draftId, draftRequest, key);
+                AreaDraftResponse response = convertToResponse(userId, draftId, draftRequest, keyNew);
                 return Optional.of(response);
             }
+
+            String keyEdit = DRAFT_PREFIX + "edit:" + draftId + ":" + userId;
+            draft = redisTemplate.opsForValue().get(keyEdit);
+
+            if (draft instanceof AreaDraftRequest) {
+                AreaDraftRequest draftRequest = (AreaDraftRequest) draft;
+                AreaDraftResponse response = convertToResponse(userId, draftId, draftRequest, keyEdit);
+                return Optional.of(response);
+            }
+
             return Optional.empty();
         } catch (RedisConnectionFailureException e) {
             log.error("Redis connection failed while getting draft: {}", e.getMessage());
@@ -70,8 +94,11 @@ public class AreaDraftCacheService {
 
     public List<AreaDraftResponse> getUserDrafts(UUID userId) {
         try {
-            String pattern = DRAFT_PREFIX + userId + ":*";
+            // Récupérer uniquement les drafts de création (nouveaux AREAs)
+            String pattern = DRAFT_PREFIX + "new:" + userId + ":*";
             List<AreaDraftResponse> drafts = new ArrayList<>();
+
+            log.info("Scanning for new area drafts with pattern: {}", pattern);
 
             redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
                 org.springframework.data.redis.core.ScanOptions options =
@@ -82,19 +109,29 @@ public class AreaDraftCacheService {
 
                 org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.scan(options);
 
+                int keyCount = 0;
                 while (cursor.hasNext()) {
                     String key = new String(cursor.next());
+                    keyCount++;
+                    log.info("Found key #{}: {}", keyCount, key);
+
                     Object draft = redisTemplate.opsForValue().get(key);
+
                     if (draft instanceof AreaDraftRequest) {
-                        String draftId = key.substring((DRAFT_PREFIX + userId + ":").length());
+                        String draftId = key.substring((DRAFT_PREFIX + "new:" + userId + ":").length());
+                        log.info("Adding new area draft with ID: {}", draftId);
                         drafts.add(convertToResponse(userId, draftId, (AreaDraftRequest) draft, key));
+                    } else {
+                        log.warn("Draft is not an instance of AreaDraftRequest for key: {}", key);
                     }
                 }
 
+                log.info("Total keys found: {}, Drafts added: {}", keyCount, drafts.size());
                 cursor.close();
                 return null;
             });
 
+            log.info("Returning {} new area drafts for user {}", drafts.size(), userId);
             return drafts;
         } catch (RedisConnectionFailureException e) {
             log.error("Redis connection failed while getting user drafts: {}", e.getMessage());
@@ -105,11 +142,44 @@ public class AreaDraftCacheService {
         }
     }
 
+    public Optional<AreaDraftResponse> getEditDraft(UUID userId, UUID areaId) {
+        try {
+            String key = DRAFT_PREFIX + "edit:" + areaId + ":" + userId;
+            log.info("Getting edit draft with key: {}", key);
+
+            Object draft = redisTemplate.opsForValue().get(key);
+
+            if (draft instanceof AreaDraftRequest) {
+                AreaDraftRequest draftRequest = (AreaDraftRequest) draft;
+                AreaDraftResponse response = convertToResponse(userId, areaId.toString(), draftRequest, key);
+                log.info("Edit draft found for area: {}", areaId);
+                return Optional.of(response);
+            }
+
+            log.info("No edit draft found for area: {}", areaId);
+            return Optional.empty();
+        } catch (RedisConnectionFailureException e) {
+            log.error("Redis connection failed while getting edit draft: {}", e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Failed to get edit draft for area: {} and user: {}", areaId, userId, e);
+            return Optional.empty();
+        }
+    }
+
     public void deleteDraft(UUID userId, String draftId) {
         try {
-            String key = DRAFT_PREFIX + userId + ":" + draftId;
-            redisTemplate.delete(key);
-            log.info("Draft deleted: {} for user: {}", draftId, userId);
+            String keyNew = DRAFT_PREFIX + "new:" + userId + ":" + draftId;
+            Boolean deletedNew = redisTemplate.delete(keyNew);
+
+            String keyEdit = DRAFT_PREFIX + "edit:" + draftId + ":" + userId;
+            Boolean deletedEdit = redisTemplate.delete(keyEdit);
+
+            if (Boolean.TRUE.equals(deletedNew) || Boolean.TRUE.equals(deletedEdit)) {
+                log.info("Draft deleted: {} for user: {}", draftId, userId);
+            } else {
+                log.warn("No draft found to delete: {} for user: {}", draftId, userId);
+            }
         } catch (RedisConnectionFailureException e) {
             log.error("Redis connection failed while deleting draft: {}", e.getMessage());
             throw new RuntimeException("Cache service unavailable", e);

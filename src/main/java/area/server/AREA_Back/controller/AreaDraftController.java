@@ -44,6 +44,7 @@ public class AreaDraftController {
     })
     public ResponseEntity<Map<String, String>> saveDraft(
             @Valid @RequestBody AreaDraftRequest request,
+            @RequestParam(required = false) String areaId,
             HttpServletRequest httpRequest) {
         try {
             UUID userId = getUserIdFromRequest(httpRequest);
@@ -53,7 +54,16 @@ public class AreaDraftController {
                     .body(Map.of("error", "Cache service unavailable"));
             }
 
-            String draftId = draftCacheService.saveDraft(userId, request);
+            UUID areaUuid = null;
+            if (areaId != null && !areaId.isEmpty()) {
+                try {
+                    areaUuid = UUID.fromString(areaId);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid areaId format: {}", areaId);
+                }
+            }
+
+            String draftId = draftCacheService.saveDraft(userId, request, areaUuid);
 
             return ResponseEntity.ok(Map.of(
                 "draftId", draftId,
@@ -92,6 +102,44 @@ public class AreaDraftController {
             log.error("Failed to get drafts", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to retrieve drafts"));
+        }
+    }
+
+    @GetMapping("/edit/{areaId}")
+    @Operation(summary = "Get edit draft for a specific area")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Edit draft retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Edit draft not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "503", description = "Cache service unavailable")
+    })
+    public ResponseEntity<?> getEditDraft(
+            @PathVariable String areaId,
+            HttpServletRequest httpRequest) {
+        try {
+            UUID userId = getUserIdFromRequest(httpRequest);
+
+            if (!draftCacheService.isCacheAvailable()) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "Cache service unavailable"));
+            }
+
+            UUID areaUuid = UUID.fromString(areaId);
+            Optional<AreaDraftResponse> draft = draftCacheService.getEditDraft(userId, areaUuid);
+
+            if (draft.isPresent()) {
+                return ResponseEntity.ok(draft.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Edit draft not found"));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid area ID format"));
+        } catch (Exception e) {
+            log.error("Failed to get edit draft", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to retrieve edit draft"));
         }
     }
 

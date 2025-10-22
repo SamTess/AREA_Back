@@ -256,7 +256,9 @@ public class WebhookEventProcessingService {
         };
     }
 
-    private Map<String, Object> applyPayloadMapping(Map<String, Object> sourcePayload, Map<String, Object> mappingConfig) {
+    private Map<String, Object> applyPayloadMapping(
+            Map<String, Object> sourcePayload,
+            Map<String, Object> mappingConfig) {
         if (mappingConfig == null || mappingConfig.isEmpty()) {
             return sourcePayload;
         }
@@ -266,7 +268,8 @@ public class WebhookEventProcessingService {
                 .writeValueAsString(mappingConfig);
             return payloadMappingService.applyMapping(sourcePayload, mappingJson);
         } catch (Exception e) {
-            log.warn("Failed to apply payload mapping, using original payload: {}", e.getMessage());
+            log.warn("Failed to apply payload mapping, using original payload: {}",
+                e.getMessage());
             return sourcePayload;
         }
     }
@@ -279,7 +282,7 @@ public class WebhookEventProcessingService {
         if (eventId != null) {
             eventIdStr = eventId.toString();
         }
-        
+
         String eventActionStr = "default";
         if (eventAction != null) {
             eventActionStr = eventAction.toString();

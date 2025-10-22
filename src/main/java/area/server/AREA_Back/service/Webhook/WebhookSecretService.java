@@ -29,7 +29,7 @@ public class WebhookSecretService {
     @Value("${app.webhook.github.secret:#{null}}")
     private String githubWebhookSecret;
 
-    @Value("${app.webhook.slack.secret:#{null}}")
+    @Value("${slack.signing.secret:#{null}}")
     private String slackWebhookSecret;
 
     @Value("${app.webhook.discord.secret:#{null}}")

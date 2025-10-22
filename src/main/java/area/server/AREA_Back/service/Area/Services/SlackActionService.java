@@ -145,7 +145,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             throw new RuntimeException("Failed to send Slack message: "
                 + errorMsg);
         }
@@ -177,7 +182,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             throw new RuntimeException("Failed to create Slack channel: "
                 + errorMsg);
         }
@@ -216,7 +226,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             throw new RuntimeException("Failed to add Slack reaction: "
                 + errorMsg);
         }
@@ -247,7 +262,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             throw new RuntimeException("Failed to pin Slack message: "
                 + errorMsg);
         }
@@ -277,7 +297,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             throw new RuntimeException("Failed to invite to Slack channel: "
                 + errorMsg);
         }
@@ -305,7 +330,12 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
-            String errorMsg = responseBody != null ? String.valueOf(responseBody.get("error")) : "Unknown error";
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
             if ("channel_not_found".equals(errorMsg)) {
                 log.warn("Failed to fetch Slack messages for channel '{}': {}. "
                     + "Make sure the AREA bot has been invited to this channel. "

@@ -21,7 +21,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -165,7 +167,6 @@ public class AreaReactionWorker {
     @Scheduled(fixedDelay = 60000)
     public void logStatistics() {
         try {
-            // Statistics are tracked via metrics, no need to log them
             executionService.getExecutionStatistics();
         } catch (Exception e) {
             log.warn("Failed to fetch statistics: { }", e.getMessage());
@@ -178,15 +179,18 @@ public class AreaReactionWorker {
             Map<Object, Object> values = record.getValue();
             Object executionIdObj = values.get("executionId");
             if (executionIdObj != null) {
-                String executionIdStr = executionIdObj.toString();
-                UUID executionId = UUID.fromString(executionIdStr);
-                var executionOpt = executionService.getQueuedExecutions().stream()
-                    .filter(e -> e.getId().equals(executionId))
-                    .findFirst();
-                if (executionOpt.isPresent()) {
-                    processExecution(executionOpt.get());
+                UUID executionId = parseUUID(executionIdObj);
+                if (executionId != null) {
+                    var executionOpt = executionService.getQueuedExecutions().stream()
+                        .filter(e -> e.getId().equals(executionId))
+                        .findFirst();
+                    if (executionOpt.isPresent()) {
+                        processExecution(executionOpt.get());
+                    } else {
+                        log.warn("Execution not found for event: { }", executionId);
+                    }
                 } else {
-                    log.warn("Execution not found for event: { }", executionId);
+                    log.error("Failed to parse executionId from event: {}", executionIdObj);
                 }
             }
             redisTemplate.opsForStream().acknowledge(
@@ -197,6 +201,53 @@ public class AreaReactionWorker {
 
         } catch (Exception e) {
             log.error("Error processing event record { }: { }", record.getId(), e.getMessage(), e);
+        }
+    }
+
+    private UUID parseUUID(final Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            String str = obj.toString();
+
+            try {
+                byte[] decoded = Base64.getDecoder().decode(str);
+                String decodedStr = new String(decoded, StandardCharsets.UTF_8);
+                log.debug("Decoded base64 UUID: {} -> {}", str, decodedStr);
+                str = decodedStr;
+            } catch (IllegalArgumentException e) {
+                log.debug("String is not base64 encoded");
+            }
+
+            str = str.replaceAll("[^0-9a-fA-F-]", "");
+            final int standardUuidLength = 36;
+            final int hexOnlyUuidLength = 32;
+            final int firstGroupEnd = 8;
+            final int secondGroupEnd = 12;
+            final int thirdGroupEnd = 16;
+            final int fourthGroupEnd = 20;
+
+            if (str.length() == standardUuidLength) {
+                return UUID.fromString(str);
+            } else if (str.length() == hexOnlyUuidLength) {
+                return UUID.fromString(
+                    str.substring(0, firstGroupEnd)
+                        + "-"
+                        + str.substring(firstGroupEnd, secondGroupEnd)
+                        + "-"
+                        + str.substring(secondGroupEnd, thirdGroupEnd)
+                        + "-"
+                        + str.substring(thirdGroupEnd, fourthGroupEnd)
+                        + "-"
+                        + str.substring(fourthGroupEnd, hexOnlyUuidLength)
+                );
+            }
+            log.error("Invalid UUID format: {} (length: {})", str, str.length());
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to parse UUID from: {}", obj, e);
+            return null;
         }
     }
 

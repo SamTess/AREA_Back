@@ -19,7 +19,6 @@ public class WebhookSignatureValidator {
     private static final String GITHUB_SIGNATURE_PREFIX = "sha256=";
     private static final String SLACK_SIGNATURE_PREFIX = "v0=";
     private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final int JWT_PARTS_COUNT = 3;
 
     /**
      * Validates GitHub webhook signature
@@ -72,6 +71,11 @@ public class WebhookSignatureValidator {
                 + calculateHmacSha256(baseString.getBytes(StandardCharsets.UTF_8), secret);
 
             boolean isValid = secureEquals(signature, expectedSignature);
+
+            if (!isValid) {
+                log.warn("Slack signature mismatch");
+            }
+
             return isValid;
 
         } catch (Exception e) {

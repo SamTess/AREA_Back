@@ -77,13 +77,9 @@ public class OAuthSlackService extends OAuthService {
             "https://cdn.simpleicons.org/slack/4A154B",
             "https://slack.com/oauth/v2/authorize?client_id=" + slackClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
-                + "&user_scope=identity.basic,identity.email,identity.avatar"
-                + "&scope=channels:history,channels:read,channels:manage"
-                + ",chat:write,reactions:write,reactions:read"
-                + ",users:read,users.profile:read"
-                + ",files:read,pins:write"
-                + ",im:read,im:write,im:history"
-                + ",groups:history,mpim:history",
+                + "&scope=channels:manage,chat:write,channels:join,reactions:write,"
+                + "pins:write,channels:read,channels:history,users:read,files:read"
+                + "&user_scope=identity.basic,identity.email,identity.avatar",
             slackClientId,
             slackClientSecret,
             jwtService,
@@ -278,7 +274,8 @@ public class OAuthSlackService extends OAuthService {
 
     private LocalDateTime calculateExpirationTime(Integer expiresIn) {
         if (expiresIn == null || expiresIn <= 0) {
-            return LocalDateTime.now().plusDays(90);
+            final int expirationDays = 90;
+            return LocalDateTime.now().plusDays(expirationDays);
         }
         return LocalDateTime.now().plusSeconds(expiresIn);
     }
@@ -317,37 +314,53 @@ public class OAuthSlackService extends OAuthService {
             if (okObj == null || !Boolean.TRUE.equals(okObj)) {
                 tokenExchangeFailures.increment();
                 Object errorObj = responseBody.get("error");
-                String errorMsg = errorObj != null ? errorObj.toString() : "Unknown error";
+                String errorMsg;
+                if (errorObj != null) {
+                    errorMsg = errorObj.toString();
+                } else {
+                    errorMsg = "Unknown error";
+                }
                 throw new RuntimeException("Slack API returned error: " + errorMsg);
             }
 
             Object authedUserObj = responseBody.get("authed_user");
-            if (!(authedUserObj instanceof Map)) {
-                tokenExchangeFailures.increment();
-                throw new RuntimeException("No authed_user in Slack response");
+            String accessToken = null;
+            String refreshToken = null;
+            Integer expiresIn = null;
+
+            if (authedUserObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> authedUser = (Map<String, Object>) authedUserObj;
+                Object accessTokenObj = authedUser.get("access_token");
+                if (accessTokenObj != null) {
+                    accessToken = accessTokenObj.toString();
+                }
+
+                Object refreshTokenObj = authedUser.get("refresh_token");
+                if (refreshTokenObj != null) {
+                    refreshToken = refreshTokenObj.toString();
+                }
+
+                Object expiresInObj = authedUser.get("expires_in");
+                if (expiresInObj instanceof Integer) {
+                    expiresIn = (Integer) expiresInObj;
+                } else if (expiresInObj != null) {
+                    try {
+                        expiresIn = Integer.parseInt(expiresInObj.toString());
+                    } catch (NumberFormatException e) {
+                        log.warn("Could not parse expires_in: {}", expiresInObj);
+                    }
+                }
+            } else {
+                Object botAccessTokenObj = responseBody.get("access_token");
+                if (botAccessTokenObj != null) {
+                    accessToken = botAccessTokenObj.toString();
+                }
             }
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> authedUser = (Map<String, Object>) authedUserObj;
-            Object accessTokenObj = authedUser.get("access_token");
-            if (accessTokenObj == null) {
+            if (accessToken == null) {
                 tokenExchangeFailures.increment();
                 throw new RuntimeException("No access_token in Slack response");
-            }
-
-            Object refreshTokenObj = authedUser.get("refresh_token");
-            String refreshToken = refreshTokenObj != null ? refreshTokenObj.toString() : null;
-
-            Object expiresInObj = authedUser.get("expires_in");
-            Integer expiresIn = null;
-            if (expiresInObj instanceof Integer) {
-                expiresIn = (Integer) expiresInObj;
-            } else if (expiresInObj != null) {
-                try {
-                    expiresIn = Integer.parseInt(expiresInObj.toString());
-                } catch (NumberFormatException e) {
-                    log.warn("Could not parse expires_in: {}", expiresInObj);
-                }
             }
 
             Object teamObj = responseBody.get("team");
@@ -358,15 +371,23 @@ public class OAuthSlackService extends OAuthService {
                 Map<String, Object> team = (Map<String, Object>) teamObj;
                 Object teamIdObj = team.get("id");
                 Object teamNameObj = team.get("name");
-                teamId = teamIdObj != null ? teamIdObj.toString() : null;
-                teamName = teamNameObj != null ? teamNameObj.toString() : null;
+                if (teamIdObj != null) {
+                    teamId = teamIdObj.toString();
+                }
+                if (teamNameObj != null) {
+                    teamName = teamNameObj.toString();
+                }
             }
 
             Object botAccessTokenObj = responseBody.get("access_token");
-            String botAccessToken = botAccessTokenObj != null ? botAccessTokenObj.toString() : null;
+            String botAccessToken = null;
+            if (authedUserObj instanceof Map && botAccessTokenObj != null) {
+                botAccessToken = botAccessTokenObj.toString();
+                log.debug("Captured bot access token from OAuth response");
+            }
 
             return new SlackTokenResponse(
-                accessTokenObj.toString(),
+                accessToken,
                 refreshToken,
                 expiresIn,
                 teamId,
@@ -387,27 +408,32 @@ public class OAuthSlackService extends OAuthService {
 
         HttpEntity<Void> authRequest = new HttpEntity<>(authHeaders);
 
-        ResponseEntity<Map<String, Object>> userResp = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> identityResp = restTemplate.exchange(
             "https://slack.com/api/users.identity",
             HttpMethod.GET,
             authRequest,
             new ParameterizedTypeReference<Map<String, Object>>() { }
         );
 
-        if (!userResp.getStatusCode().is2xxSuccessful() || userResp.getBody() == null) {
-            throw new RuntimeException("Failed to fetch Slack user profile");
+        if (!identityResp.getStatusCode().is2xxSuccessful() || identityResp.getBody() == null) {
+            throw new RuntimeException("Failed to fetch Slack user identity");
         }
 
-        Map<String, Object> responseBody = userResp.getBody();
+        Map<String, Object> identityBody = identityResp.getBody();
 
-        Object okObj = responseBody.get("ok");
+        Object okObj = identityBody.get("ok");
         if (okObj == null || !Boolean.TRUE.equals(okObj)) {
-            Object errorObj = responseBody.get("error");
-            String errorMsg = errorObj != null ? errorObj.toString() : "Unknown error";
-            throw new RuntimeException("Slack API returned error: " + errorMsg);
+            Object errorObj = identityBody.get("error");
+            String errorMsg;
+            if (errorObj != null) {
+                errorMsg = errorObj.toString();
+            } else {
+                errorMsg = "Unknown error";
+            }
+            throw new RuntimeException("Slack identity API returned error: " + errorMsg);
         }
 
-        Object userObj = responseBody.get("user");
+        Object userObj = identityBody.get("user");
         if (!(userObj instanceof Map)) {
             throw new RuntimeException("No user object in Slack identity response");
         }
@@ -417,14 +443,25 @@ public class OAuthSlackService extends OAuthService {
 
         Object idObj = user.get("id");
         if (idObj == null) {
-            throw new RuntimeException("Slack user id is missing in profile response");
+            throw new RuntimeException("Slack user id is missing in identity response");
         }
 
+        String userId = idObj.toString();
         Object emailObj = user.get("email");
-        String email = emailObj != null ? emailObj.toString() : null;
+        String email;
+        if (emailObj != null) {
+            email = emailObj.toString();
+        } else {
+            email = null;
+        }
 
         Object nameObj = user.get("name");
-        String displayName = nameObj != null ? nameObj.toString() : "";
+        String displayName;
+        if (nameObj != null) {
+            displayName = nameObj.toString();
+        } else {
+            displayName = "";
+        }
 
         String realName = "";
         String avatarUrl = "";
@@ -435,7 +472,9 @@ public class OAuthSlackService extends OAuthService {
             Map<String, Object> profile = (Map<String, Object>) profileObj;
 
             Object realNameObj = profile.get("real_name");
-            realName = realNameObj != null ? realNameObj.toString() : "";
+            if (realNameObj != null) {
+                realName = realNameObj.toString();
+            }
 
             Object imageObj = profile.get("image_512");
             if (imageObj == null) {
@@ -444,13 +483,15 @@ public class OAuthSlackService extends OAuthService {
             if (imageObj == null) {
                 imageObj = profile.get("image_72");
             }
-            avatarUrl = imageObj != null ? imageObj.toString() : "";
+            if (imageObj != null) {
+                avatarUrl = imageObj.toString();
+            }
         }
 
         return new UserProfileData(
             email,
             avatarUrl,
-            idObj.toString(),
+            userId,
             displayName,
             realName
         );

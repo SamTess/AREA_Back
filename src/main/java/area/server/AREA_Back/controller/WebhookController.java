@@ -3,13 +3,14 @@ package area.server.AREA_Back.controller;
 import area.server.AREA_Back.entity.Execution;
 import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
-import area.server.AREA_Back.service.Webhook.GitHubWebhookService;
 import area.server.AREA_Back.service.Webhook.GoogleWatchService;
 import area.server.AREA_Back.service.Webhook.GoogleWebhookService;
+import area.server.AREA_Back.service.Webhook.SlackWebhookService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
 import area.server.AREA_Back.service.Webhook.WebhookSecretService;
 import area.server.AREA_Back.service.Webhook.WebhookSignatureValidator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,14 +38,15 @@ import java.util.UUID;
 @Slf4j
 public class WebhookController {
 
-    private final GitHubWebhookService gitHubWebhookService;
     private final GoogleWebhookService googleWebhookService;
     private final GoogleWatchService googleWatchService;
+    private final SlackWebhookService slackWebhookService;
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;
     private final WebhookSecretService webhookSecretService;
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * Generic webhook receiver endpoint
@@ -53,17 +55,21 @@ public class WebhookController {
     @PostMapping("/{service}/{action}")
     @Operation(summary = "Handle webhook events from external services",
                description = "Receives and processes webhook events with signature validation and deduplication")
-    public ResponseEntity<Map<String, Object>> handleWebhook(
+    public ResponseEntity<Object> handleWebhook(
             @Parameter(description = "Service name (github, slack, etc.)")
             @PathVariable String service,
             @Parameter(description = "Action type (issues, pull_request, message, etc.)")
             @PathVariable String action,
             @Parameter(description = "Optional user ID to scope the webhook")
             @RequestParam(required = false) UUID userId,
-            @RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
 
         long startTime = System.currentTimeMillis();
+
+        byte[] rawBody = getRequestBody(request);
+
+        Map<String, Object> payload = parseJsonBody(rawBody);
+
         String eventId = extractEventId(service, request, payload);
         log.info("Received webhook: service={}, action={}, eventId={}, userId={}",
                 service, action, eventId, userId);
@@ -71,7 +77,16 @@ public class WebhookController {
         log.debug("Webhook headers: {}", getRequestHeaders(request));
 
         try {
-            if (!validateSignature(service, request, payload)) {
+            if ("slack".equalsIgnoreCase(service) && "url_verification".equals(payload.get("type"))) {
+                Map<String, Object> slackResult = slackWebhookService.processWebhook(payload);
+                if (slackResult.containsKey("challenge")) {
+                    String challenge = (String) slackResult.get("challenge");
+                    log.info("Slack URL verification successful, returning challenge");
+                    return ResponseEntity.ok(challenge);
+                }
+            }
+
+            if (!validateSignature(service, request, rawBody)) {
                 log.warn("Webhook signature validation failed for service {} action {}", service, action);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                     "error", "Invalid signature",
@@ -105,6 +120,22 @@ public class WebhookController {
 
                     long processingTime = System.currentTimeMillis() - startTime;
                     log.info("Google webhook processed: action={}, time={}ms", action, processingTime);
+
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "processed");
+                    response.put("service", service);
+                    response.put("action", action);
+                    response.put("eventId", eventId);
+                    response.put("processingTimeMs", processingTime);
+                    response.put("timestamp", LocalDateTime.now().toString());
+                    response.put("serviceResult", serviceResult);
+                    return ResponseEntity.ok(response);
+                } else if ("slack".equalsIgnoreCase(service)) {
+                    serviceResult = slackWebhookService.processWebhook(payload);
+                    executions = List.of();
+
+                    long processingTime = System.currentTimeMillis() - startTime;
+                    log.info("Slack webhook processed: action={}, time={}ms", action, processingTime);
 
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "processed");
@@ -245,9 +276,8 @@ public class WebhookController {
     /**
      * Validates webhook signature based on service provider
      */
-    private boolean validateSignature(String service, HttpServletRequest request, Map<String, Object> payload) {
+    private boolean validateSignature(String service, HttpServletRequest request, byte[] payloadBytes) {
         try {
-            byte[] payloadBytes = getRequestBody(request);
             String signature = getSignatureHeader(service, request);
             String timestamp = getTimestampHeader(service, request);
             if (signature == null) {
@@ -340,6 +370,22 @@ public class WebhookController {
         } catch (IOException e) {
             log.error("Error reading request body: {}", e.getMessage());
             return new byte[0];
+        }
+    }
+
+    /**
+     * Parses JSON body from raw bytes
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonBody(byte[] rawBody) {
+        try {
+            if (rawBody == null || rawBody.length == 0) {
+                return new HashMap<>();
+            }
+            return objectMapper.readValue(rawBody, Map.class);
+        } catch (IOException e) {
+            log.error("Error parsing JSON body: {}", e.getMessage());
+            return new HashMap<>();
         }
     }
 

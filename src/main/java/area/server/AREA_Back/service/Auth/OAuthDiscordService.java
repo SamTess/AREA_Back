@@ -206,6 +206,7 @@ public class OAuthDiscordService extends OAuthService {
         }
 
         Map<String, Object> tokenMeta = new HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("username", profileData.username);
         tokenMeta.put("discriminator", profileData.discriminator);
         tokenMeta.put("global_name", profileData.globalName);
@@ -260,6 +261,7 @@ public class OAuthDiscordService extends OAuthService {
         }
 
         Map<String, Object> tokenMeta = new HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("username", profileData.username);
         tokenMeta.put("discriminator", profileData.discriminator);
         tokenMeta.put("global_name", profileData.globalName);

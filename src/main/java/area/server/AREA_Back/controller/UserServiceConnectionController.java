@@ -54,27 +54,31 @@ public class UserServiceConnectionController {
             status.setServiceKey(serviceKey);
             status.setServiceName(getServiceDisplayName(serviceKey));
             status.setIconUrl(getServiceIconUrl(serviceKey));
-            status.setUserEmail(currentUser.getEmail());
             status.setAvatarUrl(currentUser.getAvatarUrl());
 
             if (oauthIdentity.isPresent()) {
+                UserOAuthIdentity oauth = oauthIdentity.get();
                 status.setConnected(true);
                 status.setConnectionType("OAUTH");
-                status.setProviderUserId(oauthIdentity.get().getProviderUserId());
+                status.setProviderUserId(oauth.getProviderUserId());
+
+                String oauthEmail = extractEmailFromOAuth(oauth);
+                status.setUserEmail(oauthEmail != null ? oauthEmail : currentUser.getEmail());
 
                 boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(), provider);
                 status.setCanDisconnect(canDisconnect);
-                
+
                 Optional<String> primaryProvider = userIdentityService.getPrimaryOAuthProvider(currentUser.getId());
                 boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(provider);
                 status.setPrimaryAuth(isPrimary);
 
-                String userName = extractUserNameFromOAuth(oauthIdentity.get());
+                String userName = extractUserNameFromOAuth(oauth);
                 status.setUserName(userName != null ? userName : currentUser.getEmail());
             } else {
                 status.setConnected(false);
                 status.setConnectionType("NONE");
                 status.setUserName(currentUser.getEmail());
+                status.setUserEmail(currentUser.getEmail());
                 status.setCanDisconnect(false);
                 status.setPrimaryAuth(false);
             }
@@ -110,13 +114,16 @@ public class UserServiceConnectionController {
                         status.setIconUrl(getServiceIconUrl(serviceKey));
                         status.setConnected(true);
                         status.setConnectionType("OAUTH");
-                        status.setUserEmail(currentUser.getEmail());
+
+                        String oauthEmail = extractEmailFromOAuth(oauth);
+                        status.setUserEmail(oauthEmail != null ? oauthEmail : currentUser.getEmail());
+
                         status.setAvatarUrl(currentUser.getAvatarUrl());
                         status.setProviderUserId(oauth.getProviderUserId());
 
                         boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(), oauth.getProvider());
                         status.setCanDisconnect(canDisconnect);
-                        
+
                         log.info("Service: {}, Provider: {}, canDisconnect: {}", serviceKey, oauth.getProvider(), canDisconnect);
 
                         boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(oauth.getProvider());
@@ -183,6 +190,16 @@ public class UserServiceConnectionController {
             Object login = oauth.getTokenMeta().get("login");
             if (login != null) {
                 return login.toString();
+            }
+        }
+        return null;
+    }
+
+    private String extractEmailFromOAuth(UserOAuthIdentity oauth) {
+        if (oauth.getTokenMeta() != null) {
+            Object email = oauth.getTokenMeta().get("email");
+            if (email != null) {
+                return email.toString();
             }
         }
         return null;

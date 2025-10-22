@@ -126,7 +126,7 @@ public class WebhookController {
                 executions = eventProcessingService.processWebhookEventForUser(service, action, payload, userId);
             } else {
                 log.warn("Could not identify user for {} webhook, skipping processing", service);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
                     "error", "User identification failed",
                     "message", "Could not identify which user this webhook belongs to",
                     "service", service,

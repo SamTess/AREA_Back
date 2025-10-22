@@ -85,7 +85,7 @@ public class OAuthGoogleService extends OAuthService {
         final JwtCookieProperties jwtCookieProperties,
         final MeterRegistry meterRegistry,
         final RedisTokenService redisTokenService,
-        final PasswordEncoder passwordEncoder, // gardé pour symétrie DI même si non utilisé
+        final PasswordEncoder passwordEncoder,
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,

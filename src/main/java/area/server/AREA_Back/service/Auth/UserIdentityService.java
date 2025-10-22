@@ -97,15 +97,15 @@ public class UserIdentityService {
     public boolean canDisconnectService(UUID userId, String provider) {
         Optional<String> primaryProvider = getPrimaryOAuthProvider(userId);
 
-        log.info("Checking canDisconnect for user {} provider {}: primaryProvider={}",
+        log.debug("Checking canDisconnect for user {} provider {}: primaryProvider={}",
                 userId, provider, primaryProvider.orElse("none"));
 
         if (primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(provider)) {
-            log.info("Provider {} is primary, cannot disconnect", provider);
+            log.debug("Provider {} is primary, cannot disconnect", provider);
             return false;
         }
 
-        log.info("Provider {} is not primary, can disconnect: true", provider);
+        log.debug("Provider {} is not primary, can disconnect: true", provider);
         return true;
     }
 

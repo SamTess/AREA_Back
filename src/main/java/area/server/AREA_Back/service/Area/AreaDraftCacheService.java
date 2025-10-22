@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,6 +30,10 @@ public class AreaDraftCacheService {
                 : UUID.randomUUID().toString();
 
             String key = DRAFT_PREFIX + userId + ":" + draftId;
+
+            if (draft.getSavedAt() == null) {
+                draft.setSavedAt(LocalDateTime.now());
+            }
 
             redisTemplate.opsForValue().set(key, draft, DRAFT_TTL);
             log.info("Draft saved: {} for user: {}", draftId, userId);
@@ -68,23 +71,31 @@ public class AreaDraftCacheService {
     public List<AreaDraftResponse> getUserDrafts(UUID userId) {
         try {
             String pattern = DRAFT_PREFIX + userId + ":*";
-            Set<String> keys = redisTemplate.keys(pattern);
+            List<AreaDraftResponse> drafts = new ArrayList<>();
 
-            if (keys == null || keys.isEmpty()) {
-                return Collections.emptyList();
-            }
+            redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
+                org.springframework.data.redis.core.ScanOptions options =
+                    org.springframework.data.redis.core.ScanOptions.scanOptions()
+                        .match(pattern)
+                        .count(100)
+                        .build();
 
-            return keys.stream()
-                .map(key -> {
+                org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.scan(options);
+
+                while (cursor.hasNext()) {
+                    String key = new String(cursor.next());
                     Object draft = redisTemplate.opsForValue().get(key);
                     if (draft instanceof AreaDraftRequest) {
                         String draftId = key.substring((DRAFT_PREFIX + userId + ":").length());
-                        return convertToResponse(userId, draftId, (AreaDraftRequest) draft, key);
+                        drafts.add(convertToResponse(userId, draftId, (AreaDraftRequest) draft, key));
                     }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                }
+
+                cursor.close();
+                return null;
+            });
+
+            return drafts;
         } catch (RedisConnectionFailureException e) {
             log.error("Redis connection failed while getting user drafts: {}", e.getMessage());
             return Collections.emptyList();
@@ -143,7 +154,7 @@ public class AreaDraftCacheService {
         response.setReactions(draft.getReactions());
         response.setConnections(draft.getConnections());
         response.setLayoutMode(draft.getLayoutMode());
-        response.setSavedAt(LocalDateTime.now());
+        response.setSavedAt(draft.getSavedAt() != null ? draft.getSavedAt() : LocalDateTime.now());
 
         try {
             Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);

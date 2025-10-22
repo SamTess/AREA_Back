@@ -119,7 +119,7 @@ public class AreaDraftController {
                 return ResponseEntity.ok(draft.get());
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(null);
+                    .body(Map.of("error", "Draft not found"));
             }
         } catch (Exception e) {
             log.error("Failed to get draft", e);

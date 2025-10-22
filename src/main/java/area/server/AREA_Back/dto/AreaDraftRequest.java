@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,9 @@ public class AreaDraftRequest implements Serializable {
 
     @JsonProperty("draftId")
     private String draftId;
+
+    @JsonProperty("savedAt")
+    private LocalDateTime savedAt;
 
     @Data
     @NoArgsConstructor

@@ -29,6 +29,7 @@ import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
+import area.server.AREA_Back.service.Webhook.GoogleWatchService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -36,9 +37,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-id")
-@ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-secret")
 @Service
+@ConditionalOnProperty(
+    prefix = "spring.security.oauth2.client.registration.google",
+    name = { "client-id", "client-secret" }
+)
 public class OAuthGoogleService extends OAuthService {
 
     private final RestTemplate restTemplate;
@@ -48,6 +51,7 @@ public class OAuthGoogleService extends OAuthService {
     private final UserRepository userRepository;
     private final RedisTokenService redisTokenService;
     private final MeterRegistry meterRegistry;
+    private final GoogleWatchService googleWatchService;
 
     private Counter oauthLoginSuccessCounter;
     private Counter oauthLoginFailureCounter;
@@ -56,25 +60,7 @@ public class OAuthGoogleService extends OAuthService {
     private Counter tokenExchangeFailures;
 
     /**
-     * Constructs an OAuthGoogleService instance with all required dependencies for Google OAuth2 authentication.
-     * <p>
-     * This constructor initializes the Google OAuth service with comprehensive OAuth2 scopes including:
-     * Gmail (read, send, modify), Google Calendar, Google Drive, and Google Sheets access.
-     * The service is configured for offline access with consent prompts to obtain refresh tokens.
-     * </p>
-     *
-     * @param googleClientId The Google OAuth2 client identifier from application configuration
-     * @param googleClientSecret The Google OAuth2 client secret from application configuration
-     * @param redirectBaseUrl The base URL for OAuth callback redirects (defaults to http://localhost:3000)
-     * @param jwtService Service for JWT token generation and validation
-     * @param jwtCookieProperties Configuration properties for JWT cookies
-     * @param meterRegistry Metrics registry for monitoring OAuth operations
-     * @param redisTokenService Service for managing OAuth tokens in Redis cache
-     * @param passwordEncoder Password encoder bean (kept for dependency injection symmetry, not actively used)
-     * @param tokenEncryptionService Service for encrypting and decrypting OAuth tokens
-     * @param userOAuthIdentityRepository Repository for managing user OAuth identity associations
-     * @param userRepository Repository for user data access
-     * @param restTemplate Configured REST template for external API calls
+     * Constructs OAuth Google Service with dependencies
      */
     @SuppressWarnings("ParameterNumber")
     public OAuthGoogleService(
@@ -85,11 +71,12 @@ public class OAuthGoogleService extends OAuthService {
         final JwtCookieProperties jwtCookieProperties,
         final MeterRegistry meterRegistry,
         final RedisTokenService redisTokenService,
-        final PasswordEncoder passwordEncoder,
+        final PasswordEncoder passwordEncoder, // kept for DI symmetry
         final TokenEncryptionService tokenEncryptionService,
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,
-        final RestTemplate restTemplate
+        final RestTemplate restTemplate,
+        final GoogleWatchService googleWatchService
     ) {
         super(
             "google",
@@ -103,11 +90,6 @@ public class OAuthGoogleService extends OAuthService {
                 + "%20https://www.googleapis.com/auth/gmail.readonly"
                 + "%20https://www.googleapis.com/auth/gmail.send"
                 + "%20https://www.googleapis.com/auth/gmail.modify"
-                + "%20https://www.googleapis.com/auth/calendar"
-                + "%20https://www.googleapis.com/auth/calendar.events"
-                + "%20https://www.googleapis.com/auth/drive"
-                + "%20https://www.googleapis.com/auth/drive.file"
-                + "%20https://www.googleapis.com/auth/spreadsheets"
                 + "&access_type=offline"
                 + "&prompt=consent",
             googleClientId,
@@ -122,6 +104,7 @@ public class OAuthGoogleService extends OAuthService {
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.userRepository = userRepository;
         this.restTemplate = restTemplate;
+        this.googleWatchService = googleWatchService;
     }
 
     @PostConstruct
@@ -171,6 +154,14 @@ public class OAuthGoogleService extends OAuthService {
             );
 
             final AuthResponse out = generateAuthResponse(oauth, response);
+
+            // Optionnel : démarrage auto du watch Gmail
+            try {
+                googleWatchService.startGmailWatch(oauth.getUser().getId());
+                log.info("Auto-started Gmail watch for user {}", oauth.getUser().getId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-start Gmail watch for user {}: {}", oauth.getUser().getId(), e.getMessage());
+            }
 
             oauthLoginSuccessCounter.increment();
             log.info("Google OAuth authentication completed successfully for user {}", oauth.getUser().getId());
@@ -236,6 +227,14 @@ public class OAuthGoogleService extends OAuthService {
         try {
             oauth = this.userOAuthIdentityRepository.save(oauth);
             log.info("Successfully linked Google account {} to user {}", profileData.userIdentifier, existingUser.getId());
+
+            try {
+                googleWatchService.startGmailWatch(existingUser.getId());
+                log.info("Auto-started Gmail watch for linked user {}", existingUser.getId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-start Gmail watch for linked user {}: {}", existingUser.getId(), e.getMessage());
+            }
+
             return oauth;
         } catch (Exception e) {
             log.error("Failed to link Google account to existing user", e);
@@ -472,10 +471,7 @@ public class OAuthGoogleService extends OAuthService {
             throw new RuntimeException("Cookie setting failed: " + e.getMessage(), e);
         }
 
-        return new AuthResponse(
-            "Login successful", 
-            userResponse
-            );
+        return new AuthResponse("Login successful", userResponse);
     }
 
     private LocalDateTime calculateExpirationTime(final Integer expiresIn) {
@@ -507,18 +503,6 @@ public class OAuthGoogleService extends OAuthService {
         final String locale;
         final Boolean verifiedEmail;
 
-        /**
-         * Constructs a UserProfileData instance with comprehensive user profile information retrieved from Google OAuth.
-         *
-         * @param email the user's email address from their Google account
-         * @param userIdentifier the unique identifier for the user from Google's OAuth system
-         * @param name the user's full display name
-         * @param givenName the user's first name
-         * @param familyName the user's last name
-         * @param picture the URL to the user's profile picture
-         * @param locale the user's preferred locale/language setting
-         * @param verifiedEmail indicates whether the email address has been verified by Google
-         */
         @SuppressWarnings("ParameterNumber")
         UserProfileData(
             final String email,

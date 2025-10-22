@@ -95,9 +95,12 @@ public class WebhookEventProcessingService {
 
     private boolean matchesGitHubAction(String actionKey, String webhookAction) {
         return switch (webhookAction.toLowerCase()) {
-            case "issues" -> actionKey.equals("new_issue") || actionKey.equals("issue_updated");
-            case "pull_request" -> actionKey.equals("new_pull_request") || actionKey.equals("pr_updated");
-            case "push" -> actionKey.equals("push_to_branch") || actionKey.equals("commit_pushed");
+            case "issues", "issue" ->
+                actionKey.equals("new_issue") || actionKey.equals("issue_updated");
+            case "pull_request", "pull_requests" ->
+                actionKey.equals("new_pull_request") || actionKey.equals("pr_updated");
+            case "push" ->
+                actionKey.equals("push_to_branch") || actionKey.equals("commit_pushed");
             case "release" -> actionKey.equals("new_release");
             case "star" -> actionKey.equals("repository_starred");
             case "fork" -> actionKey.equals("repository_forked");
@@ -135,14 +138,21 @@ public class WebhookEventProcessingService {
                 log.warn("No webhook activation mode found for action instance {}", triggerInstance.getId());
                 return null;
             }
-            String eventAction = payload.get("action") != null ? payload.get("action").toString() : null;
+            String eventAction = null;
+            if (payload.get("action") != null) {
+                eventAction = payload.get("action").toString();
+            }
             if (!matchesEventSubType(triggerInstance, eventAction)) {
-                log.debug("Skipping webhook: event action '{}' does not match trigger expectations for instance {}",
-                        eventAction, triggerInstance.getId());
+                log.debug(
+                    "Skipping webhook: event action '{}' does not match trigger expectations for instance {}",
+                    eventAction,
+                    triggerInstance.getId()
+                );
                 return null;
             }
 
-            List<ActionLink> links = actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(triggerInstance.getId());
+            List<ActionLink> links = actionLinkRepository
+                .findBySourceActionInstanceIdWithTargetFetch(triggerInstance.getId());
 
             if (links.isEmpty()) {
                 log.warn("No linked actions found for trigger action instance {}", triggerInstance.getId());
@@ -252,7 +262,8 @@ public class WebhookEventProcessingService {
         }
 
         try {
-            String mappingJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(mappingConfig);
+            String mappingJson = new com.fasterxml.jackson.databind.ObjectMapper()
+                .writeValueAsString(mappingConfig);
             return payloadMappingService.applyMapping(sourcePayload, mappingJson);
         } catch (Exception e) {
             log.warn("Failed to apply payload mapping, using original payload: {}", e.getMessage());
@@ -264,11 +275,21 @@ public class WebhookEventProcessingService {
         Object eventId = extractEventId(service, payload);
         Object eventAction = payload.get("action");
 
+        String eventIdStr = "unknown";
+        if (eventId != null) {
+            eventIdStr = eventId.toString();
+        }
+        
+        String eventActionStr = "default";
+        if (eventAction != null) {
+            eventActionStr = eventAction.toString();
+        }
+
         return String.format("%s:%s:%s:%s",
                 service.toLowerCase(),
                 action.toLowerCase(),
-                eventId != null ? eventId.toString() : "unknown",
-                eventAction != null ? eventAction.toString() : "default");
+                eventIdStr,
+                eventActionStr);
     }
 
     private Object extractEventId(String service, Map<String, Object> payload) {
@@ -284,12 +305,18 @@ public class WebhookEventProcessingService {
         if (payload.containsKey("issue")) {
             @SuppressWarnings("unchecked")
             Map<String, Object> issue = (Map<String, Object>) payload.get("issue");
-            return issue != null ? issue.get("id") : null;
+            if (issue != null) {
+                return issue.get("id");
+            }
+            return null;
         }
         if (payload.containsKey("pull_request")) {
             @SuppressWarnings("unchecked")
             Map<String, Object> pr = (Map<String, Object>) payload.get("pull_request");
-            return pr != null ? pr.get("id") : null;
+            if (pr != null) {
+                return pr.get("id");
+            }
+            return null;
         }
         return payload.get("id");
     }

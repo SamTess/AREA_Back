@@ -33,7 +33,7 @@ public class JwtCookieProperties {
      * SameSite configuration for cookies.
      * Strict in production for maximum security.
      */
-    private String sameSite = "Strict";
+    private String sameSite = "None";
 
     /**
      * Domain for cookies (optional).

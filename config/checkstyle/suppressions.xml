@@ -39,15 +39,30 @@
     <!-- OAuth Google Service constructor has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"
               files="OAuthGoogleService\.java"
-              lines="71"/>
+              lines="76"/>
 
     <!-- UserProfileData record-like class needs all profile fields -->
     <suppress checks="ParameterNumber"
               files="OAuthGoogleService\.java"
-              lines="488"/>
+              lines="514"/>
 
     <!-- OAuth Github Service constructor has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"
               files="OAuthGithubService\.java"
-              lines="64"/>
+              lines="65"/>
+
+    <!-- OAuth Slack Service constructor has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthSlackService\.java"
+              lines="58"/>
+
+    <!-- OAuth Discord Service constructor has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthDiscordService\.java"
+              lines="60"/>
+
+    <!-- OAuth base Service has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthService\.java"
+              lines="30"/>
 </suppressions>

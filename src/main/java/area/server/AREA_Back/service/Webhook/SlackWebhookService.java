@@ -171,8 +171,19 @@ public class SlackWebhookService {
 
         triggerMatchingActions("new_message", eventData);
 
-        String channelValue = channel != null ? channel : "unknown";
-        String userValue = user != null ? user : "unknown";
+        String channelValue;
+        if (channel != null) {
+            channelValue = channel;
+        } else {
+            channelValue = "unknown";
+        }
+
+        String userValue;
+        if (user != null) {
+            userValue = user;
+        } else {
+            userValue = "unknown";
+        }
 
         return Map.of(
             "action", "message",
@@ -189,8 +200,18 @@ public class SlackWebhookService {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> item = (Map<String, Object>) event.get("item");
-        String channel = item != null ? (String) item.get("channel") : null;
-        String ts = item != null ? (String) item.get("ts") : null;
+        String channel;
+        String ts;
+        if (item != null) {
+            channel = (String) item.get("channel");
+        } else {
+            channel = null;
+        }
+        if (item != null) {
+            ts = (String) item.get("ts");
+        } else {
+            ts = null;
+        }
 
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("type", "reaction_added");
@@ -201,8 +222,19 @@ public class SlackWebhookService {
 
         triggerMatchingActions("reaction_added", eventData);
 
-        String reactionValue = reaction != null ? reaction : "unknown";
-        String channelValue = channel != null ? channel : "unknown";
+        String reactionValue;
+        if (reaction != null) {
+            reactionValue = reaction;
+        } else {
+            reactionValue = "unknown";
+        }
+
+        String channelValue;
+        if (channel != null) {
+            channelValue = channel;
+        } else {
+            channelValue = "unknown";
+        }
 
         return Map.of(
             "action", "reaction_added",
@@ -217,8 +249,18 @@ public class SlackWebhookService {
         @SuppressWarnings("unchecked")
         Map<String, Object> channel = (Map<String, Object>) event.get("channel");
 
-        String channelId = channel != null ? (String) channel.get("id") : null;
-        String channelName = channel != null ? (String) channel.get("name") : null;
+        String channelId;
+        String channelName;
+        if (channel != null) {
+            channelId = (String) channel.get("id");
+        } else {
+            channelId = null;
+        }
+        if (channel != null) {
+            channelName = (String) channel.get("name");
+        } else {
+            channelName = null;
+        }
 
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("type", "channel_created");
@@ -227,8 +269,19 @@ public class SlackWebhookService {
 
         triggerMatchingActions("new_channel", eventData);
 
-        String channelIdValue = channelId != null ? channelId : "unknown";
-        String channelNameValue = channelName != null ? channelName : "unknown";
+        String channelIdValue;
+        if (channelId != null) {
+            channelIdValue = channelId;
+        } else {
+            channelIdValue = "unknown";
+        }
+
+        String channelNameValue;
+        if (channelName != null) {
+            channelNameValue = channelName;
+        } else {
+            channelNameValue = "unknown";
+        }
 
         return Map.of(
             "action", "channel_event",
@@ -250,8 +303,19 @@ public class SlackWebhookService {
 
         triggerMatchingActions("user_joined", eventData);
 
-        String userValue = user != null ? user : "unknown";
-        String channelValue = channel != null ? channel : "unknown";
+        String userValue;
+        if (user != null) {
+            userValue = user;
+        } else {
+            userValue = "unknown";
+        }
+
+        String channelValue;
+        if (channel != null) {
+            channelValue = channel;
+        } else {
+            channelValue = "unknown";
+        }
 
         return Map.of(
             "action", "member_joined",
@@ -266,8 +330,18 @@ public class SlackWebhookService {
         @SuppressWarnings("unchecked")
         Map<String, Object> file = (Map<String, Object>) event.get("file");
 
-        String fileId = file != null ? (String) file.get("id") : null;
-        String fileName = file != null ? (String) file.get("name") : null;
+        String fileId;
+        String fileName;
+        if (file != null) {
+            fileId = (String) file.get("id");
+        } else {
+            fileId = null;
+        }
+        if (file != null) {
+            fileName = (String) file.get("name");
+        } else {
+            fileName = null;
+        }
         String user = (String) event.get("user_id");
 
         Map<String, Object> eventData = new HashMap<>();
@@ -278,8 +352,19 @@ public class SlackWebhookService {
 
         triggerMatchingActions("file_shared", eventData);
 
-        String fileIdValue = fileId != null ? fileId : "unknown";
-        String fileNameValue = fileName != null ? fileName : "unknown";
+        String fileIdValue;
+        if (fileId != null) {
+            fileIdValue = fileId;
+        } else {
+            fileIdValue = "unknown";
+        }
+
+        String fileNameValue;
+        if (fileName != null) {
+            fileNameValue = fileName;
+        } else {
+            fileNameValue = "unknown";
+        }
 
         return Map.of(
             "action", "file_shared",

@@ -6,14 +6,19 @@ import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.service.Auth.AuthService;
 import area.server.AREA_Back.service.Auth.UserIdentityService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -57,12 +62,21 @@ public class UserServiceConnectionController {
                 status.setConnectionType("OAUTH");
                 status.setProviderUserId(oauthIdentity.get().getProviderUserId());
 
+                boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(), provider);
+                status.setCanDisconnect(canDisconnect);
+                
+                Optional<String> primaryProvider = userIdentityService.getPrimaryOAuthProvider(currentUser.getId());
+                boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(provider);
+                status.setPrimaryAuth(isPrimary);
+
                 String userName = extractUserNameFromOAuth(oauthIdentity.get());
                 status.setUserName(userName != null ? userName : currentUser.getEmail());
             } else {
                 status.setConnected(false);
                 status.setConnectionType("NONE");
                 status.setUserName(currentUser.getEmail());
+                status.setCanDisconnect(false);
+                status.setPrimaryAuth(false);
             }
 
             return ResponseEntity.ok(status);
@@ -84,6 +98,7 @@ public class UserServiceConnectionController {
             }
 
             List<UserOAuthIdentity> oauthIdentities = userIdentityService.getUserOAuthIdentities(currentUser.getId());
+            Optional<String> primaryProvider = userIdentityService.getPrimaryOAuthProvider(currentUser.getId());
 
             List<ServiceConnectionStatus> connectedServices = oauthIdentities.stream()
                     .map(oauth -> {
@@ -98,6 +113,14 @@ public class UserServiceConnectionController {
                         status.setUserEmail(currentUser.getEmail());
                         status.setAvatarUrl(currentUser.getAvatarUrl());
                         status.setProviderUserId(oauth.getProviderUserId());
+
+                        boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(), oauth.getProvider());
+                        status.setCanDisconnect(canDisconnect);
+                        
+                        log.info("Service: {}, Provider: {}, canDisconnect: {}", serviceKey, oauth.getProvider(), canDisconnect);
+
+                        boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(oauth.getProvider());
+                        status.setPrimaryAuth(isPrimary);
 
                         String userName = extractUserNameFromOAuth(oauth);
                         status.setUserName(userName != null ? userName : currentUser.getEmail());
@@ -163,5 +186,55 @@ public class UserServiceConnectionController {
             }
         }
         return null;
+    }
+
+    @DeleteMapping("/service-connection/{serviceKey}")
+    @Transactional
+    @Operation(summary = "Disconnect service for current user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Service disconnected successfully"),
+        @ApiResponse(responseCode = "400", description = "Cannot disconnect primary authentication provider"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Service connection not found")
+    })
+    public ResponseEntity<Map<String, String>> disconnectService(
+            @PathVariable String serviceKey,
+            HttpServletRequest request) {
+        try {
+            User currentUser = authService.getCurrentUserEntity(request);
+            if (currentUser == null) {
+                return ResponseEntity.status(HTTP_UNAUTHORIZED).build();
+            }
+
+            String provider = mapServiceKeyToOAuthProvider(serviceKey);
+
+            Optional<UserOAuthIdentity> oauthIdentity = userIdentityService.getOAuthIdentity(
+                    currentUser.getId(), provider);
+
+            if (oauthIdentity.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Service connection not found"));
+            }
+
+            if (!userIdentityService.canDisconnectService(currentUser.getId(), provider)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Cannot disconnect primary authentication provider"));
+            }
+
+            userIdentityService.disconnectService(currentUser.getId(), provider);
+
+            log.info("Service {} disconnected for user {}", serviceKey, currentUser.getId());
+
+            return ResponseEntity.ok(Map.of("message", "Service disconnected successfully"));
+
+        } catch (IllegalStateException e) {
+            log.warn("Failed to disconnect service {}: {}", serviceKey, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error disconnecting service: {}", serviceKey, e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to disconnect service"));
+        }
     }
 }

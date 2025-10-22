@@ -5,6 +5,7 @@ import area.server.AREA_Back.dto.AreaDraftResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -94,13 +95,12 @@ public class AreaDraftCacheService {
 
     public List<AreaDraftResponse> getUserDrafts(UUID userId) {
         try {
-            // Récupérer uniquement les drafts de création (nouveaux AREAs)
             String pattern = DRAFT_PREFIX + "new:" + userId + ":*";
             List<AreaDraftResponse> drafts = new ArrayList<>();
 
             log.info("Scanning for new area drafts with pattern: {}", pattern);
 
-            redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
+            redisTemplate.execute((RedisCallback<Void>) connection -> {
                 org.springframework.data.redis.core.ScanOptions options =
                     org.springframework.data.redis.core.ScanOptions.scanOptions()
                         .match(pattern)

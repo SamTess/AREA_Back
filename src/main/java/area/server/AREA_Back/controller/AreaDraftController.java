@@ -197,7 +197,7 @@ public class AreaDraftController {
             }
 
             Optional<AreaDraftResponse> draftOpt = draftCacheService.getDraft(userId, draftId);
-            if (!draftOpt.isPresent()) {
+            if (draftOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Draft not found"));
             }

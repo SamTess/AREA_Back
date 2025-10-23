@@ -159,6 +159,7 @@ public class OAuthGithubService extends OAuthService {
             }
 
             java.util.Map<String, Object> tokenMeta = new java.util.HashMap<>();
+            tokenMeta.put("email", profileData.email);
             tokenMeta.put("name", profileData.name);
             tokenMeta.put("login", profileData.login);
             tokenMeta.put("avatar_url", profileData.avatarUrl);
@@ -211,6 +212,7 @@ public class OAuthGithubService extends OAuthService {
         }
 
         java.util.Map<String, Object> tokenMeta = new java.util.HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("name", profileData.name);
         tokenMeta.put("login", profileData.login);
         tokenMeta.put("avatar_url", profileData.avatarUrl);

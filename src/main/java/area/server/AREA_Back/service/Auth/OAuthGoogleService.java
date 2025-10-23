@@ -219,6 +219,7 @@ public class OAuthGoogleService extends OAuthService {
             oauth.setUpdatedAt(LocalDateTime.now());
         }
         Map<String, Object> tokenMeta = new HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("name", profileData.name);
         tokenMeta.put("given_name", profileData.givenName);
         tokenMeta.put("family_name", profileData.familyName);
@@ -392,6 +393,7 @@ public class OAuthGoogleService extends OAuthService {
         }
 
         Map<String, Object> tokenMeta = new HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("name", profileData.name);
         tokenMeta.put("given_name", profileData.givenName);
         tokenMeta.put("family_name", profileData.familyName);

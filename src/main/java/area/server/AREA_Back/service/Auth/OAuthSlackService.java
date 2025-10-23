@@ -260,6 +260,7 @@ public class OAuthSlackService extends OAuthService {
 
     private Map<String, Object> buildTokenMeta(UserProfileData profileData, SlackTokenResponse tokenResponse) {
         Map<String, Object> tokenMeta = new HashMap<>();
+        tokenMeta.put("email", profileData.email);
         tokenMeta.put("display_name", profileData.displayName);
         tokenMeta.put("real_name", profileData.realName);
         tokenMeta.put("avatar_url", profileData.avatarUrl);

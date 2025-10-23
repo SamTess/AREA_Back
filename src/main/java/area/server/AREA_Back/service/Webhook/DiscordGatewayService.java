@@ -37,25 +37,21 @@ public class DiscordGatewayService {
 
     private WebSocket webSocket;
     private final AtomicInteger sequenceNumber = new AtomicInteger(0);
-    private final AtomicLong heartbeatInterval = new AtomicLong(45000); // Default 45 seconds
+    private final AtomicLong heartbeatInterval = new AtomicLong(45000);
     private boolean connected = false;
 
-    // Discord Gateway opcodes
     private static final int OPCODE_DISPATCH = 0;
     private static final int OPCODE_HEARTBEAT = 1;
-    private static final int OPCODE_IDENTIFY = 2;
     private static final int OPCODE_RECONNECT = 7;
     private static final int OPCODE_INVALID_SESSION = 9;
     private static final int OPCODE_HELLO = 10;
     private static final int OPCODE_HEARTBEAT_ACK = 11;
 
-    // Discord Gateway intents
     private static final int INTENT_GUILDS = 1;
     private static final int INTENT_GUILD_MESSAGES = 512;
     private static final int INTENT_GUILD_MESSAGE_REACTIONS = 1024;
     private static final int INTENT_MESSAGE_CONTENT = 32768;
 
-    // WebSocket close codes
     private static final int CLOSE_CODE_NORMAL = 1000;
 
     @PostConstruct

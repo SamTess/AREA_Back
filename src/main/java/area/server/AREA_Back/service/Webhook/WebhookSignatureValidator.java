@@ -127,7 +127,7 @@ public class WebhookSignatureValidator {
         return true;
     }
 
-        /**
+    /**
      * Validates Discord webhook signature
      * Discord uses Ed25519 signatures with timestamp + body
      *

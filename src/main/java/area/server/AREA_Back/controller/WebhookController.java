@@ -6,6 +6,8 @@ import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.service.Webhook.GoogleWatchService;
 import area.server.AREA_Back.service.Webhook.GoogleWebhookService;
 import area.server.AREA_Back.service.Webhook.SlackWebhookService;
+import area.server.AREA_Back.service.Webhook.DiscordWebhookService;
+import area.server.AREA_Back.service.Webhook.DiscordGatewayService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
 import area.server.AREA_Back.service.Webhook.WebhookSecretService;
@@ -22,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -41,12 +44,16 @@ public class WebhookController {
     private final GoogleWebhookService googleWebhookService;
     private final GoogleWatchService googleWatchService;
     private final SlackWebhookService slackWebhookService;
+    private final DiscordWebhookService discordWebhookService;
+    private final DiscordGatewayService discordGatewayService;
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;
     private final WebhookSecretService webhookSecretService;
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
     private final ObjectMapper objectMapper;
+
+    private static final int RECONNECT_DELAY_MS = 1000;
 
     /**
      * Generic webhook receiver endpoint
@@ -146,6 +153,24 @@ public class WebhookController {
                     response.put("timestamp", LocalDateTime.now().toString());
                     response.put("serviceResult", serviceResult);
                     return ResponseEntity.ok(response);
+                } else if ("discord".equalsIgnoreCase(service)) {
+                    String signature = request.getHeader("X-Signature-Ed25519");
+                    String timestamp = request.getHeader("X-Signature-Timestamp");
+                    serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp);
+                    executions = List.of();
+
+                    long processingTime = System.currentTimeMillis() - startTime;
+                    log.info("Discord webhook processed: action={}, time={}ms", action, processingTime);
+
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "processed");
+                    response.put("service", service);
+                    response.put("action", action);
+                    response.put("eventId", eventId);
+                    response.put("processingTimeMs", processingTime);
+                    response.put("timestamp", LocalDateTime.now().toString());
+                    response.put("serviceResult", serviceResult);
+                    return ResponseEntity.ok(response);
                 }
 
                 if (userId != null) {
@@ -199,6 +224,81 @@ public class WebhookController {
                 "eventId", eventId,
                 "timestamp", LocalDateTime.now().toString()
             ));
+        }
+    }
+
+    @GetMapping("/discord/gateway/status")
+    @Operation(summary = "Check Discord Gateway connection status",
+               description = "Returns the current status of the Discord Gateway connection")
+    public ResponseEntity<Map<String, Object>> getDiscordGatewayStatus() {
+        boolean connected = discordGatewayService.isConnected();
+        return ResponseEntity.ok(Map.of(
+            "service", "discord",
+            "gateway_connected", connected,
+            "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    /**
+     * Reconnect Discord Gateway
+     */
+    @PostMapping("/discord/gateway/reconnect")
+    @Operation(summary = "Reconnect Discord Gateway",
+               description = "Forces a reconnection to the Discord Gateway")
+    public ResponseEntity<Map<String, Object>> reconnectDiscordGateway() {
+        log.info("Manual Discord Gateway reconnection requested");
+        discordGatewayService.disconnect();
+
+        try {
+            Thread.sleep(RECONNECT_DELAY_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "status", "reconnecting",
+            "message", "Discord Gateway reconnection initiated",
+            "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    /**
+     * Handle Discord bot interactions (webhooks)
+     */
+    @PostMapping("/discord/interactions")
+    @Operation(summary = "Handle Discord bot interactions",
+               description = "Handles Discord bot webhook events and ping verification")
+    public ResponseEntity<String> handleDiscordInteractions(
+            @RequestBody String rawBody,
+            HttpServletRequest request) {
+
+        log.debug("Received Discord interaction webhook");
+
+        try {
+            byte[] rawBodyBytes = rawBody.getBytes(StandardCharsets.UTF_8);
+            if (!validateSignature("discord", request, rawBodyBytes)) {
+                log.warn("Discord interaction signature validation failed");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\": \"Invalid signature\"}");
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = objectMapper.readValue(rawBody, Map.class);
+
+            Integer type = (Integer) payload.get("type");
+            if (type != null && type == 1) {
+                log.debug("Responding to Discord ping");
+                return ResponseEntity.ok()
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .body("{\"type\":1}");
+            }
+
+            return ResponseEntity.ok("{\"type\": 5}");
+
+        } catch (Exception e) {
+            log.error("Error processing Discord interaction: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"type\": 4, \"data\": {\"content\": \"Internal server error\"}}");
         }
     }
 
@@ -325,6 +425,12 @@ public class WebhookController {
                     return eventId.toString();
                 }
                 break;
+            case "discord":
+                Object discordId = payload.get("id");
+                if (discordId != null) {
+                    return discordId.toString();
+                }
+                break;
             default:
                 log.debug("Unknown service for event ID extraction: {}", service);
                 break;
@@ -339,6 +445,7 @@ public class WebhookController {
         return switch (service.toLowerCase()) {
             case "github" -> request.getHeader("X-Hub-Signature-256");
             case "slack" -> request.getHeader("X-Slack-Signature");
+            case "discord" -> request.getHeader("X-Signature-Ed25519");
             case "google" -> null;
             default -> request.getHeader("X-Signature");
         };
@@ -350,6 +457,7 @@ public class WebhookController {
     private String getTimestampHeader(String service, HttpServletRequest request) {
         return switch (service.toLowerCase()) {
             case "slack" -> request.getHeader("X-Slack-Request-Timestamp");
+            case "discord" -> request.getHeader("X-Signature-Timestamp");
             default -> null;
         };
     }

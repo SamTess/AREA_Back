@@ -53,8 +53,6 @@ public class WebhookController {
     private final UserOAuthIdentityRepository userOAuthIdentityRepository;
     private final ObjectMapper objectMapper;
 
-    private static final int RECONNECT_DELAY_MS = 1000;
-
     /**
      * Generic webhook receiver endpoint
      * POST /api/hooks/{service}/{action}
@@ -249,15 +247,9 @@ public class WebhookController {
         log.info("Manual Discord Gateway reconnection requested");
         discordGatewayService.disconnect();
 
-        try {
-            Thread.sleep(RECONNECT_DELAY_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        return ResponseEntity.ok(Map.of(
-            "status", "reconnecting",
-            "message", "Discord Gateway reconnection initiated",
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
+            "status", "reconnection_queued",
+            "message", "Discord Gateway reconnection has been queued",
             "timestamp", LocalDateTime.now().toString()
         ));
     }

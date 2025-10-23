@@ -44,7 +44,7 @@
     <!-- UserProfileData record-like class needs all profile fields -->
     <suppress checks="ParameterNumber"
               files="OAuthGoogleService\.java"
-              lines="514"/>
+              lines="515"/>
 
     <!-- OAuth Github Service constructor has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"
@@ -65,4 +65,9 @@
     <suppress checks="ParameterNumber"
               files="OAuthService\.java"
               lines="30"/>
+
+    <!-- WebhookController.handleWebhook is a complex method handling multiple services -->
+    <suppress checks="MethodLength"
+              files="WebhookController\.java"
+              lines="62"/>
 </suppressions>

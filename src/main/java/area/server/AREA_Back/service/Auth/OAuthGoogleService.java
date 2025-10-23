@@ -512,7 +512,6 @@ public class OAuthGoogleService extends OAuthService {
          * @param locale User locale
          * @param verifiedEmail Email verification status
          */
-        @SuppressWarnings("ParameterNumber")
         UserProfileData(
             final String email,
             final String userIdentifier,

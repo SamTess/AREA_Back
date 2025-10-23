@@ -116,7 +116,7 @@ public class DiscordGatewayService {
     }
 
     private final class DiscordWebSocketListener implements WebSocket.Listener {
-        private StringBuilder messageBuffer = new StringBuilder();
+        private StringBuffer messageBuffer = new StringBuffer();
 
         @Override
         public void onOpen(WebSocket ws) {
@@ -132,7 +132,7 @@ public class DiscordGatewayService {
 
             if (last) {
                 String message = messageBuffer.toString();
-                messageBuffer = new StringBuilder();
+                messageBuffer = new StringBuffer();
 
                 try {
                     handleGatewayMessage(message);
@@ -280,6 +280,7 @@ public class DiscordGatewayService {
                     sendHeartbeat();
                 } catch (InterruptedException e) {
                     log.info("Heartbeat thread interrupted");
+                    Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
                     log.error("Heartbeat error: {}", e.getMessage());

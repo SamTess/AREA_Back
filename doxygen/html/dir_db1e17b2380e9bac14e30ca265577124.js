@@ -6,6 +6,7 @@ var dir_db1e17b2380e9bac14e30ca265577124 =
     [ "ActionLinkController.java", "ActionLinkController_8java.html", "ActionLinkController_8java" ],
     [ "AdminController.java", "AdminController_8java.html", "AdminController_8java" ],
     [ "AreaController.java", "AreaController_8java.html", "AreaController_8java" ],
+    [ "AreaDraftController.java", "AreaDraftController_8java.html", "AreaDraftController_8java" ],
     [ "AuthController.java", "AuthController_8java.html", "AuthController_8java" ],
     [ "OAuthController.java", "OAuthController_8java.html", "OAuthController_8java" ],
     [ "OAuthLinkController.java", "OAuthLinkController_8java.html", "OAuthLinkController_8java" ],

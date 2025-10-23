@@ -24,6 +24,9 @@ var hierarchy =
     [ "area.server.AREA_Back.AreaBackApplication", "classarea_1_1server_1_1AREA__Back_1_1AreaBackApplication.html", null ],
     [ "area.server.AREA_Back.entity.AreaCollaborator", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1AreaCollaborator.html", null ],
     [ "area.server.AREA_Back.controller.AreaController", "classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaController.html", null ],
+    [ "area.server.AREA_Back.service.Area.AreaDraftCacheService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaDraftCacheService.html", null ],
+    [ "area.server.AREA_Back.controller.AreaDraftController", "classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaDraftController.html", null ],
+    [ "area.server.AREA_Back.dto.AreaDraftResponse", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaDraftResponse.html", null ],
     [ "area.server.AREA_Back.dto.AreaEventMessage", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaEventMessage.html", null ],
     [ "area.server.AREA_Back.service.Area.AreaOrchestrationService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaOrchestrationService.html", null ],
     [ "area.server.AREA_Back.dto.AreaReactionRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaReactionRequest.html", null ],
@@ -127,6 +130,8 @@ var hierarchy =
     [ "area.server.AREA_Back.worker.RetryManager.RetryStatistics", "classarea_1_1server_1_1AREA__Back_1_1worker_1_1RetryManager_1_1RetryStatistics.html", null ],
     [ "area.server.AREA_Back.config.SecurityConfig", "classarea_1_1server_1_1AREA__Back_1_1config_1_1SecurityConfig.html", null ],
     [ "Serializable", null, [
+      [ "area.server.AREA_Back.dto.AreaDraftRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaDraftRequest.html", null ],
+      [ "area.server.AREA_Back.dto.AreaDraftRequest.ConnectionRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaDraftRequest_1_1ConnectionRequest.html", null ],
       [ "area.server.AREA_Back.entity.ActionLinkId", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1ActionLinkId.html", null ],
       [ "area.server.AREA_Back.entity.AreaCollaboratorId", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1AreaCollaboratorId.html", null ]
     ] ],

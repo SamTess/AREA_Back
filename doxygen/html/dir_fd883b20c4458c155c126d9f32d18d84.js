@@ -7,6 +7,8 @@ var dir_fd883b20c4458c155c126d9f32d18d84 =
     [ "AdminMetricsResponse.java", "AdminMetricsResponse_8java.html", "AdminMetricsResponse_8java" ],
     [ "AdminServiceResponse.java", "AdminServiceResponse_8java.html", "AdminServiceResponse_8java" ],
     [ "AreaActionRequest.java", "AreaActionRequest_8java.html", "AreaActionRequest_8java" ],
+    [ "AreaDraftRequest.java", "AreaDraftRequest_8java.html", "AreaDraftRequest_8java" ],
+    [ "AreaDraftResponse.java", "AreaDraftResponse_8java.html", "AreaDraftResponse_8java" ],
     [ "AreaEventMessage.java", "AreaEventMessage_8java.html", "AreaEventMessage_8java" ],
     [ "AreaReactionRequest.java", "AreaReactionRequest_8java.html", "AreaReactionRequest_8java" ],
     [ "AreaResponse.java", "AreaResponse_8java.html", "AreaResponse_8java" ],

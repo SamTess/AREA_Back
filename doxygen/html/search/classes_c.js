@@ -18,5 +18,7 @@ var searchData=
   ['slackactionservice_15',['SlackActionService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html',1,'area::server::AREA_Back::service::Area::Services']]],
   ['slackeventpollingservice_16',['SlackEventPollingService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html',1,'area::server::AREA_Back::service::Polling']]],
   ['slackwebhookservice_17',['SlackWebhookService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService.html',1,'area::server::AREA_Back::service::Webhook']]],
-  ['storetokenrequest_18',['StoreTokenRequest',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1StoreTokenRequest.html',1,'area::server::AREA_Back::dto']]]
+  ['spotifyactionservice_18',['SpotifyActionService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService.html',1,'area::server::AREA_Back::service::Area::Services']]],
+  ['spotifyeventpollingservice_19',['SpotifyEventPollingService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SpotifyEventPollingService.html',1,'area::server::AREA_Back::service::Polling']]],
+  ['storetokenrequest_20',['StoreTokenRequest',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1StoreTokenRequest.html',1,'area::server::AREA_Back::dto']]]
 ];

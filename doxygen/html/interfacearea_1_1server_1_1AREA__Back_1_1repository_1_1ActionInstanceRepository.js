@@ -8,6 +8,7 @@ var interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceReposit
     [ "findActiveGitHubActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#aeae5ed362c17ed694ab507ad31e933b1", null ],
     [ "findActiveGoogleActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a3dceb6c912482898774aa9098e24d669", null ],
     [ "findActiveSlackActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a5a2f75aebbc686bfb6238275c6133990", null ],
+    [ "findActiveSpotifyActionInstances", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a29c12dd969423e1aa70d2492cc4b2955", null ],
     [ "findByArea", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a0ecea72103fdc1a74afad2be0d7c98c2", null ],
     [ "findByAreaId", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#a16b4c71c52f73e57d323aebfe219fec8", null ],
     [ "findByIdWithActionDefinition", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1ActionInstanceRepository.html#ac95b4f5da8498d9d22885337457bd85c", null ],

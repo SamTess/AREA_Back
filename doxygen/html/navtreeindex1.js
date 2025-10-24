@@ -1,5 +1,9 @@
 var NAVTREEINDEX1 =
 {
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaController.html#ac5b0f09a3d9fbff5a07b4be95cb480cb":[1,0,0,0,0,2,5,0],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaController.html#ada54670547242060cebd509c1f223899":[1,0,0,0,0,2,5,12],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaController.html#ae95f23012cb5f5198fdbc7dd45a024be":[1,0,0,0,0,2,5,10],
+"classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaDraftController.html":[1,0,0,0,0,2,6],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaDraftController.html#a13322336a8eccc62806902fc5d202724":[1,0,0,0,0,2,6,2],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaDraftController.html#a39db892dfb4c36117175a52ba75f645f":[1,0,0,0,0,2,6,5],
 "classarea_1_1server_1_1AREA__Back_1_1controller_1_1AreaDraftController.html#a54c1537823ef7d1c0e59d18771238cce":[1,0,0,0,0,2,6,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX1 =
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleDriveService.html#ae66946e600f1d1cf98478781399446e9":[1,0,0,0,0,8,0,0,0,2,3],
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html":[1,0,0,0,0,8,0,0,0,3],
 "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html#a01eb063d78f787696ff278b98a5f243a":[1,0,0,0,0,8,0,0,0,3,0],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html#a024c236fd4c3f731a891f4bdd103ab66":[1,0,0,0,0,8,0,0,0,3,1],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html#aa7797ae1ef058b44a22f4b4b38707e89":[1,0,0,0,0,8,0,0,0,3,2],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService.html":[1,0,0,0,0,8,0,0,0,4],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService.html#a28c4882588b9967510dbf14e91d781c4":[1,0,0,0,0,8,0,0,0,4,3],
-"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleSheetsService.html#a44ef05017a47a756a23cce87440f3fff":[1,0,0,0,0,8,0,0,0,4,0]
+"classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1Google_1_1GoogleGmailService.html#a024c236fd4c3f731a891f4bdd103ab66":[1,0,0,0,0,8,0,0,0,3,1]
 };

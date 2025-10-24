@@ -10,5 +10,7 @@ var searchData=
   ['oauthprovider_2ejava_7',['OAuthProvider.java',['../OAuthProvider_8java.html',1,'']]],
   ['oauthservice_2ejava_8',['OAuthService.java',['../OAuthService_8java.html',1,'']]],
   ['oauthslackservice_2ejava_9',['OAuthSlackService.java',['../OAuthSlackService_8java.html',1,'']]],
-  ['openapiconfig_2ejava_10',['OpenApiConfig.java',['../OpenApiConfig_8java.html',1,'']]]
+  ['oauthspotifyservice_2ejava_10',['OAuthSpotifyService.java',['../OAuthSpotifyService_8java.html',1,'']]],
+  ['oauthtokenrefreshservice_2ejava_11',['OAuthTokenRefreshService.java',['../OAuthTokenRefreshService_8java.html',1,'']]],
+  ['openapiconfig_2ejava_12',['OpenApiConfig.java',['../OpenApiConfig_8java.html',1,'']]]
 ];

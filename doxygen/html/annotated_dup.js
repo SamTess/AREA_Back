@@ -135,7 +135,8 @@ var annotated_dup =
                 [ "DiscordActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService" ],
                 [ "GitHubActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService" ],
                 [ "GoogleActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService" ],
-                [ "SlackActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService" ]
+                [ "SlackActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService" ],
+                [ "SpotifyActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService" ]
               ] ],
               [ "ActionLinkService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1ActionLinkService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1ActionLinkService" ],
               [ "AreaDraftCacheService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaDraftCacheService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaDraftCacheService" ],
@@ -154,6 +155,8 @@ var annotated_dup =
               [ "OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService" ],
               [ "OAuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService" ],
               [ "OAuthSlackService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService" ],
+              [ "OAuthSpotifyService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService" ],
+              [ "OAuthTokenRefreshService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthTokenRefreshService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthTokenRefreshService" ],
               [ "ServiceAccountService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceAccountService" ],
               [ "ServiceCacheService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceCacheService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1ServiceCacheService" ],
               [ "TokenEncryptionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1TokenEncryptionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1TokenEncryptionService" ],
@@ -163,7 +166,8 @@ var annotated_dup =
               [ "DiscordEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService" ],
               [ "GitHubEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GitHubEventPollingService" ],
               [ "GoogleEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1GoogleEventPollingService" ],
-              [ "SlackEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService" ]
+              [ "SlackEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService" ],
+              [ "SpotifyEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SpotifyEventPollingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SpotifyEventPollingService" ]
             ] ],
             [ "Redis", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Redis.html", [
               [ "RedisEventService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisEventService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisEventService" ],

@@ -111,8 +111,10 @@ var hierarchy =
       [ "area.server.AREA_Back.service.Auth.OAuthDiscordService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html", null ],
       [ "area.server.AREA_Back.service.Auth.OAuthGithubService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html", null ],
       [ "area.server.AREA_Back.service.Auth.OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", null ],
-      [ "area.server.AREA_Back.service.Auth.OAuthSlackService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html", null ]
+      [ "area.server.AREA_Back.service.Auth.OAuthSlackService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html", null ],
+      [ "area.server.AREA_Back.service.Auth.OAuthSpotifyService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html", null ]
     ] ],
+    [ "area.server.AREA_Back.service.Auth.OAuthTokenRefreshService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthTokenRefreshService.html", null ],
     [ "OncePerRequestFilter", null, [
       [ "area.server.AREA_Back.filter.EmailVerificationFilter", "classarea_1_1server_1_1AREA__Back_1_1filter_1_1EmailVerificationFilter.html", null ],
       [ "area.server.AREA_Back.filter.JwtAuthenticationFilter", "classarea_1_1server_1_1AREA__Back_1_1filter_1_1JwtAuthenticationFilter.html", null ]
@@ -152,6 +154,8 @@ var hierarchy =
     [ "area.server.AREA_Back.service.Area.Services.SlackActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html", null ],
     [ "area.server.AREA_Back.service.Polling.SlackEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SlackEventPollingService.html", null ],
     [ "area.server.AREA_Back.service.Webhook.SlackWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService.html", null ],
+    [ "area.server.AREA_Back.service.Area.Services.SpotifyActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService.html", null ],
+    [ "area.server.AREA_Back.service.Polling.SpotifyEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1SpotifyEventPollingService.html", null ],
     [ "area.server.AREA_Back.dto.StoreTokenRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1StoreTokenRequest.html", null ],
     [ "area.server.AREA_Back.controller.TestController", "classarea_1_1server_1_1AREA__Back_1_1controller_1_1TestController.html", null ],
     [ "area.server.AREA_Back.service.Auth.TokenEncryptionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1TokenEncryptionService.html", null ],

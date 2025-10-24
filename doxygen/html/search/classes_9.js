@@ -10,5 +10,7 @@ var searchData=
   ['oauthprovider_7',['OAuthProvider',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html',1,'area::server::AREA_Back::dto']]],
   ['oauthservice_8',['OAuthService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html',1,'area::server::AREA_Back::service::Auth']]],
   ['oauthslackservice_9',['OAuthSlackService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html',1,'area::server::AREA_Back::service::Auth']]],
-  ['openapiconfig_10',['OpenApiConfig',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1OpenApiConfig.html',1,'area::server::AREA_Back::config']]]
+  ['oauthspotifyservice_10',['OAuthSpotifyService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html',1,'area::server::AREA_Back::service::Auth']]],
+  ['oauthtokenrefreshservice_11',['OAuthTokenRefreshService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthTokenRefreshService.html',1,'area::server::AREA_Back::service::Auth']]],
+  ['openapiconfig_12',['OpenApiConfig',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1OpenApiConfig.html',1,'area::server::AREA_Back::config']]]
 ];

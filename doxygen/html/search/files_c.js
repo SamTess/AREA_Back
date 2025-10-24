@@ -18,5 +18,7 @@ var searchData=
   ['slackactionservice_2ejava_15',['SlackActionService.java',['../SlackActionService_8java.html',1,'']]],
   ['slackeventpollingservice_2ejava_16',['SlackEventPollingService.java',['../SlackEventPollingService_8java.html',1,'']]],
   ['slackwebhookservice_2ejava_17',['SlackWebhookService.java',['../SlackWebhookService_8java.html',1,'']]],
-  ['storetokenrequest_2ejava_18',['StoreTokenRequest.java',['../StoreTokenRequest_8java.html',1,'']]]
+  ['spotifyactionservice_2ejava_18',['SpotifyActionService.java',['../SpotifyActionService_8java.html',1,'']]],
+  ['spotifyeventpollingservice_2ejava_19',['SpotifyEventPollingService.java',['../SpotifyEventPollingService_8java.html',1,'']]],
+  ['storetokenrequest_2ejava_20',['StoreTokenRequest.java',['../StoreTokenRequest_8java.html',1,'']]]
 ];

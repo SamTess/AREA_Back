@@ -140,6 +140,20 @@ public class OAuthSlackService extends OAuthService {
 
             User user = userRepository.findById(authResponse.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("User not found after login"));
+            
+            if ((user.getUsername() == null || user.getUsername().isEmpty()) && profileData.displayName != null) {
+                user.setUsername(authService.generateUniqueUsername(profileData.displayName, profileData.email));
+            }
+            if (profileData.realName != null && !profileData.realName.isEmpty()) {
+                String[] nameParts = profileData.realName.split(" ", 2);
+                if (nameParts.length > 0 && (user.getFirstname() == null || user.getFirstname().isEmpty())) {
+                    user.setFirstname(nameParts[0]);
+                }
+                if (nameParts.length > 1 && (user.getLastname() == null || user.getLastname().isEmpty())) {
+                    user.setLastname(nameParts[1]);
+                }
+            }
+            userRepository.save(user);
 
             UserOAuthIdentity oauth = handleUserAuthentication(
                 user,

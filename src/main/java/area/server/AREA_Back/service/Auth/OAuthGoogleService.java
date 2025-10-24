@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -297,6 +298,46 @@ public class OAuthGoogleService extends OAuthService {
         }
     }
 
+    private String generateUniqueUsername(String baseUsername, String email) {
+        String sanitizedBase = baseUsername;
+
+        if (sanitizedBase == null || sanitizedBase.trim().isEmpty()) {
+            if (email != null && email.contains("@")) {
+                sanitizedBase = email.substring(0, email.indexOf("@"));
+            } else {
+                sanitizedBase = "user";
+            }
+        }
+
+        sanitizedBase = sanitizedBase.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
+
+        if (sanitizedBase.isEmpty()) {
+            sanitizedBase = "user";
+        }
+
+        if (sanitizedBase.length() > 45) {
+            sanitizedBase = sanitizedBase.substring(0, 45);
+        }
+
+        String username = sanitizedBase;
+        int attempt = 0;
+
+        while (userRepository.findByUsername(username).isPresent()) {
+            attempt++;
+            if (attempt == 1) {
+                username = sanitizedBase + "_" + UUID.randomUUID().toString().substring(0, 4);
+            } else {
+                username = sanitizedBase + "_" + UUID.randomUUID().toString().substring(0, 8);
+            }
+
+            if (username.length() > 50) {
+                username = username.substring(0, 50);
+            }
+        }
+
+        return username;
+    }
+
     private UserProfileData fetchUserProfile(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -352,10 +393,32 @@ public class OAuthGoogleService extends OAuthService {
             if (profileData.picture != null && !profileData.picture.isEmpty()) {
                 user.setAvatarUrl(profileData.picture);
             }
+            if (user.getUsername() == null || user.getUsername().isEmpty()) {
+                String baseUsername = profileData.givenName != null && !profileData.givenName.isEmpty()
+                    ? profileData.givenName
+                    : profileData.name;
+                user.setUsername(generateUniqueUsername(baseUsername, profileData.email));
+            }
+            if (profileData.givenName != null && !profileData.givenName.isEmpty()) {
+                user.setFirstname(profileData.givenName);
+            }
+            if (profileData.familyName != null && !profileData.familyName.isEmpty()) {
+                user.setLastname(profileData.familyName);
+            }
             this.userRepository.save(user);
         } else {
             user = new User();
             user.setEmail(profileData.email);
+            String baseUsername = profileData.givenName != null && !profileData.givenName.isEmpty()
+                ? profileData.givenName
+                : profileData.name;
+            user.setUsername(generateUniqueUsername(baseUsername, profileData.email));
+            if (profileData.givenName != null && !profileData.givenName.isEmpty()) {
+                user.setFirstname(profileData.givenName);
+            }
+            if (profileData.familyName != null && !profileData.familyName.isEmpty()) {
+                user.setLastname(profileData.familyName);
+            }
             user.setIsActive(true);
             user.setIsAdmin(false);
             user.setCreatedAt(LocalDateTime.now());

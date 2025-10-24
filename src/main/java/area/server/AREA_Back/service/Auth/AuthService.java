@@ -667,6 +667,8 @@ public class AuthService {
     private String generateUniqueUsername(String baseUsername) {
         String username = baseUsername.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
 
+        username = username.replaceAll("^[-_]+|[-_]+$", "");
+
         if (username.isEmpty()) {
             username = "user";
         }
@@ -675,14 +677,8 @@ public class AuthService {
             return username;
         }
 
-        int counter = 1;
-        String candidateUsername;
-        do {
-            candidateUsername = username + counter;
-            counter++;
-        } while (userRepository.existsByUsername(candidateUsername));
-
-        return candidateUsername;
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).replaceAll("-", "");
+        return username + "_" + randomSuffix;
     }
 
     private UserResponse mapToUserResponse(User user, Boolean isVerified) {

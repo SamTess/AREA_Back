@@ -42,12 +42,14 @@ var searchData=
   ['arearesponse_39',['AreaResponse',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaResponse.html',1,'area::server::AREA_Back::dto']]],
   ['areaservice_40',['AreaService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaService.html',1,'area::server::AREA_Back::service::Area']]],
   ['asyncconfig_41',['AsyncConfig',['../classarea_1_1server_1_1AREA__Back_1_1config_1_1AsyncConfig.html',1,'area::server::AREA_Back::config']]],
-  ['auditlog_42',['AuditLog',['../classarea_1_1server_1_1AREA__Back_1_1entity_1_1AuditLog.html',1,'area::server::AREA_Back::entity']]],
-  ['authcontroller_43',['AuthController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1AuthController.html',1,'area::server::AREA_Back::controller']]],
-  ['authenticationutils_44',['AuthenticationUtils',['../classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html',1,'area::server::AREA_Back::util']]],
-  ['authresponse_45',['AuthResponse',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1AuthResponse.html',1,'area::server::AREA_Back::dto']]],
-  ['authservice_46',['AuthService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService.html',1,'area::server::AREA_Back::service::Auth']]],
-  ['authtokenconstants_47',['AuthTokenConstants',['../classarea_1_1server_1_1AREA__Back_1_1constants_1_1AuthTokenConstants.html',1,'area::server::AREA_Back::constants']]],
-  ['authtype_48',['AuthType',['../enumarea_1_1server_1_1AREA__Back_1_1entity_1_1Service_1_1AuthType.html',1,'area::server::AREA_Back::entity::Service']]],
-  ['authtypeconverter_49',['AuthTypeConverter',['../classarea_1_1server_1_1AREA__Back_1_1converter_1_1AuthTypeConverter.html',1,'area::server::AREA_Back::converter']]]
+  ['atleastoneidentifier_42',['AtLeastOneIdentifier',['../interfacearea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifier.html',1,'area::server::AREA_Back::validation']]],
+  ['atleastoneidentifiervalidator_43',['AtLeastOneIdentifierValidator',['../classarea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifierValidator.html',1,'area::server::AREA_Back::validation']]],
+  ['auditlog_44',['AuditLog',['../classarea_1_1server_1_1AREA__Back_1_1entity_1_1AuditLog.html',1,'area::server::AREA_Back::entity']]],
+  ['authcontroller_45',['AuthController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1AuthController.html',1,'area::server::AREA_Back::controller']]],
+  ['authenticationutils_46',['AuthenticationUtils',['../classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html',1,'area::server::AREA_Back::util']]],
+  ['authresponse_47',['AuthResponse',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1AuthResponse.html',1,'area::server::AREA_Back::dto']]],
+  ['authservice_48',['AuthService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService.html',1,'area::server::AREA_Back::service::Auth']]],
+  ['authtokenconstants_49',['AuthTokenConstants',['../classarea_1_1server_1_1AREA__Back_1_1constants_1_1AuthTokenConstants.html',1,'area::server::AREA_Back::constants']]],
+  ['authtype_50',['AuthType',['../enumarea_1_1server_1_1AREA__Back_1_1entity_1_1Service_1_1AuthType.html',1,'area::server::AREA_Back::entity::Service']]],
+  ['authtypeconverter_51',['AuthTypeConverter',['../classarea_1_1server_1_1AREA__Back_1_1converter_1_1AuthTypeConverter.html',1,'area::server::AREA_Back::converter']]]
 ];

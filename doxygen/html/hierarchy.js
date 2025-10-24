@@ -34,6 +34,7 @@ var hierarchy =
     [ "area.server.AREA_Back.dto.AreaResponse", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1AreaResponse.html", null ],
     [ "area.server.AREA_Back.service.Area.AreaService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1AreaService.html", null ],
     [ "area.server.AREA_Back.config.AsyncConfig", "classarea_1_1server_1_1AREA__Back_1_1config_1_1AsyncConfig.html", null ],
+    [ "area.server.AREA_Back.validation.AtLeastOneIdentifier", "interfacearea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifier.html", null ],
     [ "AttributeConverter", null, [
       [ "area.server.AREA_Back.converter.AuthTypeConverter", "classarea_1_1server_1_1AREA__Back_1_1converter_1_1AuthTypeConverter.html", null ],
       [ "area.server.AREA_Back.converter.DedupStrategyConverter", "classarea_1_1server_1_1AREA__Back_1_1converter_1_1DedupStrategyConverter.html", null ]
@@ -46,6 +47,9 @@ var hierarchy =
     [ "area.server.AREA_Back.constants.AuthTokenConstants", "classarea_1_1server_1_1AREA__Back_1_1constants_1_1AuthTokenConstants.html", null ],
     [ "area.server.AREA_Back.entity.Service.AuthType", "enumarea_1_1server_1_1AREA__Back_1_1entity_1_1Service_1_1AuthType.html", null ],
     [ "area.server.AREA_Back.dto.BatchCreateActionLinksRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1BatchCreateActionLinksRequest.html", null ],
+    [ "ConstraintValidator", null, [
+      [ "area.server.AREA_Back.validation.AtLeastOneIdentifierValidator", "classarea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifierValidator.html", null ]
+    ] ],
     [ "area.server.AREA_Back.dto.CreateActionInstanceRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1CreateActionInstanceRequest.html", null ],
     [ "area.server.AREA_Back.dto.CreateActionLinkRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1CreateActionLinkRequest.html", null ],
     [ "area.server.AREA_Back.dto.CreateAreaRequest", "classarea_1_1server_1_1AREA__Back_1_1dto_1_1CreateAreaRequest.html", null ],

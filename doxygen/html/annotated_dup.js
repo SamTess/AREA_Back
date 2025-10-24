@@ -195,6 +195,10 @@ var annotated_dup =
           [ "util", "namespacearea_1_1server_1_1AREA__Back_1_1util.html", [
             [ "AuthenticationUtils", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils" ]
           ] ],
+          [ "validation", "namespacearea_1_1server_1_1AREA__Back_1_1validation.html", [
+            [ "AtLeastOneIdentifier", "interfacearea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifier.html", "interfacearea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifier" ],
+            [ "AtLeastOneIdentifierValidator", "classarea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifierValidator.html", "classarea_1_1server_1_1AREA__Back_1_1validation_1_1AtLeastOneIdentifierValidator" ]
+          ] ],
           [ "worker", "namespacearea_1_1server_1_1AREA__Back_1_1worker.html", [
             [ "AreaReactionWorker", "classarea_1_1server_1_1AREA__Back_1_1worker_1_1AreaReactionWorker.html", "classarea_1_1server_1_1AREA__Back_1_1worker_1_1AreaReactionWorker" ],
             [ "ReactionExecutor", "classarea_1_1server_1_1AREA__Back_1_1worker_1_1ReactionExecutor.html", "classarea_1_1server_1_1AREA__Back_1_1worker_1_1ReactionExecutor" ],

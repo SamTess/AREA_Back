@@ -8,6 +8,7 @@ var interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepo
     [ "findByPasswordResetToken", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a6144f1bfb511f1fc22534d0a4ef03e1f", null ],
     [ "findByUser", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#aec8f3f9a3805a1157d1b320ffc8cc178", null ],
     [ "findByUserId", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a244105267a9e2da65d404403e69dc171", null ],
+    [ "findByUsername", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#ae6726312db43bcc0273c1062cd3a5275", null ],
     [ "incrementFailedLoginAttempts", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a7a204b79e541fc83a83d54b9a23d78c2", null ],
     [ "lockAccount", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a8a8b898b6637372233671d5b67b8691c", null ],
     [ "resetFailedLoginAttempts", "interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a0f8d8c5a9d24683463d2a7f196d556b4", null ]

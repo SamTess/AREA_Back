@@ -19,5 +19,6 @@ var searchData=
   ['area_3a_3aserver_3a_3aarea_5fback_3a_3aservice_3a_3aredis_16',['Redis',['../namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Redis.html',1,'area::server::AREA_Back::service']]],
   ['area_3a_3aserver_3a_3aarea_5fback_3a_3aservice_3a_3awebhook_17',['Webhook',['../namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Webhook.html',1,'area::server::AREA_Back::service']]],
   ['area_3a_3aserver_3a_3aarea_5fback_3a_3autil_18',['util',['../namespacearea_1_1server_1_1AREA__Back_1_1util.html',1,'area::server::AREA_Back']]],
-  ['area_3a_3aserver_3a_3aarea_5fback_3a_3aworker_19',['worker',['../namespacearea_1_1server_1_1AREA__Back_1_1worker.html',1,'area::server::AREA_Back']]]
+  ['area_3a_3aserver_3a_3aarea_5fback_3a_3avalidation_19',['validation',['../namespacearea_1_1server_1_1AREA__Back_1_1validation.html',1,'area::server::AREA_Back']]],
+  ['area_3a_3aserver_3a_3aarea_5fback_3a_3aworker_20',['worker',['../namespacearea_1_1server_1_1AREA__Back_1_1worker.html',1,'area::server::AREA_Back']]]
 ];

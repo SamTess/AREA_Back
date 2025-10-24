@@ -116,6 +116,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a244105267a9e2da65d404403e69dc171" id="r_a244105267a9e2da65d404403e69dc171"><td class="memItemLeft" align="right" valign="top">Optional&lt; UserLocalIdentity &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#a244105267a9e2da65d404403e69dc171">findByUserId</a> (UUID userId)</td></tr>
 <tr class="memdesc:a244105267a9e2da65d404403e69dc171"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find user local identity by user ID.  <br /></td></tr>
 <tr class="separator:a244105267a9e2da65d404403e69dc171"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6726312db43bcc0273c1062cd3a5275" id="r_ae6726312db43bcc0273c1062cd3a5275"><td class="memItemLeft" align="right" valign="top">Optional&lt; UserLocalIdentity &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#ae6726312db43bcc0273c1062cd3a5275">findByUsername</a> (@Param(&quot;username&quot;) String username)</td></tr>
+<tr class="memdesc:ae6726312db43bcc0273c1062cd3a5275"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find user local identity by username Uses a join query to find the identity via the user's username.  <br /></td></tr>
+<tr class="separator:ae6726312db43bcc0273c1062cd3a5275"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1be64e064e476cb96eecbe3b265a7a4" id="r_ae1be64e064e476cb96eecbe3b265a7a4"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html#ae1be64e064e476cb96eecbe3b265a7a4">existsByEmail</a> (String email)</td></tr>
 <tr class="memdesc:ae1be64e064e476cb96eecbe3b265a7a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if email exists.  <br /></td></tr>
 <tr class="separator:ae1be64e064e476cb96eecbe3b265a7a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -302,6 +305,26 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ae6726312db43bcc0273c1062cd3a5275" name="ae6726312db43bcc0273c1062cd3a5275"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae6726312db43bcc0273c1062cd3a5275">&#9670;&#160;</a></span>findByUsername()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Optional&lt; UserLocalIdentity &gt; area.server.AREA_Back.repository.UserLocalIdentityRepository.findByUsername </td>
+          <td>(</td>
+          <td class="paramtype">@Param(&quot;username&quot;) String&#160;</td>
+          <td class="paramname"><em>username</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Find user local identity by username Uses a join query to find the identity via the user's username. </p>
+
+</div>
+</div>
 <a id="a7a204b79e541fc83a83d54b9a23d78c2" name="a7a204b79e541fc83a83d54b9a23d78c2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7a204b79e541fc83a83d54b9a23d78c2">&#9670;&#160;</a></span>incrementFailedLoginAttempts()</h2>
 
@@ -381,7 +404,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><b>area</b></li><li class="navelem"><b>server</b></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back.html">AREA_Back</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1repository.html">repository</a></li><li class="navelem"><a class="el" href="interfacearea_1_1server_1_1AREA__Back_1_1repository_1_1UserLocalIdentityRepository.html">UserLocalIdentityRepository</a></li>
-    <li class="footer">Generated on Fri Oct 24 2025 13:36:36 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
+    <li class="footer">Generated on Fri Oct 24 2025 13:37:58 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
   </ul>
 </div>
 </body>

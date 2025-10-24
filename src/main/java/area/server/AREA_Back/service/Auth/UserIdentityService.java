@@ -25,6 +25,10 @@ public class UserIdentityService {
     public boolean hasLocalIdentity(UUID userId) {
         return userLocalIdentityRepository.findByUserId(userId)
                 .map(identity -> {
+                    if (identity.getIsOAuthPlaceholder()) {
+                        log.debug("User {} has OAuth placeholder local identity, not a real local account", userId);
+                        return false;
+                    }
                     String hash = identity.getPasswordHash();
                     boolean hasValidPassword = hash != null
                                               && !hash.isEmpty()
@@ -95,13 +99,20 @@ public class UserIdentityService {
     }
 
     public boolean canDisconnectService(UUID userId, String provider) {
+        boolean hasLocal = hasLocalIdentity(userId);
+
+        if (hasLocal) {
+            log.debug("User {} has local identity, can disconnect any OAuth provider {}", userId, provider);
+            return true;
+        }
+
         Optional<String> primaryProvider = getPrimaryOAuthProvider(userId);
 
-        log.debug("Checking canDisconnect for user {} provider {}: primaryProvider={}",
-                userId, provider, primaryProvider.orElse("none"));
+        log.debug("Checking canDisconnect for user {} provider {}: primaryProvider={}, hasLocal={}",
+                userId, provider, primaryProvider.orElse("none"), hasLocal);
 
         if (primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(provider)) {
-            log.debug("Provider {} is primary, cannot disconnect", provider);
+            log.debug("Provider {} is primary and no local identity, cannot disconnect", provider);
             return false;
         }
 

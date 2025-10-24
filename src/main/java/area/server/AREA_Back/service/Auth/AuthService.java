@@ -148,6 +148,7 @@ public class AuthService {
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         localIdentity.setIsEmailVerified(false);
+        localIdentity.setIsOAuthPlaceholder(false);
         localIdentity.setEmailVerificationToken(verificationToken);
         localIdentity.setEmailVerificationExpiresAt(tokenExpiry);
         localIdentity.setFailedLoginAttempts(0);
@@ -270,8 +271,12 @@ public class AuthService {
         UserLocalIdentity localIdentity;
 
         if (localIdentityOpt.isEmpty()) {
+            String baseUsername = email.split("@")[0];
+            String username = generateUniqueUsername(baseUsername);
+
             user = new User();
             user.setEmail(email);
+            user.setUsername(username);
             user.setAvatarUrl(avatarUrl);
             user.setIsActive(true);
             user.setIsAdmin(false);
@@ -283,6 +288,7 @@ public class AuthService {
             localIdentity.setEmail(email);
             localIdentity.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             localIdentity.setIsEmailVerified(true);
+            localIdentity.setIsOAuthPlaceholder(true);
             localIdentity.setFailedLoginAttempts(0);
             localIdentity.setCreatedAt(LocalDateTime.now());
             localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -656,6 +662,23 @@ public class AuthService {
         ));
 
         log.debug("Cleared HttpOnly authentication cookies");
+    }
+
+    private String generateUniqueUsername(String baseUsername) {
+        String username = baseUsername.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
+
+        username = username.replaceAll("^[-_]+|[-_]+$", "");
+
+        if (username.isEmpty()) {
+            username = "user";
+        }
+
+        if (!userRepository.existsByUsername(username)) {
+            return username;
+        }
+
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).replaceAll("-", "");
+        return username + "_" + randomSuffix;
     }
 
     private UserResponse mapToUserResponse(User user, Boolean isVerified) {

@@ -42,6 +42,9 @@ public class UserLocalIdentity {
     @Column(name = "is_email_verified", nullable = false)
     private Boolean isEmailVerified = false;
 
+    @Column(name = "is_oauth_placeholder", nullable = false)
+    private Boolean isOAuthPlaceholder = false;
+
     @Column(name = "email_verification_token")
     private String emailVerificationToken;
 

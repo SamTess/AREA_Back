@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LocalLoginRequest {
 
-    @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     private String email;
+
+    private String username;
 
     @NotBlank(message = "Password is required")
     private String password;

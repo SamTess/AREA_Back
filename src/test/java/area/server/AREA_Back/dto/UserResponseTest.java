@@ -88,6 +88,7 @@ class UserResponseTest {
         // Test all-args constructor
         UUID id = UUID.randomUUID();
         String email = "constructor@example.com";
+        String username = "johnuser";
         String firstname = "John";
         String lastname = "Doe";
         Boolean isActive = true;
@@ -97,7 +98,7 @@ class UserResponseTest {
         LocalDateTime lastLoginAt = LocalDateTime.now().plusDays(1);
         String avatarUrl = "https://constructor.com/avatar.jpg";
 
-        UserResponse response2 = new UserResponse(id, email, firstname, lastname,
+        UserResponse response2 = new UserResponse(id, email, username, firstname, lastname,
                                                  isActive, isAdmin, isVerified,
                                                  createdAt, lastLoginAt, avatarUrl);
 

@@ -130,11 +130,12 @@ class RegisterRequestTest {
         // Test all-args constructor
         String testEmail = "constructor@example.com";
         String testPassword = "constructorPassword123";
+        String testUsername = "aliceuser";
         String testFirstName = "Alice";
         String testLastName = "Johnson";
         String testAvatarUrl = "https://example.com/constructor-avatar.jpg";
 
-        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, testFirstName, testLastName, testAvatarUrl);
+        RegisterRequest allArgsRequest = new RegisterRequest(testEmail, testPassword, testUsername, testFirstName, testLastName, testAvatarUrl);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
@@ -152,9 +153,9 @@ class RegisterRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", "John", "Doe", "https://example.com/avatar.jpg");
-        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", "John", "Doe", "https://example.com/avatar.jpg");
-        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", "Jane", "Smith", "https://example.com/avatar.jpg");
+        RegisterRequest request1 = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", "https://example.com/avatar.jpg");
+        RegisterRequest request2 = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", "https://example.com/avatar.jpg");
+        RegisterRequest request3 = new RegisterRequest("different@example.com", "password123", "testuser", "Jane", "Smith", "https://example.com/avatar.jpg");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());

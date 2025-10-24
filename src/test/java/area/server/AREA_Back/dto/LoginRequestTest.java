@@ -97,7 +97,7 @@ class LoginRequestTest {
         String testEmail = "constructor@example.com";
         String testPassword = "constructorPassword123";
 
-        LocalLoginRequest allArgsRequest = new LocalLoginRequest(testEmail, testPassword);
+        LocalLoginRequest allArgsRequest = new LocalLoginRequest(testEmail, null, testPassword);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
@@ -112,9 +112,9 @@ class LoginRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        LocalLoginRequest request1 = new LocalLoginRequest("test@example.com", "password123");
-        LocalLoginRequest request2 = new LocalLoginRequest("test@example.com", "password123");
-        LocalLoginRequest request3 = new LocalLoginRequest("different@example.com", "password123");
+        LocalLoginRequest request1 = new LocalLoginRequest("test@example.com", null, "password123");
+        LocalLoginRequest request2 = new LocalLoginRequest("test@example.com", null, "password123");
+        LocalLoginRequest request3 = new LocalLoginRequest("different@example.com", null, "password123");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());

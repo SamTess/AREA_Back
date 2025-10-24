@@ -28,6 +28,7 @@ class RegisterRequestTest {
         registerRequest = new RegisterRequest();
         registerRequest.setEmail("test@example.com");
         registerRequest.setPassword("password123");
+        registerRequest.setUsername("testuser");
         registerRequest.setFirstName("John");
         registerRequest.setLastName("Doe");
         registerRequest.setAvatarUrl("https://example.com/avatar.jpg");

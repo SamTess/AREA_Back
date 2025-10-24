@@ -138,6 +138,20 @@ public class OAuthGithubService extends OAuthService {
             User user = userRepository.findById(authResponse.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("User not found after login"));
 
+            if ((user.getUsername() == null || user.getUsername().isEmpty()) && profileData.login != null) {
+                user.setUsername(authService.generateUniqueUsername(profileData.login, profileData.email));
+            }
+            if (profileData.name != null && !profileData.name.isEmpty()) {
+                String[] nameParts = profileData.name.split(" ", 2);
+                if (nameParts.length > 0 && (user.getFirstname() == null || user.getFirstname().isEmpty())) {
+                    user.setFirstname(nameParts[0]);
+                }
+                if (nameParts.length > 1 && (user.getLastname() == null || user.getLastname().isEmpty())) {
+                    user.setLastname(nameParts[1]);
+                }
+            }
+            userRepository.save(user);
+
             Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository.findByUserAndProvider(user,
                 this.providerKey);
             UserOAuthIdentity oauth;

@@ -28,7 +28,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "username", length = 50, unique = true)
+    @NotBlank(message = "Username is required")
+    @Column(name = "username", length = 50, unique = true, nullable = false)
     private String username;
 
     @Column(name = "firstname", length = 100)

@@ -31,6 +31,13 @@ public interface UserLocalIdentityRepository extends JpaRepository<UserLocalIden
     Optional<UserLocalIdentity> findByUserId(UUID userId);
 
     /**
+     * Find user local identity by username
+     * Uses a join query to find the identity via the user's username
+     */
+    @Query("SELECT uli FROM UserLocalIdentity uli JOIN uli.user u WHERE u.username = :username")
+    Optional<UserLocalIdentity> findByUsername(@Param("username") String username);
+
+    /**
      * Check if email exists
      */
     boolean existsByEmail(String email);

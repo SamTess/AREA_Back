@@ -46,17 +46,19 @@ class LoginRequestTest {
     @Test
     void testLoginRequestWithNullEmail() {
         loginRequest.setEmail(null);
+        loginRequest.setUsername(null);
         Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email is required")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Either email or username must be provided")));
     }
 
     @Test
     void testLoginRequestWithBlankEmail() {
         loginRequest.setEmail("   ");
+        loginRequest.setUsername(null);
         Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email is required")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Either email or username must be provided")));
     }
 
     @Test
@@ -73,6 +75,30 @@ class LoginRequestTest {
         Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Password is required")));
+    }
+
+    @Test
+    void testLoginRequestWithUsername() {
+        loginRequest.setEmail(null);
+        loginRequest.setUsername("testuser");
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testLoginRequestWithBothEmailAndUsername() {
+        loginRequest.setUsername("testuser");
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void testLoginRequestWithNeitherEmailNorUsername() {
+        loginRequest.setEmail(null);
+        loginRequest.setUsername(null);
+        Set<ConstraintViolation<LocalLoginRequest>> violations = validator.validate(loginRequest);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Either email or username must be provided")));
     }
 
     @Test
@@ -97,7 +123,7 @@ class LoginRequestTest {
         String testEmail = "constructor@example.com";
         String testPassword = "constructorPassword123";
 
-        LocalLoginRequest allArgsRequest = new LocalLoginRequest(testEmail, testPassword);
+        LocalLoginRequest allArgsRequest = new LocalLoginRequest(testEmail, null, testPassword);
 
         assertEquals(testEmail, allArgsRequest.getEmail());
         assertEquals(testPassword, allArgsRequest.getPassword());
@@ -112,9 +138,9 @@ class LoginRequestTest {
 
     @Test
     void testEqualsAndHashCode() {
-        LocalLoginRequest request1 = new LocalLoginRequest("test@example.com", "password123");
-        LocalLoginRequest request2 = new LocalLoginRequest("test@example.com", "password123");
-        LocalLoginRequest request3 = new LocalLoginRequest("different@example.com", "password123");
+        LocalLoginRequest request1 = new LocalLoginRequest("test@example.com", null, "password123");
+        LocalLoginRequest request2 = new LocalLoginRequest("test@example.com", null, "password123");
+        LocalLoginRequest request3 = new LocalLoginRequest("different@example.com", null, "password123");
 
         assertEquals(request1, request2);
         assertEquals(request1.hashCode(), request2.hashCode());

@@ -122,8 +122,14 @@ public class AuthService {
             throw new RuntimeException("Email already registered");
         }
 
+        if (userRepository.existsByUsername(request.getUsername())) {
+            registerFailureCounter.increment();
+            throw new RuntimeException("Username already taken");
+        }
+
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setUsername(request.getUsername());
         user.setFirstname(request.getFirstName());
         user.setLastname(request.getLastName());
         user.setAvatarUrl(request.getAvatarUrl());
@@ -188,11 +194,19 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LocalLoginRequest request, HttpServletResponse response) {
-        log.info("Attempting to login user with email: { }", request.getEmail());
+        String identifier = request.getEmail() != null ? request.getEmail() : request.getUsername();
+        log.info("Attempting to login user with identifier: { }", identifier);
 
-        Optional<UserLocalIdentity> localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
+        Optional<UserLocalIdentity> localIdentityOpt = Optional.empty();
+
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
+        } else if (request.getUsername() != null && !request.getUsername().isEmpty()) {
+            localIdentityOpt = userLocalIdentityRepository.findByUsername(request.getUsername());
+        }
+
         if (localIdentityOpt.isEmpty()) {
-            log.warn("Login attempt with non-existent email: { }", request.getEmail());
+            log.warn("Login attempt with non-existent identifier: { }", identifier);
             loginFailureCounter.increment();
             throw new RuntimeException("Invalid credentials");
         }
@@ -648,6 +662,7 @@ public class AuthService {
         return new UserResponse(
             user.getId(),
             user.getEmail(),
+            user.getUsername(),
             user.getFirstname(),
             user.getLastname(),
             user.getIsActive(),

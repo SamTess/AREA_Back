@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -208,5 +212,85 @@ class ServiceControllerTest {
         mockMvc.perform(get("/api/services/search").param("name", "xyz"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void getAllServicesWithDefaultParameters() throws Exception {
+        Service service = new Service();
+        service.setId(UUID.randomUUID());
+        service.setKey("github");
+        service.setName("GitHub");
+        service.setAuth(Service.AuthType.OAUTH2);
+        service.setIsActive(true);
+        service.setCreatedAt(java.time.LocalDateTime.now());
+        service.setUpdatedAt(java.time.LocalDateTime.now());
+
+        org.springframework.data.domain.Page<Service> page = new PageImpl<>(List.of(service));
+        when(serviceRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        org.springframework.http.ResponseEntity<org.springframework.data.domain.Page<ServiceResponse>> response = 
+            serviceController.getAllServices(0, 20, "id", "asc");
+
+        org.junit.jupiter.api.Assertions.assertEquals(200, response.getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertEquals(1, response.getBody().getContent().size());
+        org.junit.jupiter.api.Assertions.assertEquals("GitHub", response.getBody().getContent().get(0).getName());
+
+        verify(serviceRepository, times(1)).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void getAllServicesWithCustomParameters() throws Exception {
+        Service service = new Service();
+        service.setId(UUID.randomUUID());
+        service.setKey("gitlab");
+        service.setName("GitLab");
+        service.setAuth(Service.AuthType.OAUTH2);
+        service.setIsActive(true);
+        service.setCreatedAt(java.time.LocalDateTime.now());
+        service.setUpdatedAt(java.time.LocalDateTime.now());
+
+        org.springframework.data.domain.Page<Service> page = new PageImpl<>(List.of(service));
+        when(serviceRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        org.springframework.http.ResponseEntity<org.springframework.data.domain.Page<ServiceResponse>> response = 
+            serviceController.getAllServices(1, 10, "name", "desc");
+
+        org.junit.jupiter.api.Assertions.assertEquals(200, response.getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertEquals(1, response.getBody().getContent().size());
+        org.junit.jupiter.api.Assertions.assertEquals("GitLab", response.getBody().getContent().get(0).getName());
+
+        verify(serviceRepository, times(1)).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void createServiceSuccess() throws Exception {
+        CreateServiceRequest request = new CreateServiceRequest();
+        request.setKey("slack");
+        request.setName("Slack");
+        request.setAuth(Service.AuthType.OAUTH2);
+        request.setDocsUrl("https://docs.slack.com");
+        request.setIconLightUrl("https://icon.light");
+        request.setIconDarkUrl("https://icon.dark");
+
+        Service savedService = new Service();
+        savedService.setId(UUID.randomUUID());
+        savedService.setKey("slack");
+        savedService.setName("Slack");
+        savedService.setAuth(Service.AuthType.OAUTH2);
+        savedService.setIsActive(true);
+
+        when(serviceRepository.existsByKey("slack")).thenReturn(false);
+        when(serviceRepository.save(any(Service.class))).thenReturn(savedService);
+
+        mockMvc.perform(post("/api/services")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Slack"))
+                .andExpect(jsonPath("$.key").value("slack"));
+
+        verify(serviceRepository, times(1)).existsByKey("slack");
+        verify(serviceRepository, times(1)).save(any(Service.class));
+        verify(serviceCacheService, times(1)).invalidateServicesCache();
     }
 }

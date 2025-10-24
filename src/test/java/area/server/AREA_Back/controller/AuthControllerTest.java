@@ -734,4 +734,398 @@ class AuthControllerTest {
             assertEquals("Validation failed", response.getBody().get("error"));
         }
     }
+
+    @Nested
+    class VerifyEmailTests {
+
+        @Test
+        void verifyEmailShouldReturnOkWhenTokenValid() {
+            // Given
+            String token = "valid-token-123";
+            when(authService.verifyEmail(token))
+                .thenReturn(testAuthResponse);
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.verifyEmail(token);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Success", response.getBody().getMessage());
+            assertEquals("test@example.com", response.getBody().getUser().getEmail());
+            verify(authService).verifyEmail(token);
+        }
+
+        @Test
+        void verifyEmailShouldReturnBadRequestWhenTokenInvalid() {
+            // Given
+            String token = "invalid-token";
+            when(authService.verifyEmail(token))
+                .thenThrow(new RuntimeException("Invalid verification token"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.verifyEmail(token);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Invalid verification token", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void verifyEmailShouldReturnBadRequestWhenTokenExpired() {
+            // Given
+            String token = "expired-token";
+            when(authService.verifyEmail(token))
+                .thenThrow(new RuntimeException("Verification token has expired"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.verifyEmail(token);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Verification token has expired", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void verifyEmailShouldReturnInternalServerErrorWhenUnexpectedError() {
+            // Given
+            String token = "token-123";
+            when(authService.verifyEmail(token))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Database connection failed");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.verifyEmail(token);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Email verification failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+    }
+
+    @Nested
+    class ForgotPasswordTests {
+
+        @Test
+        void forgotPasswordShouldReturnOkWhenEmailExists() {
+            // Given
+            area.server.AREA_Back.dto.ForgotPasswordRequest request = 
+                new area.server.AREA_Back.dto.ForgotPasswordRequest("test@example.com");
+            AuthResponse expectedResponse = new AuthResponse(
+                "Password reset email sent", null);
+            when(authService.forgotPassword(request))
+                .thenReturn(expectedResponse);
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.forgotPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Password reset email sent", response.getBody().getMessage());
+            verify(authService).forgotPassword(request);
+        }
+
+        @Test
+        void forgotPasswordShouldReturnOkEvenWhenEmailDoesNotExist() {
+            // Given - For security, we return OK even if email doesn't exist
+            area.server.AREA_Back.dto.ForgotPasswordRequest request = 
+                new area.server.AREA_Back.dto.ForgotPasswordRequest("nonexistent@example.com");
+            AuthResponse expectedResponse = new AuthResponse(
+                "If an account with that email exists, a password reset link has been sent", null);
+            when(authService.forgotPassword(request))
+                .thenReturn(expectedResponse);
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.forgotPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+
+        @Test
+        void forgotPasswordShouldReturnBadRequestWhenServiceThrowsException() {
+            // Given
+            area.server.AREA_Back.dto.ForgotPasswordRequest request = 
+                new area.server.AREA_Back.dto.ForgotPasswordRequest("test@example.com");
+            when(authService.forgotPassword(request))
+                .thenThrow(new RuntimeException("Email service unavailable"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.forgotPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Email service unavailable", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void forgotPasswordShouldReturnInternalServerErrorWhenUnexpectedError() {
+            // Given
+            area.server.AREA_Back.dto.ForgotPasswordRequest request = 
+                new area.server.AREA_Back.dto.ForgotPasswordRequest("test@example.com");
+            when(authService.forgotPassword(request))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Unexpected error");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.forgotPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Failed to process password reset request", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+    }
+
+    @Nested
+    class ResetPasswordTests {
+
+        @Test
+        void resetPasswordShouldReturnOkWhenTokenValidAndPasswordReset() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("valid-token", "newPassword123");
+            AuthResponse expectedResponse = new AuthResponse("Password reset successfully", testUserResponse);
+            when(authService.resetPassword(request))
+                .thenReturn(expectedResponse);
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Password reset successfully", response.getBody().getMessage());
+            assertNotNull(response.getBody().getUser());
+            verify(authService).resetPassword(request);
+        }
+
+        @Test
+        void resetPasswordShouldReturnBadRequestWhenTokenInvalid() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("invalid-token", "newPassword123");
+            when(authService.resetPassword(request))
+                .thenThrow(new RuntimeException("Invalid reset token"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Invalid reset token", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void resetPasswordShouldReturnBadRequestWhenTokenExpired() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("expired-token", "newPassword123");
+            when(authService.resetPassword(request))
+                .thenThrow(new RuntimeException("Reset token has expired"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Reset token has expired", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void resetPasswordShouldReturnBadRequestWhenPasswordInvalid() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("valid-token", "123");
+            when(authService.resetPassword(request))
+                .thenThrow(new RuntimeException("Password does not meet requirements"));
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Password does not meet requirements", response.getBody().getMessage());
+        }
+
+        @Test
+        void resetPasswordShouldReturnInternalServerErrorWhenUnexpectedError() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("valid-token", "newPassword123");
+            when(authService.resetPassword(request))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Database error");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Password reset failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+    }
+
+    @Nested
+    class AdditionalCoverageTests {
+
+        @Test
+        void registerShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            // Use a checked exception wrapped to trigger the Exception catch block
+            when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.register(request, httpServletResponse);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Registration failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void loginShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            // Use a checked exception wrapped to trigger the Exception catch block
+            when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.login(request, httpServletResponse);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Login failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void getCurrentUserShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            when(authService.getCurrentUser(httpServletRequest))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<?> response = authController.getCurrentUser(httpServletRequest);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertInstanceOf(Map.class, response.getBody());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> errorResponse = (Map<String, Object>) response.getBody();
+            assertEquals("Failed to get user information", errorResponse.get("error"));
+        }
+
+        @Test
+        void refreshTokenShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            TokenRefreshRequest request = new TokenRefreshRequest();
+            when(authService.refreshToken(httpServletRequest, httpServletResponse))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.refreshToken(
+                    request, httpServletRequest, httpServletResponse);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Token refresh failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void verifyEmailShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            String token = "valid-token";
+            when(authService.verifyEmail(token))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.verifyEmail(token);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Email verification failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void forgotPasswordShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            area.server.AREA_Back.dto.ForgotPasswordRequest request = 
+                new area.server.AREA_Back.dto.ForgotPasswordRequest("test@example.com");
+            when(authService.forgotPassword(request))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.forgotPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Failed to process password reset request", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+
+        @Test
+        void resetPasswordShouldReturnInternalServerErrorOnNonRuntimeException() {
+            // Given
+            area.server.AREA_Back.dto.ResetPasswordRequest request = 
+                new area.server.AREA_Back.dto.ResetPasswordRequest("valid-token", "newPassword123");
+            when(authService.resetPassword(request))
+                .thenAnswer(invocation -> {
+                    throw new Exception("Checked exception");
+                });
+
+            // When
+            ResponseEntity<AuthResponse> response = authController.resetPassword(request);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("Password reset failed", response.getBody().getMessage());
+            assertNull(response.getBody().getUser());
+        }
+    }
 }

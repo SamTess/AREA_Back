@@ -6,8 +6,8 @@
 -- Add Spotify service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url)
 VALUES ('spotify', 'Spotify', 'OAUTH2', true, 'https://developer.spotify.com/documentation/web-api',
-        'https://cdn.simpleicons.org/spotify/1DB954',
-        'https://cdn.simpleicons.org/spotify/1DB954')
+        'https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg',
+        'https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,

@@ -384,16 +384,6 @@ public class WebhookController {
     }
 
     /**
-     * Gets request headers for debugging
-     */
-    private Map<String, String> getRequestHeaders(HttpServletRequest request) {
-        Map<String, String> headers = new java.util.HashMap<>();
-        request.getHeaderNames().asIterator()
-            .forEachRemaining(name -> headers.put(name, request.getHeader(name)));
-        return headers;
-    }
-
-    /**
      * Handle Slack URL verification challenge
      */
     private ResponseEntity<Object> handleSlackUrlVerification(Map<String, Object> payload) {

@@ -6,8 +6,8 @@
 -- Add Discord service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url)
 VALUES ('discord', 'Discord', 'OAUTH2', true, 'https://discord.com/developers/docs/intro',
-        'https://cdn.simpleicons.org/discord/5865F2',
-        'https://cdn.simpleicons.org/discord/FFFFFF')
+        'https://upload.wikimedia.org/wikipedia/fr/4/4f/Discord_Logo_sans_texte.svg',
+        'https://upload.wikimedia.org/wikipedia/fr/4/4f/Discord_Logo_sans_texte.svg')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,

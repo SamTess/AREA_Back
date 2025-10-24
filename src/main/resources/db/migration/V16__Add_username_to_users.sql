@@ -1,0 +1,1 @@
+ALTER TABLE area.a_users ADD COLUMN username VARCHAR(50) UNIQUE;

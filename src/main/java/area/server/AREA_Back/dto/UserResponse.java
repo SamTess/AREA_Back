@@ -13,6 +13,7 @@ import java.util.UUID;
 public class UserResponse {
     private UUID id;
     private String email;
+    private String username;
     private String firstname;
     private String lastname;
     private Boolean isActive;

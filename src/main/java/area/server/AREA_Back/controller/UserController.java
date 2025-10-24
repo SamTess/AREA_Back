@@ -142,6 +142,15 @@ public class UserController {
             }
         }
 
+        if (request.getUsername() != null) {
+            Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "Username already taken"));
+            }
+            user.setUsername(request.getUsername());
+        }
+
         if (request.getFirstname() != null) {
             user.setFirstname(request.getFirstname());
         }

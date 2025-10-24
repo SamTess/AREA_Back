@@ -22,11 +22,12 @@ class AuthResponseTest {
         userResponse = new UserResponse(
             UUID.randomUUID(),
             "test@example.com",
+            "testuser",
             "John",
             "Doe",
             true,
             false,
-            true, // isVerified
+            true,
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"
@@ -66,11 +67,12 @@ class AuthResponseTest {
         UserResponse testUser = new UserResponse(
             UUID.randomUUID(),
             "getter@example.com",
+            "janeuser",
             "Jane",
             "Smith",
             false,
             true,
-            false, // isVerified
+            false,
             LocalDateTime.now().minusDays(1),
             null,
             null
@@ -96,11 +98,12 @@ class AuthResponseTest {
         UserResponse testUser = new UserResponse(
             UUID.randomUUID(),
             "constructor@example.com",
+            "aliceuser",
             "Alice",
             "Johnson",
             true,
             false,
-            true, // isVerified
+            true,
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/constructor-avatar.jpg"

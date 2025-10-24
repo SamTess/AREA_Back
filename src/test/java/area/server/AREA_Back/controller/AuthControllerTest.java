@@ -76,11 +76,12 @@ class AuthControllerTest {
         testUserResponse = new UserResponse(
             testUserId,
             "test@example.com",
+            "testuser",
             "John",
             "Doe",
             true,
             false,
-            true, // isVerified
+            true,
             LocalDateTime.now(),
             LocalDateTime.now(),
             "https://example.com/avatar.jpg"
@@ -94,7 +95,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnCreatedWhenRegistrationSuccessful() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -115,7 +116,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenEmailAlreadyExists() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 
@@ -134,7 +135,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
@@ -151,7 +152,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnConflictWhenServiceThrowsRuntimeException() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Service error"));
 
@@ -168,7 +169,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnCreatedWhenSuccessful() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -186,7 +187,7 @@ class AuthControllerTest {
         @Test
         void registerUsingDirectControllerCallShouldReturnConflictWhenEmailExists() {
             // Given
-            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("existing@example.com", "password123", "testuser", "John", "Doe", null);
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Email already registered"));
 
@@ -203,7 +204,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleEmptyEmail() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("", "password123", "testuser", "John", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -218,7 +219,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleShortPassword() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "123", "testuser", "John", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -233,7 +234,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleInvalidEmailFormat() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("invalid-email", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("invalid-email", "password123", "testuser", "John", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -248,7 +249,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleEmptyFirstName() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "", "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -263,7 +264,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleEmptyLastName() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -278,7 +279,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleNullFirstName() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", null, "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", null, "Doe", null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -293,7 +294,7 @@ class AuthControllerTest {
         @Test
         void registerShouldHandleNullLastName() throws Exception {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", null, null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", null, null);
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -312,7 +313,7 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnOkWhenCredentialsValid() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -333,7 +334,7 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnUnauthorizedWhenCredentialsInvalid() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "wrongpassword");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "wrongpassword");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Invalid credentials"));
 
@@ -352,7 +353,7 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnLockedWhenAccountLocked() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Account locked due to failed attempts"));
 
@@ -371,7 +372,7 @@ class AuthControllerTest {
         @Test
         void loginUsingDirectControllerCallShouldReturnOkWhenSuccessful() {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenReturn(testAuthResponse);
 
@@ -388,7 +389,7 @@ class AuthControllerTest {
         @Test
         void loginUsingDirectControllerCallShouldReturnLockedWhenAccountLocked() {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Account is locked"));
 
@@ -405,7 +406,7 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnInternalServerErrorWhenUnexpectedExceptionOccurs() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
@@ -424,7 +425,7 @@ class AuthControllerTest {
         @Test
         void loginShouldHandleEmptyEmail() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("", null, "password123");
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);
@@ -439,7 +440,7 @@ class AuthControllerTest {
         @Test
         void loginShouldHandleEmptyPassword() throws Exception {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "");
 
             // When
             String requestJson = objectMapper.writeValueAsString(request);

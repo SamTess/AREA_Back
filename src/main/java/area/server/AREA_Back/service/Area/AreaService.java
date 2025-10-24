@@ -47,6 +47,7 @@ public class AreaService {
     private final ServiceAccountRepository serviceAccountRepository;
     private final JsonSchemaValidationService jsonSchemaValidationService;
     private final ActionLinkService actionLinkService;
+    private final ExecutionTriggerService executionTriggerService;
 
     private static final int DEFAULT_MAX_CONCURRENCY = 5;
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
@@ -307,12 +308,50 @@ public class AreaService {
 
             log.info("Manually triggering AREA: {} with payload: {}", areaId, inputPayload);
 
-            return Map.of(
-                "status", "triggered",
-                "areaId", areaId,
-                "timestamp", LocalDateTime.now().toString(),
-                "payload", inputPayload
-            );
+            List<ActionInstance> actionInstances = actionInstanceRepository.findByAreaId(areaId);
+
+            if (actionInstances.isEmpty()) {
+                log.warn("No action instances found for AREA: {}", areaId);
+            } else {
+                log.info("Found {} action instances for AREA: {}", actionInstances.size(), areaId);
+
+                int triggered = 0;
+                for (ActionInstance actionInstance : actionInstances) {
+                    if (actionInstance.getEnabled()
+                        && actionInstance.getActionDefinition().getIsExecutable()) {
+                        try {
+                            log.info("Triggering action instance: {} ({})",
+                                    actionInstance.getId(), actionInstance.getName());
+                            Map<String, Object> executionPayload = inputPayload;
+                            if (executionPayload == null) {
+                                executionPayload = Map.of();
+                            }
+                            executionTriggerService.triggerAreaExecution(
+                                actionInstance,
+                                ActivationModeType.MANUAL,
+                                executionPayload
+                            );
+                            triggered++;
+                        } catch (Exception e) {
+                            log.error("Failed to trigger action instance {}: {}",
+                                    actionInstance.getId(), e.getMessage(), e);
+                        }
+                    }
+                }
+                log.info("Triggered {} reactions for AREA: {}", triggered, areaId);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "triggered");
+            response.put("areaId", areaId);
+            response.put("timestamp", LocalDateTime.now().toString());
+            Object payload = inputPayload;
+            if (payload == null) {
+                payload = Map.of();
+            }
+            response.put("payload", payload);
+            response.put("actionInstancesTriggered", actionInstances.size());
+            return response;
 
         } catch (Exception e) {
             log.error("Failed to trigger AREA manually: {}", e.getMessage(), e);

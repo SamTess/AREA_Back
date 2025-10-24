@@ -40,7 +40,7 @@ SELECT
             "role_id": { "type": "string" }
         }
     }'::jsonb,
-    null
+    NULL::integer
 FROM discord_service ds
 
 UNION ALL
@@ -71,7 +71,7 @@ SELECT
             "user_id": { "type": "string" }
         }
     }'::jsonb,
-    null
+    NULL::integer
 FROM discord_service ds
 
 UNION ALL
@@ -103,7 +103,7 @@ SELECT
             "user_id": { "type": "string" }
         }
     }'::jsonb,
-    null
+    NULL::integer
 FROM discord_service ds
 
 UNION ALL
@@ -134,7 +134,7 @@ SELECT
             "message_id": { "type": "string" }
         }
     }'::jsonb,
-    null
+    NULL::integer
 FROM discord_service ds
 
 ON CONFLICT (service_id, key, version) DO UPDATE SET

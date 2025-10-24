@@ -11,12 +11,12 @@ import jakarta.validation.ConstraintValidatorContext;
 public class AtLeastOneIdentifierValidator implements ConstraintValidator<AtLeastOneIdentifier, LocalLoginRequest> {
 
     @Override
-    public void initialize(AtLeastOneIdentifier constraintAnnotation) {
+    public void initialize(final AtLeastOneIdentifier constraintAnnotation) {
         // No initialization needed
     }
 
     @Override
-    public boolean isValid(LocalLoginRequest request, ConstraintValidatorContext context) {
+    public boolean isValid(final LocalLoginRequest request, final ConstraintValidatorContext context) {
         if (request == null) {
             return false;
         }

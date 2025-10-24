@@ -7,6 +7,7 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
+import area.server.AREA_Back.service.Area.Services.NotionActionService;
 import area.server.AREA_Back.service.Area.Services.SlackActionService;
 import area.server.AREA_Back.service.Area.Services.SpotifyActionService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -51,6 +52,7 @@ public class ReactionExecutor {
     private final DiscordActionService discordActionService;
     private final SlackActionService slackActionService;
     private final SpotifyActionService spotifyActionService;
+    private final NotionActionService notionActionService;
     private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
@@ -140,6 +142,9 @@ public class ReactionExecutor {
                 break;
             case "discord":
                 result.putAll(executeDiscordAction(actionKey, inputPayload, actionParams, execution));
+                break;
+            case "notion":
+                result.putAll(executeNotionAction(actionKey, inputPayload, actionParams, execution));
                 break;
             case "webhook":
                 result.putAll(executeWebhookAction(actionKey, inputPayload, actionParams));
@@ -304,6 +309,21 @@ public class ReactionExecutor {
         } catch (Exception e) {
             log.error("Failed to execute Google action {}: {}", actionKey, e.getMessage(), e);
             throw new RuntimeException("Google action execution failed: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> executeNotionAction(final String actionKey, final Map<String, Object> input,
+                                                    final Map<String, Object> params, final Execution execution) {
+        try {
+            UUID userId = execution.getActionInstance().getUser().getId();
+            Map<String, Object> result = notionActionService.executeNotionAction(actionKey, input, params, userId);
+            result.put("type", "notion");
+            result.put("executedAt", LocalDateTime.now());
+            result.put("executionId", execution.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to execute Notion action {}: {}", actionKey, e.getMessage(), e);
+            throw new RuntimeException("Notion action execution failed: " + e.getMessage(), e);
         }
     }
 

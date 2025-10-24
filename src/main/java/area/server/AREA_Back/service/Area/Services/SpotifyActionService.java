@@ -35,7 +35,6 @@ public class SpotifyActionService {
 
     private static final String SPOTIFY_API_BASE = "https://api.spotify.com/v1";
     private static final String SPOTIFY_PROVIDER_KEY = "spotify";
-    private static final String SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
     private static final int ISO_DATE_LENGTH = 19;
     private static final int MAX_VOLUME = 100;
 
@@ -181,7 +180,13 @@ public class SpotifyActionService {
                         Map<String, Object> item = (Map<String, Object>) elem;
                         items.add(item);
                     } else {
-                        log.warn("Unexpected item type in 'items' list: {}", elem != null ? elem.getClass() : "null");
+                        String className;
+                        if (elem != null) {
+                            className = elem.getClass().toString();
+                        } else {
+                            className = "null";
+                        }
+                        log.warn("Unexpected item type in 'items' list: {}", className);
                     }
                 }
             } else if (itemsObj != null) {

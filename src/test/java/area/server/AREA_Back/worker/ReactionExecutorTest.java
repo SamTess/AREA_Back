@@ -10,6 +10,7 @@ import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
+import area.server.AREA_Back.service.Area.Services.NotionActionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,9 @@ class ReactionExecutorTest {
     @Mock
     private area.server.AREA_Back.service.Area.Services.SpotifyActionService spotifyActionService;
 
+    @Mock
+    private NotionActionService notionActionService;
+
     private SimpleMeterRegistry meterRegistry;
 
     private ReactionExecutor reactionExecutor;
@@ -71,6 +75,7 @@ class ReactionExecutorTest {
             discordActionService,
             slackActionService,
             spotifyActionService,
+            notionActionService,
             meterRegistry
         );
 

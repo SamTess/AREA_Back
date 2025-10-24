@@ -8,6 +8,7 @@ import area.server.AREA_Back.service.Webhook.GoogleWebhookService;
 import area.server.AREA_Back.service.Webhook.SlackWebhookService;
 import area.server.AREA_Back.service.Webhook.DiscordWebhookService;
 import area.server.AREA_Back.service.Webhook.DiscordGatewayService;
+import area.server.AREA_Back.service.Webhook.NotionWebhookService;
 import area.server.AREA_Back.service.Webhook.WebhookDeduplicationService;
 import area.server.AREA_Back.service.Webhook.WebhookEventProcessingService;
 import area.server.AREA_Back.service.Webhook.WebhookSecretService;
@@ -46,6 +47,7 @@ public class WebhookController {
     private final SlackWebhookService slackWebhookService;
     private final DiscordWebhookService discordWebhookService;
     private final DiscordGatewayService discordGatewayService;
+    private final NotionWebhookService notionWebhookService;
     private final WebhookSignatureValidator signatureValidator;
     private final WebhookDeduplicationService deduplicationService;
     private final WebhookEventProcessingService eventProcessingService;
@@ -458,6 +460,11 @@ public class WebhookController {
             serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp);
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("Discord webhook processed: action={}, time={}ms", action, processingTime);
+            return createServiceResponse(service, action, eventId, processingTime, serviceResult);
+        } else if ("notion".equalsIgnoreCase(service)) {
+            serviceResult = notionWebhookService.processWebhook(payload);
+            long processingTime = System.currentTimeMillis() - startTime;
+            log.info("Notion webhook processed: action={}, time={}ms", action, processingTime);
             return createServiceResponse(service, action, eventId, processingTime, serviceResult);
         }
 

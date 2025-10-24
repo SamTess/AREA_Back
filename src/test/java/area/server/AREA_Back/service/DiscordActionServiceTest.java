@@ -26,6 +26,9 @@ class DiscordActionServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private area.server.AREA_Back.service.Auth.OAuthTokenRefreshService oauthTokenRefreshService;
+
     private SimpleMeterRegistry meterRegistry;
     private DiscordActionService discordActionService;
 
@@ -36,7 +39,8 @@ class DiscordActionServiceTest {
             userOAuthIdentityRepository,
             tokenEncryptionService,
             restTemplate,
-            meterRegistry
+            meterRegistry,
+            oauthTokenRefreshService
         );
 
         try {

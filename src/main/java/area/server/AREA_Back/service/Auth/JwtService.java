@@ -30,10 +30,10 @@ public class JwtService {
     private static final int LOG_TOKEN_PREFIX_LENGTH = 20;
     private static final long MILLISECONDS_PER_SECOND = 1000L;
 
-    @Value("${JWT_ACCESS_SECRET:}")
+    @Value("${app.jwt.access-secret:}")
     private String accessTokenSecret;
 
-    @Value("${JWT_REFRESH_SECRET:}")
+    @Value("${app.jwt.refresh-secret:}")
     private String refreshTokenSecret;
 
     private final JwtCookieProperties jwtCookieProperties;

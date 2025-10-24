@@ -47,6 +47,15 @@ public class DiscordActionService {
     private final TokenEncryptionService tokenEncryptionService;
     private final RestTemplate restTemplate;
     private final MeterRegistry meterRegistry;
+    private final area.server.AREA_Back.service.Auth.OAuthTokenRefreshService oauthTokenRefreshService;
+
+    @org.springframework.beans.factory.annotation.Value(
+        "${spring.security.oauth2.client.registration.discord.client-id:}")
+    private String discordClientId;
+
+    @org.springframework.beans.factory.annotation.Value(
+        "${spring.security.oauth2.client.registration.discord.client-secret:}")
+    private String discordClientSecret;
 
     @Value("${DISCORD_BOT_TOKEN:#{null}}")
     private String discordBotToken;
@@ -739,14 +748,28 @@ public class DiscordActionService {
         }
 
         UserOAuthIdentity identity = oauthIdentity.get();
+
+        if (oauthTokenRefreshService.needsRefresh(identity)
+            && discordClientId != null && !discordClientId.isEmpty()) {
+            log.info("Discord access token expired or about to expire for user {}, refreshing...", userId);
+            boolean refreshed = oauthTokenRefreshService.refreshDiscordToken(
+                identity, discordClientId, discordClientSecret);
+            if (!refreshed) {
+                log.error("Failed to refresh Discord token for user {}", userId);
+                return null;
+            }
+            identity = userOAuthIdentityRepository
+                .findByUserIdAndProvider(userId, DISCORD_PROVIDER_KEY)
+                .orElse(null);
+            if (identity == null) {
+                log.error("Failed to reload Discord identity after refresh for user {}", userId);
+                return null;
+            }
+        }
+
         String encryptedToken = identity.getAccessTokenEnc();
         if (encryptedToken == null) {
             log.warn("No Discord access token found for user: {}", userId);
-            return null;
-        }
-
-        if (identity.getExpiresAt() != null && identity.getExpiresAt().isBefore(LocalDateTime.now())) {
-            log.warn("Discord access token expired for user: {}", userId);
             return null;
         }
 

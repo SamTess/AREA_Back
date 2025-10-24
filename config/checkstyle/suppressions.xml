@@ -56,6 +56,16 @@
               files="OAuthSlackService\.java"
               lines="58"/>
 
+    <!-- OAuth Spotify Service authorization URL is long due to OAuth parameters -->
+    <suppress checks="LineLength"
+              files="OAuthSpotifyService\.java"
+              lines="48"/>
+
+    <!-- OAuth Spotify Service constructor has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthSpotifyService\.java"
+              lines="64"/>
+
     <!-- OAuth Discord Service constructor has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"
               files="OAuthDiscordService\.java"

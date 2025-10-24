@@ -25,6 +25,10 @@ public class UserIdentityService {
     public boolean hasLocalIdentity(UUID userId) {
         return userLocalIdentityRepository.findByUserId(userId)
                 .map(identity -> {
+                    if (identity.getIsOAuthPlaceholder()) {
+                        log.debug("User {} has OAuth placeholder local identity, not a real local account", userId);
+                        return false;
+                    }
                     String hash = identity.getPasswordHash();
                     boolean hasValidPassword = hash != null
                                               && !hash.isEmpty()

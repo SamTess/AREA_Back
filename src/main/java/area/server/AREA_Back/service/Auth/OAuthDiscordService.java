@@ -142,20 +142,6 @@ public class OAuthDiscordService extends OAuthService {
             User user = userRepository.findById(authResponse.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("User not found after login"));
 
-            if ((user.getUsername() == null || user.getUsername().isEmpty()) && profileData.username != null) {
-                user.setUsername(authService.generateUniqueUsername(profileData.username, profileData.email));
-            }
-            if (profileData.globalName != null && !profileData.globalName.isEmpty()) {
-                String[] nameParts = profileData.globalName.split(" ", 2);
-                if (nameParts.length > 0 && (user.getFirstname() == null || user.getFirstname().isEmpty())) {
-                    user.setFirstname(nameParts[0]);
-                }
-                if (nameParts.length > 1 && (user.getLastname() == null || user.getLastname().isEmpty())) {
-                    user.setLastname(nameParts[1]);
-                }
-            }
-            userRepository.save(user);
-
             UserOAuthIdentity oauth = handleUserAuthentication(
                 user,
                 profileData,

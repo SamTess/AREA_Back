@@ -148,6 +148,7 @@ public class AuthService {
         localIdentity.setEmail(request.getEmail());
         localIdentity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         localIdentity.setIsEmailVerified(false);
+        localIdentity.setIsOAuthPlaceholder(false);
         localIdentity.setEmailVerificationToken(verificationToken);
         localIdentity.setEmailVerificationExpiresAt(tokenExpiry);
         localIdentity.setFailedLoginAttempts(0);
@@ -270,9 +271,12 @@ public class AuthService {
         UserLocalIdentity localIdentity;
 
         if (localIdentityOpt.isEmpty()) {
+            String baseUsername = email.split("@")[0];
+            String username = generateUniqueUsername(baseUsername);
+
             user = new User();
             user.setEmail(email);
-            user.setUsername(generateUniqueUsername(null, email));
+            user.setUsername(username);
             user.setAvatarUrl(avatarUrl);
             user.setIsActive(true);
             user.setIsAdmin(false);
@@ -284,6 +288,7 @@ public class AuthService {
             localIdentity.setEmail(email);
             localIdentity.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             localIdentity.setIsEmailVerified(true);
+            localIdentity.setIsOAuthPlaceholder(true);
             localIdentity.setFailedLoginAttempts(0);
             localIdentity.setCreatedAt(LocalDateTime.now());
             localIdentity.setUpdatedAt(LocalDateTime.now());
@@ -301,10 +306,6 @@ public class AuthService {
 
             if (avatarUrl != null && !avatarUrl.isEmpty()) {
                 user.setAvatarUrl(avatarUrl);
-            }
-
-            if (user.getUsername() == null || user.getUsername().isEmpty()) {
-                user.setUsername(generateUniqueUsername(null, email));
             }
 
             log.info("Logged in existing OAuth user: {}", email);
@@ -663,44 +664,25 @@ public class AuthService {
         log.debug("Cleared HttpOnly authentication cookies");
     }
 
-    public String generateUniqueUsername(String baseUsername, String email) {
-        String sanitizedBase = baseUsername;
+    private String generateUniqueUsername(String baseUsername) {
+        String username = baseUsername.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
 
-        if (sanitizedBase == null || sanitizedBase.trim().isEmpty()) {
-            if (email != null && email.contains("@")) {
-                sanitizedBase = email.substring(0, email.indexOf("@"));
-            } else {
-                sanitizedBase = "user";
-            }
+        if (username.isEmpty()) {
+            username = "user";
         }
 
-        sanitizedBase = sanitizedBase.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
-
-        if (sanitizedBase.isEmpty()) {
-            sanitizedBase = "user";
+        if (!userRepository.existsByUsername(username)) {
+            return username;
         }
 
-        if (sanitizedBase.length() > 45) {
-            sanitizedBase = sanitizedBase.substring(0, 45);
-        }
+        int counter = 1;
+        String candidateUsername;
+        do {
+            candidateUsername = username + counter;
+            counter++;
+        } while (userRepository.existsByUsername(candidateUsername));
 
-        String username = sanitizedBase;
-        int attempt = 0;
-
-        while (userRepository.findByUsername(username).isPresent()) {
-            attempt++;
-            if (attempt == 1) {
-                username = sanitizedBase + "_" + UUID.randomUUID().toString().substring(0, 4);
-            } else {
-                username = sanitizedBase + "_" + UUID.randomUUID().toString().substring(0, 8);
-            }
-
-            if (username.length() > 50) {
-                username = username.substring(0, 50);
-            }
-        }
-
-        return username;
+        return candidateUsername;
     }
 
     private UserResponse mapToUserResponse(User user, Boolean isVerified) {

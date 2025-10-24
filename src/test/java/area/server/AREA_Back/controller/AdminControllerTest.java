@@ -26,8 +26,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import org.springframework.data.domain.Sort;
-
 /**
  * Unit tests for AdminController
  */

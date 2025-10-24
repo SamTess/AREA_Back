@@ -431,7 +431,7 @@ public class DiscordActionService {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(
+            restTemplate.exchange(
                 url, HttpMethod.DELETE, request, Void.class
             );
 
@@ -461,7 +461,7 @@ public class DiscordActionService {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(
+            restTemplate.exchange(
                 url, HttpMethod.PUT, request, Void.class
             );
 
@@ -492,7 +492,7 @@ public class DiscordActionService {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(
+            restTemplate.exchange(
                 url, HttpMethod.DELETE, request, Void.class
             );
 
@@ -528,7 +528,7 @@ public class DiscordActionService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(
+            restTemplate.exchange(
                 url, HttpMethod.PUT, request, Void.class
             );
 

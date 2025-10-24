@@ -7,6 +7,7 @@ import area.server.AREA_Back.entity.ActionInstance;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
+import area.server.AREA_Back.service.Area.Services.NotionActionService;
 import area.server.AREA_Back.service.Area.Services.SlackActionService;
 import area.server.AREA_Back.service.Area.Services.SpotifyActionService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -19,31 +20,11 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class ReactionExecutor {
-
-    private static final int MIN_EXECUTION_TIME = 100;
-    private static final int MAX_EXECUTION_TIME = 2000;
-    private static final int EMAIL_MIN_LATENCY = 200;
-    private static final int EMAIL_MAX_LATENCY = 800;
-    private static final int SLACK_MIN_LATENCY = 300;
-    private static final int SLACK_MAX_LATENCY = 1000;
-    private static final int WEBHOOK_MIN_LATENCY = 500;
-    private static final int WEBHOOK_MAX_LATENCY = 1500;
-    private static final int DB_MIN_LATENCY = 100;
-    private static final int DB_MAX_LATENCY = 500;
-    private static final int NOTIFICATION_MIN_LATENCY = 150;
-    private static final int NOTIFICATION_MAX_LATENCY = 600;
-    private static final int GENERIC_MIN_LATENCY = 200;
-    private static final int GENERIC_MAX_LATENCY = 1000;
-    private static final int UUID_SUBSTRING_END = 8;
-    private static final int MAX_ROWS_AFFECTED = 10;
-    private static final int HTTP_OK = 200;
-    private static final long MILLIS_TO_SECONDS = 1000;
 
     private final RetryManager retryManager;
     private final GitHubActionService gitHubActionService;
@@ -51,6 +32,7 @@ public class ReactionExecutor {
     private final DiscordActionService discordActionService;
     private final SlackActionService slackActionService;
     private final SpotifyActionService spotifyActionService;
+    private final NotionActionService notionActionService;
     private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
@@ -119,13 +101,8 @@ public class ReactionExecutor {
         result.put("service", serviceKey);
         result.put("action", actionKey);
         result.put("executedAt", LocalDateTime.now());
-        result.put("executionDuration", ThreadLocalRandom.current().nextInt(MIN_EXECUTION_TIME, MAX_EXECUTION_TIME)
-            + "ms");
 
         switch (serviceKey.toLowerCase()) {
-            case "email":
-                result.putAll(executeEmailAction(actionKey, inputPayload, actionParams));
-                break;
             case "slack":
                 result.putAll(executeSlackAction(actionKey, inputPayload, actionParams, execution));
                 break;
@@ -141,34 +118,14 @@ public class ReactionExecutor {
             case "discord":
                 result.putAll(executeDiscordAction(actionKey, inputPayload, actionParams, execution));
                 break;
-            case "webhook":
-                result.putAll(executeWebhookAction(actionKey, inputPayload, actionParams));
-                break;
-            case "database":
-                result.putAll(executeDatabaseAction(actionKey, inputPayload, actionParams));
-                break;
-            case "notification":
-                result.putAll(executeNotificationAction(actionKey, inputPayload, actionParams));
+            case "notion":
+                result.putAll(executeNotionAction(actionKey, inputPayload, actionParams, execution));
                 break;
             default:
-                result.putAll(executeGenericAction(serviceKey, actionKey, inputPayload, actionParams));
+                throw new UnsupportedOperationException("Service not supported: " + serviceKey);
         }
 
         return result;
-    }
-
-    private Map<String, Object> executeEmailAction(final String actionKey, final Map<String, Object> input,
-                                                  final Map<String, Object> params) {
-        simulateLatency(EMAIL_MIN_LATENCY, EMAIL_MAX_LATENCY);
-
-        return Map.of(
-            "type", "email",
-            "action", actionKey,
-            "to", params.getOrDefault("to", "unknown@example.com"),
-            "subject", params.getOrDefault("subject", "AREA Notification"),
-            "status", "sent",
-            "messageId", "msg_" + java.util.UUID.randomUUID().toString().substring(0, UUID_SUBSTRING_END)
-        );
     }
 
     private Map<String, Object> executeSlackAction(final String actionKey, final Map<String, Object> input,
@@ -179,14 +136,7 @@ public class ReactionExecutor {
             return slackActionService.executeSlackAction(actionKey, input, params, userId);
         } catch (Exception e) {
             log.error("Failed to execute Slack action: {}", e.getMessage(), e);
-            simulateLatency(SLACK_MIN_LATENCY, SLACK_MAX_LATENCY);
-            return Map.of(
-                "type", "slack",
-                "action", actionKey,
-                "status", "failed",
-                "error", e.getMessage(),
-                "timestamp", System.currentTimeMillis() / MILLIS_TO_SECONDS
-            );
+            throw new RuntimeException("Slack action execution failed: " + e.getMessage(), e);
         }
     }
 
@@ -198,68 +148,8 @@ public class ReactionExecutor {
             return spotifyActionService.executeSpotifyAction(actionKey, input, params, userId);
         } catch (Exception e) {
             log.error("Failed to execute Spotify action: {}", e.getMessage(), e);
-            return Map.of(
-                "type", "spotify",
-                "action", actionKey,
-                "status", "failed",
-                "error", e.getMessage(),
-                "timestamp", System.currentTimeMillis() / MILLIS_TO_SECONDS
-            );
+            throw new RuntimeException("Spotify action execution failed: " + e.getMessage(), e);
         }
-    }
-
-    private Map<String, Object> executeWebhookAction(final String actionKey, final Map<String, Object> input,
-                                                    final Map<String, Object> params) {
-        simulateLatency(WEBHOOK_MIN_LATENCY, WEBHOOK_MAX_LATENCY);
-
-        return Map.of(
-            "type", "webhook",
-            "action", actionKey,
-            "url", params.getOrDefault("url", "https://example.com/webhook"),
-            "method", params.getOrDefault("method", "POST"),
-            "status", "sent",
-            "responseCode", HTTP_OK
-        );
-    }
-
-    private Map<String, Object> executeDatabaseAction(final String actionKey, final Map<String, Object> input,
-                                                     final Map<String, Object> params) {
-        simulateLatency(DB_MIN_LATENCY, DB_MAX_LATENCY);
-
-        return Map.of(
-            "type", "database",
-            "action", actionKey,
-            "operation", actionKey,
-            "status", "executed",
-            "rowsAffected", ThreadLocalRandom.current().nextInt(1, MAX_ROWS_AFFECTED)
-        );
-    }
-
-    private Map<String, Object> executeNotificationAction(final String actionKey, final Map<String, Object> input,
-                                                         final Map<String, Object> params) {
-        simulateLatency(NOTIFICATION_MIN_LATENCY, NOTIFICATION_MAX_LATENCY);
-
-        return Map.of(
-            "type", "notification",
-            "action", actionKey,
-            "recipient", params.getOrDefault("recipient", "user"),
-            "title", params.getOrDefault("title", "AREA Notification"),
-            "status", "delivered",
-            "notificationId", java.util.UUID.randomUUID().toString()
-        );
-    }
-
-    private Map<String, Object> executeGenericAction(final String serviceKey, final String actionKey,
-                                                    final Map<String, Object> input, final Map<String, Object> params) {
-        simulateLatency(GENERIC_MIN_LATENCY, GENERIC_MAX_LATENCY);
-
-        return Map.of(
-            "type", "generic",
-            "service", serviceKey,
-            "action", actionKey,
-            "status", "executed",
-            "result", "success"
-        );
     }
 
     private Map<String, Object> executeGitHubAction(final String actionKey, final Map<String, Object> input,
@@ -307,6 +197,21 @@ public class ReactionExecutor {
         }
     }
 
+    private Map<String, Object> executeNotionAction(final String actionKey, final Map<String, Object> input,
+                                                    final Map<String, Object> params, final Execution execution) {
+        try {
+            UUID userId = execution.getActionInstance().getUser().getId();
+            Map<String, Object> result = notionActionService.executeNotionAction(actionKey, input, params, userId);
+            result.put("type", "notion");
+            result.put("executedAt", LocalDateTime.now());
+            result.put("executionId", execution.getId());
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to execute Notion action {}: {}", actionKey, e.getMessage(), e);
+            throw new RuntimeException("Notion action execution failed: " + e.getMessage(), e);
+        }
+    }
+
     private Map<String, Object> createErrorDetails(final Exception e, final Execution execution) {
         Map<String, Object> errorDetails = new HashMap<>();
         errorDetails.put("exception", e.getClass().getSimpleName());
@@ -319,15 +224,5 @@ public class ReactionExecutor {
             errorDetails.put("cause", e.getCause().getMessage());
         }
         return errorDetails;
-    }
-
-    private void simulateLatency(final int minMs, final int maxMs) {
-        try {
-            int delay = ThreadLocalRandom.current().nextInt(minMs, maxMs);
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Execution interrupted", e);
-        }
     }
 }

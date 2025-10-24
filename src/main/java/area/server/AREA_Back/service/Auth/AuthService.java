@@ -195,7 +195,12 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LocalLoginRequest request, HttpServletResponse response) {
-        String identifier = request.getEmail() != null ? request.getEmail() : request.getUsername();
+        String identifier;
+        if (request.getEmail() != null) {
+            identifier = request.getEmail();
+        } else {
+            identifier = request.getUsername();
+        }
         log.info("Attempting to login user with identifier: { }", identifier);
 
         Optional<UserLocalIdentity> localIdentityOpt = Optional.empty();
@@ -664,6 +669,8 @@ public class AuthService {
         log.debug("Cleared HttpOnly authentication cookies");
     }
 
+    private static final int USERNAME_SUFFIX_LENGTH = 8;
+
     private String generateUniqueUsername(String baseUsername) {
         String username = baseUsername.replaceAll("[^a-zA-Z0-9_-]", "").toLowerCase();
 
@@ -677,7 +684,7 @@ public class AuthService {
             return username;
         }
 
-        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).replaceAll("-", "");
+        String randomSuffix = UUID.randomUUID().toString().substring(0, USERNAME_SUFFIX_LENGTH).replaceAll("-", "");
         return username + "_" + randomSuffix;
     }
 

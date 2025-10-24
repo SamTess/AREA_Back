@@ -8,11 +8,13 @@ import area.server.AREA_Back.service.Auth.AuthService;
 import area.server.AREA_Back.service.Auth.OAuthDiscordService;
 import area.server.AREA_Back.service.Auth.OAuthGithubService;
 import area.server.AREA_Back.service.Auth.OAuthGoogleService;
+import area.server.AREA_Back.service.Auth.OAuthNotionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +31,9 @@ public class OAuthLinkController {
     private final OAuthDiscordService oauthDiscordService;
     private final OAuthGithubService oauthGithubService;
     private final OAuthGoogleService oauthGoogleService;
+
+    @Autowired(required = false)
+    private OAuthNotionService oauthNotionService;
 
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_NOT_FOUND = 404;
@@ -64,6 +69,9 @@ public class OAuthLinkController {
                     break;
                 case "google":
                     linkedIdentity = oauthGoogleService.linkToExistingUser(currentUser, authorizationCode);
+                    break;
+                case "notion":
+                    linkedIdentity = oauthNotionService.linkToExistingUser(currentUser, authorizationCode);
                     break;
                 default:
                     return ResponseEntity.status(HTTP_NOT_FOUND).build();
@@ -109,6 +117,7 @@ public class OAuthLinkController {
             case "github" -> "GitHub";
             case "google" -> "Google";
             case "microsoft" -> "Microsoft";
+            case "notion" -> "Notion";
             default -> provider;
         };
     }
@@ -119,6 +128,7 @@ public class OAuthLinkController {
             case "github" -> "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg";
             case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
             case "microsoft" -> "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg";
+            case "notion" -> "https://cdn.simpleicons.org/notion/000000";
             default -> "/file.svg";
         };
     }

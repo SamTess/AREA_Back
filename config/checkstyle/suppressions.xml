@@ -76,8 +76,8 @@
               files="OAuthService\.java"
               lines="30"/>
 
-    <!-- WebhookController.handleWebhook is a complex method handling multiple services -->
-    <suppress checks="MethodLength"
-              files="WebhookController\.java"
-              lines="62"/>
+    <!-- OAuth Notion Service constructor has many dependencies from Spring DI -->
+    <suppress checks="ParameterNumber"
+              files="OAuthNotionService\.java"
+              lines="77"/>
 </suppressions>

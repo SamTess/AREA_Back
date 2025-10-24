@@ -147,13 +147,14 @@ public class OAuthNotionService extends OAuthService {
             UserProfileData profileData = tokenResponse.ownerProfile;
             log.info("Fetched Notion user profile: {}", profileData.userIdentifier);
 
-            if (profileData.email == null || profileData.email.isEmpty()) {
+            String email = profileData.email;
+            if (email == null || email.isBlank()) {
                 oauthLoginFailureCounter.increment();
                 throw new RuntimeException("Notion account email is required for authentication");
             }
 
-            log.info("Calling authService.oauthLogin for email: {}", profileData.email);
-            AuthResponse authResponse = authService.oauthLogin(profileData.email, profileData.avatarUrl, response);
+            log.info("Calling authService.oauthLogin for email: {}", email);
+            AuthResponse authResponse = authService.oauthLogin(email, profileData.avatarUrl, response);
             log.info("AuthService.oauthLogin completed successfully for user: {}", authResponse.getUser().getId());
 
             User user = userRepository.findById(authResponse.getUser().getId())
@@ -189,7 +190,8 @@ public class OAuthNotionService extends OAuthService {
         NotionTokenResponse tokenResponse = exchangeCodeForToken(authorizationCode);
         UserProfileData profileData = tokenResponse.ownerProfile;
 
-        if (profileData.email == null || profileData.email.isEmpty()) {
+        String email = profileData.email;
+        if (email == null || email.isBlank()) {
             throw new RuntimeException("Notion account email is required for account linking");
         }
 
@@ -283,7 +285,7 @@ public class OAuthNotionService extends OAuthService {
         tokenMeta.put("workspace_icon", tokenResponse.workspaceIcon);
         tokenMeta.put("bot_id", tokenResponse.botId);
 
-        if (tokenResponse.duplicatedTemplateId != null && !tokenResponse.duplicatedTemplateId.isEmpty()) {
+        if (tokenResponse.duplicatedTemplateId != null && !tokenResponse.duplicatedTemplateId.isBlank()) {
             tokenMeta.put("duplicated_template_id", tokenResponse.duplicatedTemplateId);
         }
 
@@ -388,29 +390,29 @@ public class OAuthNotionService extends OAuthService {
         if (ownerObj instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> owner = (Map<String, Object>) ownerObj;
-            
+
             Object typeObj = owner.get("type");
             if ("user".equals(typeObj)) {
                 Object userObj = owner.get("user");
                 if (userObj instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> user = (Map<String, Object>) userObj;
-                    
+
                     Object idObj = user.get("id");
                     if (idObj != null) {
                         userId = idObj.toString();
                     }
-                    
+
                     Object nameObj = user.get("name");
                     if (nameObj != null) {
                         name = nameObj.toString();
                     }
-                    
+
                     Object avatarObj = user.get("avatar_url");
                     if (avatarObj != null) {
                         avatarUrl = avatarObj.toString();
                     }
-                    
+
                     Object personObj = user.get("person");
                     if (personObj instanceof Map) {
                         @SuppressWarnings("unchecked")
@@ -434,12 +436,12 @@ public class OAuthNotionService extends OAuthService {
             }
         }
 
-        if (email == null || email.isEmpty()) {
+        if (email == null || email.isBlank()) {
             log.warn("No email found in Notion OAuth response for user {}", userId);
             email = null;
         }
 
-        if (name == null || name.isEmpty()) {
+        if (name == null || name.isBlank()) {
             name = "Notion User";
             log.warn("No name found for Notion user {}, using default: {}", userId, name);
         }
@@ -457,7 +459,7 @@ public class OAuthNotionService extends OAuthService {
             avatarLog = "null";
         }
 
-        log.info("Extracted Notion user profile - ID: {}, Name: {}, Email: {}, Avatar: {}", 
+        log.info("Extracted Notion user profile - ID: {}, Name: {}, Email: {}, Avatar: {}",
                  userId, name, emailLog, avatarLog);
 
         return new UserProfileData(email, avatarUrl, userId, name);

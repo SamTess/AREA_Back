@@ -100,14 +100,14 @@ public class NotionActionService {
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("parent", Map.of("page_id", pageId));
-        
+
         requestBody.put("properties", Map.of(
             "title", Map.of(
                 "title", List.of(Map.of("text", Map.of("content", title)))
             )
         ));
 
-        if (!content.isEmpty()) {
+        if (!content.isBlank()) {
             requestBody.put("children", List.of(
                 Map.of(
                     "object", "block",
@@ -143,8 +143,8 @@ public class NotionActionService {
         String url = NOTION_API_BASE + "/pages/" + pageId;
 
         Map<String, Object> requestBody = new HashMap<>();
-        
-        if (title != null && !title.isEmpty()) {
+
+        if (title != null && !title.isBlank()) {
             requestBody.put("properties", Map.of(
                 "title", Map.of(
                     "title", List.of(Map.of("text", Map.of("content", title)))
@@ -161,11 +161,11 @@ public class NotionActionService {
             url, HttpMethod.PATCH, request,
             new ParameterizedTypeReference<Map<String, Object>>() { }
         );
-        
+
         Map<String, Object> responseBody = response.getBody();
         log.info("Notion response: {}", responseBody);
 
-        if (content != null && !content.isEmpty()) {
+        if (content != null && !content.isBlank()) {
             String blockUrl = NOTION_API_BASE + "/blocks/" + pageId + "/children";
             Map<String, Object> blockBody = Map.of(
                 "children", List.of(
@@ -178,7 +178,7 @@ public class NotionActionService {
                     )
                 )
             );
-            
+
             HttpEntity<Map<String, Object>> blockRequest = new HttpEntity<>(blockBody, headers);
             restTemplate.exchange(
                 blockUrl, HttpMethod.PATCH, blockRequest,
@@ -355,7 +355,7 @@ public class NotionActionService {
 
         UserOAuthIdentity oauth = oauthOpt.get();
         String encryptedToken = oauth.getAccessTokenEnc();
-        if (encryptedToken == null || encryptedToken.trim().isEmpty()) {
+        if (encryptedToken == null || encryptedToken.isBlank()) {
             log.warn("Notion token is null or empty for user: {}", userId);
             return null;
         }

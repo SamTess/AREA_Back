@@ -234,7 +234,7 @@ class UserLocalIdentityTest {
         LocalDateTime testUpdatedAt = LocalDateTime.now();
 
         UserLocalIdentity allArgsIdentity = new UserLocalIdentity(
-            testId, user, testEmail, testPasswordHash, testSalt, testEmailVerified,
+            testId, user, testEmail, testPasswordHash, testSalt, testEmailVerified, false,
             testVerificationToken, testVerificationExpiry, testResetToken, testResetExpiry,
             testFailedAttempts, testLockedUntil, testLastPasswordChange, testCreatedAt, testUpdatedAt
         );
@@ -245,6 +245,7 @@ class UserLocalIdentityTest {
         assertEquals(testPasswordHash, allArgsIdentity.getPasswordHash());
         assertEquals(testSalt, allArgsIdentity.getSalt());
         assertEquals(testEmailVerified, allArgsIdentity.getIsEmailVerified());
+        assertEquals(false, allArgsIdentity.getIsOAuthPlaceholder());
         assertEquals(testVerificationToken, allArgsIdentity.getEmailVerificationToken());
         assertEquals(testVerificationExpiry, allArgsIdentity.getEmailVerificationExpiresAt());
         assertEquals(testResetToken, allArgsIdentity.getPasswordResetToken());

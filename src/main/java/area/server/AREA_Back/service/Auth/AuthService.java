@@ -198,14 +198,11 @@ public class AuthService {
         log.info("Attempting to login user with identifier: { }", identifier);
 
         Optional<UserLocalIdentity> localIdentityOpt = Optional.empty();
-        
+
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             localIdentityOpt = userLocalIdentityRepository.findByEmail(request.getEmail());
         } else if (request.getUsername() != null && !request.getUsername().isEmpty()) {
-            Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
-            if (userOpt.isPresent()) {
-                localIdentityOpt = userLocalIdentityRepository.findByEmail(userOpt.get().getEmail());
-            }
+            localIdentityOpt = userLocalIdentityRepository.findByUsername(request.getUsername());
         }
 
         if (localIdentityOpt.isEmpty()) {

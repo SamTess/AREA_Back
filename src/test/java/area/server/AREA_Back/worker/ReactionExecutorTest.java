@@ -47,6 +47,9 @@ class ReactionExecutorTest {
     @Mock
     private area.server.AREA_Back.service.Area.Services.SlackActionService slackActionService;
 
+    @Mock
+    private area.server.AREA_Back.service.Area.Services.SpotifyActionService spotifyActionService;
+
     private SimpleMeterRegistry meterRegistry;
 
     private ReactionExecutor reactionExecutor;
@@ -67,6 +70,7 @@ class ReactionExecutorTest {
             googleActionService,
             discordActionService,
             slackActionService,
+            spotifyActionService,
             meterRegistry
         );
 

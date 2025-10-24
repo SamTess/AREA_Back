@@ -8,6 +8,7 @@ import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
 import area.server.AREA_Back.service.Area.Services.SlackActionService;
+import area.server.AREA_Back.service.Area.Services.SpotifyActionService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class ReactionExecutor {
     private final GoogleActionService googleActionService;
     private final DiscordActionService discordActionService;
     private final SlackActionService slackActionService;
+    private final SpotifyActionService spotifyActionService;
     private final MeterRegistry meterRegistry;
 
     public ExecutionResult executeReaction(final Execution execution) {
@@ -127,6 +129,9 @@ public class ReactionExecutor {
             case "slack":
                 result.putAll(executeSlackAction(actionKey, inputPayload, actionParams, execution));
                 break;
+            case "spotify":
+                result.putAll(executeSpotifyAction(actionKey, inputPayload, actionParams, execution));
+                break;
             case "github":
                 result.putAll(executeGitHubAction(actionKey, inputPayload, actionParams, execution));
                 break;
@@ -177,6 +182,24 @@ public class ReactionExecutor {
             simulateLatency(SLACK_MIN_LATENCY, SLACK_MAX_LATENCY);
             return Map.of(
                 "type", "slack",
+                "action", actionKey,
+                "status", "failed",
+                "error", e.getMessage(),
+                "timestamp", System.currentTimeMillis() / MILLIS_TO_SECONDS
+            );
+        }
+    }
+
+    private Map<String, Object> executeSpotifyAction(final String actionKey, final Map<String, Object> input,
+                                                     final Map<String, Object> params, final Execution execution) {
+        UUID userId = execution.getActionInstance().getUser().getId();
+
+        try {
+            return spotifyActionService.executeSpotifyAction(actionKey, input, params, userId);
+        } catch (Exception e) {
+            log.error("Failed to execute Spotify action: {}", e.getMessage(), e);
+            return Map.of(
+                "type", "spotify",
                 "action", actionKey,
                 "status", "failed",
                 "error", e.getMessage(),

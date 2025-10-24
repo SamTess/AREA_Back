@@ -72,156 +72,48 @@ public class WebhookController {
         long startTime = System.currentTimeMillis();
 
         byte[] rawBody = getRequestBody(request);
-
         Map<String, Object> payload = parseJsonBody(rawBody);
-
         String eventId = extractEventId(service, request, payload);
+
         log.info("Received webhook: service={}, action={}, eventId={}, userId={}",
                 service, action, eventId, userId);
-        log.info("Webhook payload: {}", payload);
-        log.debug("Webhook headers: {}", getRequestHeaders(request));
 
         try {
             if ("slack".equalsIgnoreCase(service) && "url_verification".equals(payload.get("type"))) {
-                Map<String, Object> slackResult = slackWebhookService.processWebhook(payload);
-                if (slackResult.containsKey("challenge")) {
-                    String challenge = (String) slackResult.get("challenge");
-                    log.info("Slack URL verification successful, returning challenge");
-                    return ResponseEntity.ok(challenge);
-                }
+                return handleSlackUrlVerification(payload);
             }
 
             if (!validateSignature(service, request, rawBody)) {
-                log.warn("Webhook signature validation failed for service {} action {}", service, action);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "error", "Invalid signature",
-                    "service", service,
-                    "action", action,
-                    "timestamp", LocalDateTime.now().toString()
-                ));
+                return createErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid signature",
+                    service, action, eventId);
             }
 
             if (deduplicationService.checkAndMark(eventId, service)) {
-                log.info("Duplicate webhook event detected: {} for service {}", eventId, service);
-                return ResponseEntity.ok(Map.of(
-                    "status", "duplicate",
-                    "message", "Event already processed",
-                    "eventId", eventId,
-                    "service", service,
-                    "action", action,
-                    "timestamp", LocalDateTime.now().toString()
-                ));
+                return createDuplicateResponse(service, action, eventId);
             }
 
-            List<Execution> executions;
-            Map<String, Object> serviceResult = new HashMap<>();
+            ResponseEntity<Object> serviceResponse = processServiceSpecificWebhook(
+                service, action, payload, userId, eventId, startTime, request);
+            if (serviceResponse != null) {
+                return serviceResponse;
+            }
 
             if (userId == null) {
-                if ("github".equalsIgnoreCase(service)) {
-                    userId = identifyGitHubUser(payload);
-                } else if ("google".equalsIgnoreCase(service)) {
-                    serviceResult = googleWebhookService.processWebhook(payload);
-                    executions = List.of();
-
-                    long processingTime = System.currentTimeMillis() - startTime;
-                    log.info("Google webhook processed: action={}, time={}ms", action, processingTime);
-
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("status", "processed");
-                    response.put("service", service);
-                    response.put("action", action);
-                    response.put("eventId", eventId);
-                    response.put("processingTimeMs", processingTime);
-                    response.put("timestamp", LocalDateTime.now().toString());
-                    response.put("serviceResult", serviceResult);
-                    return ResponseEntity.ok(response);
-                } else if ("slack".equalsIgnoreCase(service)) {
-                    serviceResult = slackWebhookService.processWebhook(payload);
-                    executions = List.of();
-
-                    long processingTime = System.currentTimeMillis() - startTime;
-                    log.info("Slack webhook processed: action={}, time={}ms", action, processingTime);
-
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("status", "processed");
-                    response.put("service", service);
-                    response.put("action", action);
-                    response.put("eventId", eventId);
-                    response.put("processingTimeMs", processingTime);
-                    response.put("timestamp", LocalDateTime.now().toString());
-                    response.put("serviceResult", serviceResult);
-                    return ResponseEntity.ok(response);
-                } else if ("discord".equalsIgnoreCase(service)) {
-                    String signature = request.getHeader("X-Signature-Ed25519");
-                    String timestamp = request.getHeader("X-Signature-Timestamp");
-                    serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp);
-                    executions = List.of();
-
-                    long processingTime = System.currentTimeMillis() - startTime;
-                    log.info("Discord webhook processed: action={}, time={}ms", action, processingTime);
-
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("status", "processed");
-                    response.put("service", service);
-                    response.put("action", action);
-                    response.put("eventId", eventId);
-                    response.put("processingTimeMs", processingTime);
-                    response.put("timestamp", LocalDateTime.now().toString());
-                    response.put("serviceResult", serviceResult);
-                    return ResponseEntity.ok(response);
-                }
-
-                if (userId != null) {
-                    log.info("Identified user {} from {} webhook payload", userId, service);
-                }
+                userId = identifyUserFromWebhook(service, payload);
             }
 
             if (userId != null) {
-                executions = eventProcessingService.processWebhookEventForUser(service, action, payload, userId);
+                return processWebhookEvent(service, action, payload, userId, eventId, startTime);
             } else {
-                log.warn("Could not identify user for {} webhook, skipping processing", service);
-                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
-                    "error", "User identification failed",
-                    "message", "Could not identify which user this webhook belongs to",
-                    "service", service,
-                    "action", action,
-                    "eventId", eventId,
-                    "timestamp", LocalDateTime.now().toString()
-                ));
+                return createErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "User identification failed",
+                    service, action, eventId);
             }
-
-            long processingTime = System.currentTimeMillis() - startTime;
-            log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms",
-                    service, action, executions.size(), processingTime);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "processed");
-            response.put("service", service);
-            response.put("action", action);
-            response.put("eventId", eventId);
-            response.put("executionsCreated", executions.size());
-            response.put("executionIds", executions.stream().map(e -> e.getId().toString()).toList());
-            response.put("processingTimeMs", processingTime);
-            response.put("timestamp", LocalDateTime.now().toString());
-
-            if (!serviceResult.isEmpty()) {
-                response.put("serviceResult", serviceResult);
-            }
-
-            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("Failed to process webhook: service={}, action={}, error={}",
                      service, action, e.getMessage(), e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "error", "Webhook processing failed",
-                "message", e.getMessage(),
-                "service", service,
-                "action", action,
-                "eventId", eventId,
-                "timestamp", LocalDateTime.now().toString()
-            ));
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Webhook processing failed: " + e.getMessage(), service, action, eventId);
         }
     }
 
@@ -497,6 +389,131 @@ public class WebhookController {
         request.getHeaderNames().asIterator()
             .forEachRemaining(name -> headers.put(name, request.getHeader(name)));
         return headers;
+    }
+
+    /**
+     * Handle Slack URL verification challenge
+     */
+    private ResponseEntity<Object> handleSlackUrlVerification(Map<String, Object> payload) {
+        Map<String, Object> slackResult = slackWebhookService.processWebhook(payload);
+        if (slackResult.containsKey("challenge")) {
+            String challenge = (String) slackResult.get("challenge");
+            log.info("Slack URL verification successful, returning challenge");
+            return ResponseEntity.ok(challenge);
+        }
+        return null;
+    }
+
+    /**
+     * Create error response
+     */
+    private ResponseEntity<Object> createErrorResponse(HttpStatus status, String errorMessage,
+            String service, String action, String eventId) {
+        return ResponseEntity.status(status).body(Map.of(
+            "error", errorMessage,
+            "service", service,
+            "action", action,
+            "eventId", eventId,
+            "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    /**
+     * Create duplicate event response
+     */
+    private ResponseEntity<Object> createDuplicateResponse(String service, String action, String eventId) {
+        log.info("Duplicate webhook event detected: {} for service {}", eventId, service);
+        return ResponseEntity.ok(Map.of(
+            "status", "duplicate",
+            "message", "Event already processed",
+            "eventId", eventId,
+            "service", service,
+            "action", action,
+            "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    /**
+     * Process service-specific webhooks that don't create AREA executions
+     */
+    private ResponseEntity<Object> processServiceSpecificWebhook(String service, String action,
+            Map<String, Object> payload, UUID userId, String eventId, long startTime,
+            HttpServletRequest request) {
+
+        Map<String, Object> serviceResult = new HashMap<>();
+
+        if ("google".equalsIgnoreCase(service)) {
+            serviceResult = googleWebhookService.processWebhook(payload);
+            long processingTime = System.currentTimeMillis() - startTime;
+            log.info("Google webhook processed: action={}, time={}ms", action, processingTime);
+            return createServiceResponse(service, action, eventId, processingTime, serviceResult);
+        } else if ("slack".equalsIgnoreCase(service)) {
+            serviceResult = slackWebhookService.processWebhook(payload);
+            long processingTime = System.currentTimeMillis() - startTime;
+            log.info("Slack webhook processed: action={}, time={}ms", action, processingTime);
+            return createServiceResponse(service, action, eventId, processingTime, serviceResult);
+        } else if ("discord".equalsIgnoreCase(service)) {
+            String signature = request.getHeader("X-Signature-Ed25519");
+            String timestamp = request.getHeader("X-Signature-Timestamp");
+            serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp);
+            long processingTime = System.currentTimeMillis() - startTime;
+            log.info("Discord webhook processed: action={}, time={}ms", action, processingTime);
+            return createServiceResponse(service, action, eventId, processingTime, serviceResult);
+        }
+
+        return null;
+    }
+
+    /**
+     * Create service-specific response
+     */
+    private ResponseEntity<Object> createServiceResponse(String service, String action,
+            String eventId, long processingTime, Map<String, Object> serviceResult) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "processed");
+        response.put("service", service);
+        response.put("action", action);
+        response.put("eventId", eventId);
+        response.put("processingTimeMs", processingTime);
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("serviceResult", serviceResult);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Identify user from webhook payload
+     */
+    private UUID identifyUserFromWebhook(String service, Map<String, Object> payload) {
+        if ("github".equalsIgnoreCase(service)) {
+            return identifyGitHubUser(payload);
+        }
+        return null;
+    }
+
+    /**
+     * Process webhook event and create AREA executions
+     */
+    private ResponseEntity<Object> processWebhookEvent(String service, String action,
+            Map<String, Object> payload, UUID userId, String eventId, long startTime) {
+
+        List<Execution> executions = eventProcessingService.processWebhookEventForUser(
+            service, action, payload, userId);
+
+        long processingTime = System.currentTimeMillis() - startTime;
+        log.info("Webhook processed successfully: service={}, action={}, executions={}, time={}ms",
+                service, action, executions.size(), processingTime);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "processed");
+        response.put("service", service);
+        response.put("action", action);
+        response.put("eventId", eventId);
+        response.put("executionsCreated", executions.size());
+        response.put("executionIds", executions.stream().map(e -> e.getId().toString()).toList());
+        response.put("processingTimeMs", processingTime);
+        response.put("timestamp", LocalDateTime.now().toString());
+
+        return ResponseEntity.ok(response);
     }
 
     /**

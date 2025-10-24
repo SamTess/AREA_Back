@@ -11,7 +11,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -23,6 +27,7 @@ public class AreaDraftCacheService {
 
     private static final String DRAFT_PREFIX = "area:draft:";
     private static final Duration DRAFT_TTL = Duration.ofHours(1);
+    private static final int SCAN_COUNT = 100;
 
     public String saveDraft(UUID userId, AreaDraftRequest draft) {
         return saveDraft(userId, draft, null);
@@ -38,9 +43,12 @@ public class AreaDraftCacheService {
                 draftId = areaId.toString();
                 log.info("Saving edit draft for area: {} (userId: {})", areaId, userId);
             } else {
-                draftId = draft.getDraftId() != null && !draft.getDraftId().isEmpty()
-                    ? draft.getDraftId()
-                    : UUID.randomUUID().toString();
+                String existingDraftId = draft.getDraftId();
+                if (existingDraftId != null && !existingDraftId.isEmpty()) {
+                    draftId = existingDraftId;
+                } else {
+                    draftId = UUID.randomUUID().toString();
+                }
                 key = DRAFT_PREFIX + "new:" + userId + ":" + draftId;
                 log.info("Saving new draft with draftId: {} (userId: {})", draftId, userId);
             }
@@ -104,7 +112,7 @@ public class AreaDraftCacheService {
                 org.springframework.data.redis.core.ScanOptions options =
                     org.springframework.data.redis.core.ScanOptions.scanOptions()
                         .match(pattern)
-                        .count(100)
+                        .count(SCAN_COUNT)
                         .build();
 
                 org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.scan(options);
@@ -232,11 +240,19 @@ public class AreaDraftCacheService {
         response.setReactions(draft.getReactions());
         response.setConnections(draft.getConnections());
         response.setLayoutMode(draft.getLayoutMode());
-        response.setSavedAt(draft.getSavedAt() != null ? draft.getSavedAt() : LocalDateTime.now());
+        LocalDateTime savedAt = draft.getSavedAt();
+        if (savedAt == null) {
+            savedAt = LocalDateTime.now();
+        }
+        response.setSavedAt(savedAt);
 
         try {
             Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-            response.setTtlSeconds(ttl != null ? ttl : 0L);
+            if (ttl != null) {
+                response.setTtlSeconds(ttl);
+            } else {
+                response.setTtlSeconds(0L);
+            }
         } catch (Exception e) {
             response.setTtlSeconds(0L);
         }

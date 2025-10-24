@@ -26,9 +26,9 @@ public class UserIdentityService {
         return userLocalIdentityRepository.findByUserId(userId)
                 .map(identity -> {
                     String hash = identity.getPasswordHash();
-                    boolean hasValidPassword = hash != null &&
-                                              !hash.isEmpty() &&
-                                              hash.startsWith("$2");
+                    boolean hasValidPassword = hash != null
+                                              && !hash.isEmpty()
+                                              && hash.startsWith("$2");
                     log.debug("User {} hasLocalIdentity check: passwordHash exists={}, isValidBcrypt={}",
                             userId, hash != null, hasValidPassword);
                     return hasValidPassword;

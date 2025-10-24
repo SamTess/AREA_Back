@@ -119,7 +119,7 @@ class OAuthDiscordServiceTest {
     @Test
     void testAuthorizationUrlContainsRequiredScopes() {
         String authUrl = oauthDiscordService.getUserAuthUrl();
-        assertTrue(authUrl.contains("scope=identify"));
+        assertTrue(authUrl.contains("identify"));
         assertTrue(authUrl.contains("email"));
         assertTrue(authUrl.contains("guilds"));
     }

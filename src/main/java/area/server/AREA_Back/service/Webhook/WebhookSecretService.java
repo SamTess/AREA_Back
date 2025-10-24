@@ -32,8 +32,8 @@ public class WebhookSecretService {
     @Value("${slack.signing.secret:#{null}}")
     private String slackWebhookSecret;
 
-    @Value("${app.webhook.discord.secret:#{null}}")
-    private String discordWebhookSecret;
+    @Value("${app.webhook.discord.public.key:#{null}}")
+    private String discordPublicKey;
 
     private final Map<String, String> secretCache = new HashMap<>();
 
@@ -49,7 +49,7 @@ public class WebhookSecretService {
         String secret = switch (service.toLowerCase()) {
             case "github" -> githubWebhookSecret;
             case "slack" -> slackWebhookSecret;
-            case "discord" -> discordWebhookSecret;
+            case "discord" -> discordPublicKey;
             default -> null;
         };
 

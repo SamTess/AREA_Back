@@ -1,6 +1,8 @@
 package area.server.AREA_Back.service.Webhook;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -19,6 +21,10 @@ public class WebhookSignatureValidator {
     private static final String GITHUB_SIGNATURE_PREFIX = "sha256=";
     private static final String SLACK_SIGNATURE_PREFIX = "v0=";
     private static final String HMAC_SHA256 = "HmacSHA256";
+    private static final int ED25519_PUBLIC_KEY_LENGTH = 32;
+    private static final int ED25519_SIGNATURE_LENGTH = 64;
+    private static final int HEX_STEP = 2;
+    private static final int RADIX_HEX = 16;
 
     /**
      * Validates GitHub webhook signature
@@ -122,6 +128,67 @@ public class WebhookSignatureValidator {
     }
 
     /**
+     * Validates Discord webhook signature
+     * Discord uses Ed25519 signatures with timestamp + body
+     *
+     * @param payload The raw payload bytes
+     * @param signature The signature from X-Signature-Ed25519 header
+     * @param publicKey The webhook public key (hex format)
+     * @param timestamp The timestamp from X-Signature-Timestamp header
+     * @return true if signature is valid
+     */
+    public boolean validateDiscordSignature(final byte[] payload, final String signature,
+                                          final String publicKey, final String timestamp) {
+        if (publicKey == null || publicKey.trim().isEmpty()) {
+            log.warn("No Discord public key configured for signature validation");
+            return false;
+        }
+
+        if (signature == null || timestamp == null) {
+            log.debug("No Discord signature headers provided, allowing request for ping verification");
+            return true;
+        }
+
+        try {
+            byte[] publicKeyBytes = hexToBytes(publicKey);
+            if (publicKeyBytes.length != ED25519_PUBLIC_KEY_LENGTH) {
+                log.warn("Invalid Discord public key length: expected {} bytes, got {}",
+                    ED25519_PUBLIC_KEY_LENGTH, publicKeyBytes.length);
+                return false;
+            }
+
+            byte[] signatureBytes = hexToBytes(signature);
+            if (signatureBytes.length != ED25519_SIGNATURE_LENGTH) {
+                log.warn("Invalid Discord signature length: expected {} bytes, got {}",
+                    ED25519_SIGNATURE_LENGTH, signatureBytes.length);
+                return false;
+            }
+
+            String message = timestamp + new String(payload, StandardCharsets.UTF_8);
+            byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+
+            Ed25519PublicKeyParameters publicKeyParams = new Ed25519PublicKeyParameters(publicKeyBytes, 0);
+            Ed25519Signer signer = new Ed25519Signer();
+            signer.init(false, publicKeyParams);
+            signer.update(messageBytes, 0, messageBytes.length);
+
+            boolean isValid = signer.verifySignature(signatureBytes);
+
+            if (!isValid) {
+                log.warn("Discord signature verification failed - invalid signature");
+            } else {
+                log.debug("Discord signature verification passed");
+            }
+
+            return isValid;
+
+        } catch (Exception e) {
+            log.error("Error validating Discord signature: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
      * Validates webhook signature based on provider type
      *
      * @param provider The provider name (github, slack, etc.)
@@ -145,6 +212,8 @@ public class WebhookSignatureValidator {
                 return validateSlackSignature(payload, signature, secret, timestamp);
             case "google":
                 return validateGoogleSignature(payload, signature, secret, timestamp);
+            case "discord":
+                return validateDiscordSignature(payload, signature, secret, timestamp);
             case "generic":
                 return validateHmacSha256Signature(payload, signature, secret);
             default:
@@ -174,6 +243,20 @@ public class WebhookSignatureValidator {
             result.append(String.format("%02x", b));
         }
         return result.toString();
+    }
+
+    /**
+     * Converts hexadecimal string to byte array
+     */
+    private byte[] hexToBytes(final String hex) {
+        if (hex.length() % HEX_STEP != 0) {
+            throw new IllegalArgumentException("Hex string must have even length");
+        }
+        byte[] bytes = new byte[hex.length() / HEX_STEP];
+        for (int i = 0; i < hex.length(); i += HEX_STEP) {
+            bytes[i / HEX_STEP] = (byte) Integer.parseInt(hex.substring(i, i + HEX_STEP), RADIX_HEX);
+        }
+        return bytes;
     }
 
     /**

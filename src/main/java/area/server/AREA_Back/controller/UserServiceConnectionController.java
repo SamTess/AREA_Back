@@ -121,12 +121,15 @@ public class UserServiceConnectionController {
                         status.setAvatarUrl(currentUser.getAvatarUrl());
                         status.setProviderUserId(oauth.getProviderUserId());
 
-                        boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(), oauth.getProvider());
+                        boolean canDisconnect = userIdentityService.canDisconnectService(currentUser.getId(),
+                                oauth.getProvider());
                         status.setCanDisconnect(canDisconnect);
 
-                        log.info("Service: {}, Provider: {}, canDisconnect: {}", serviceKey, oauth.getProvider(), canDisconnect);
+                        log.info("Service: {}, Provider: {}, canDisconnect: {}", serviceKey,
+                                oauth.getProvider(), canDisconnect);
 
-                        boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(oauth.getProvider());
+                        boolean isPrimary = primaryProvider.isPresent() && primaryProvider.get().equalsIgnoreCase(
+                                oauth.getProvider());
                         status.setPrimaryAuth(isPrimary);
 
                         String userName = extractUserNameFromOAuth(oauth);
@@ -174,7 +177,8 @@ public class UserServiceConnectionController {
     private String getServiceIconUrl(String serviceKey) {
         return switch (serviceKey.toLowerCase()) {
             case "github" -> "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg";
-            case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
+            case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/"
+                    + "Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
             case "microsoft" -> "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg";
             default -> "/file.svg";
         };

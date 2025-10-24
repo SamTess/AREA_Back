@@ -122,8 +122,8 @@ public class DiscordEventPollingService {
 
             if (!events.isEmpty()) {
                 eventsFound.increment(events.size());
-                log.info("Found {} new Discord events for action instance {}",
-                        events.size(), actionInstance.getId());
+                log.info("Found {} new Discord events for action instance {} ({})",
+                        events.size(), actionInstance.getId(), actionInstance.getActionDefinition().getKey());
 
                 for (Map<String, Object> event : events) {
                     log.debug("Processing Discord event: {}", event);
@@ -143,6 +143,9 @@ public class DiscordEventPollingService {
                                 actionInstance.getId(), e.getMessage(), e);
                     }
                 }
+            } else {
+                log.debug("No new Discord events found for action instance {}", actionInstance.getId());
+
             }
 
         } catch (Exception e) {

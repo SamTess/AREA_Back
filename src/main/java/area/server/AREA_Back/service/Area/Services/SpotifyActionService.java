@@ -171,9 +171,24 @@ public class SpotifyActionService {
 
             List<Map<String, Object>> events = new ArrayList<>();
             Map<String, Object> body = response.getBody();
-            List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+            Object itemsObj = body.get("items");
+            List<Map<String, Object>> items = new ArrayList<>();
+            if (itemsObj instanceof List<?>) {
+                List<?> rawList = (List<?>) itemsObj;
+                for (Object elem : rawList) {
+                    if (elem instanceof Map<?, ?>) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> item = (Map<String, Object>) elem;
+                        items.add(item);
+                    } else {
+                        log.warn("Unexpected item type in 'items' list: {}", elem != null ? elem.getClass() : "null");
+                    }
+                }
+            } else if (itemsObj != null) {
+                log.warn("'items' is not a List: {}", itemsObj.getClass());
+            }
 
-            if (items != null) {
+            if (!items.isEmpty()) {
                 long lastCheckEpoch = lastCheck.toEpochSecond(ZoneOffset.UTC);
                 for (Map<String, Object> item : items) {
                     String addedAt = (String) item.get("added_at");
@@ -299,7 +314,13 @@ public class SpotifyActionService {
             event.put("event_type", "playlist_updated");
             event.put("playlist_id", playlist.get("id"));
             event.put("playlist_name", playlist.get("name"));
-            event.put("tracks_total", ((Map<String, Object>) playlist.get("tracks")).get("total"));
+            Object tracksObj = playlist.get("tracks");
+            Object tracksTotal = null;
+            if (tracksObj instanceof Map) {
+                Object totalObj = ((Map<?, ?>) tracksObj).get("total");
+                tracksTotal = totalObj;
+            }
+            event.put("tracks_total", tracksTotal);
             event.put("timestamp", LocalDateTime.now().toString());
 
             return List.of(event);
@@ -713,13 +734,26 @@ public class SpotifyActionService {
         event.put("track_name", track.get("name"));
         event.put("track_uri", track.get("uri"));
 
-        List<Map<String, Object>> artists = (List<Map<String, Object>>) track.get("artists");
-        if (artists != null && !artists.isEmpty()) {
+        Object artistsObj = track.get("artists");
+        List<Map<String, Object>> artists = new ArrayList<>();
+        if (artistsObj instanceof List<?>) {
+            List<?> rawList = (List<?>) artistsObj;
+            for (Object item : rawList) {
+                if (item instanceof Map<?, ?>) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> artistMap = (Map<String, Object>) item;
+                    artists.add(artistMap);
+                }
+            }
+        }
+        if (!artists.isEmpty()) {
             event.put("artist_name", artists.get(0).get("name"));
         }
 
-        Map<String, Object> album = (Map<String, Object>) track.get("album");
-        if (album != null) {
+        Object albumObj = track.get("album");
+        if (albumObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> album = (Map<String, Object>) albumObj;
             event.put("album_name", album.get("name"));
         }
 

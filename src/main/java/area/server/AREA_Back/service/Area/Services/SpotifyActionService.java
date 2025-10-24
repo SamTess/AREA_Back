@@ -202,6 +202,7 @@ public class SpotifyActionService {
                                 addedAt.substring(0, ISO_DATE_LENGTH))
                             .toEpochSecond(ZoneOffset.UTC);
                         if (addedEpoch > lastCheckEpoch) {
+                            @SuppressWarnings("unchecked")
                             Map<String, Object> track = (Map<String, Object>) item.get("track");
                             events.add(createTrackEvent(track, "new_saved_track"));
                         }
@@ -241,6 +242,7 @@ public class SpotifyActionService {
             Boolean isPlaying = (Boolean) body.get("is_playing");
 
             if (Boolean.TRUE.equals(isPlaying)) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> item = (Map<String, Object>) body.get("item");
                 if (item != null) {
                     return List.of(createTrackEvent(item, "playback_started"));
@@ -275,6 +277,7 @@ public class SpotifyActionService {
             }
 
             Map<String, Object> body = response.getBody();
+            @SuppressWarnings("unchecked")
             Map<String, Object> item = (Map<String, Object>) body.get("item");
 
             if (item != null) {

@@ -333,56 +333,6 @@ public class NotionActionService {
         return result;
     }
 
-    private String extractPageTitle(Map<String, Object> page) {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> properties = (Map<String, Object>) page.get("properties");
-            if (properties == null) {
-                return "Untitled";
-            }
-
-            for (Map.Entry<String, Object> entry : properties.entrySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> prop = (Map<String, Object>) entry.getValue();
-                if ("title".equals(prop.get("type"))) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> titleArray = (List<Map<String, Object>>) prop.get("title");
-                    if (titleArray != null && !titleArray.isEmpty()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> text = (Map<String, Object>) titleArray.get(0).get("text");
-                        return (String) text.get("content");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Failed to extract page title: {}", e.getMessage());
-        }
-        return "Untitled";
-    }
-
-    private Map<String, Object> convertToNotionProperties(Map<String, Object> properties) {
-        Map<String, Object> notionProps = new HashMap<>();
-
-        for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            if (value instanceof String) {
-                notionProps.put(key, Map.of(
-                    "rich_text", List.of(Map.of("text", Map.of("content", value)))
-                ));
-            } else if (value instanceof Number) {
-                notionProps.put(key, Map.of("number", value));
-            } else if (value instanceof Boolean) {
-                notionProps.put(key, Map.of("checkbox", value));
-            } else {
-                notionProps.put(key, value);
-            }
-        }
-
-        return notionProps;
-    }
-
     private String getNotionToken(UUID userId) {
         Optional<String> serviceToken = serviceAccountService.getAccessToken(userId, NOTION_PROVIDER_KEY);
         if (serviceToken.isPresent()) {

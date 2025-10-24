@@ -151,12 +151,13 @@ public class NotionWebhookService {
         @SuppressWarnings("unchecked")
         Map<String, Object> entity = (Map<String, Object>) payload.get("entity");
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> page;
         if (entity != null) {
             page = entity;
         } else {
-            page = (Map<String, Object>) payload.get("data");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) payload.get("data");
+            page = data;
         }
 
         if (page == null) {

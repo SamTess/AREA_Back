@@ -1,0 +1,4 @@
+var DiscordWebhookService_8java =
+[
+    [ "area.server.AREA_Back.service.Webhook.DiscordWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService" ]
+];

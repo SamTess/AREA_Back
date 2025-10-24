@@ -114,6 +114,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:afde90d894429bd81104fb09426ca6884" id="r_afde90d894429bd81104fb09426ca6884"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSignatureValidator.html#afde90d894429bd81104fb09426ca6884">validateGoogleSignature</a> (final byte[] payload, final String signature, final String secret, final String timestamp)</td></tr>
 <tr class="memdesc:afde90d894429bd81104fb09426ca6884"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates Google Pub/Sub webhook Google Pub/Sub doesn't use traditional webhook signatures in the same way, but relies on HTTPS and proper endpoint configuration.  <br /></td></tr>
 <tr class="separator:afde90d894429bd81104fb09426ca6884"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a710a1cad4bae1c039ab37d4ba3343c5c" id="r_a710a1cad4bae1c039ab37d4ba3343c5c"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSignatureValidator.html#a710a1cad4bae1c039ab37d4ba3343c5c">validateDiscordSignature</a> (final byte[] payload, final String signature, final String publicKey, final String timestamp)</td></tr>
+<tr class="memdesc:a710a1cad4bae1c039ab37d4ba3343c5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates Discord webhook signature Discord uses Ed25519 signatures with timestamp + body.  <br /></td></tr>
+<tr class="separator:a710a1cad4bae1c039ab37d4ba3343c5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a433d50bd943ba8c0269a3398ba3f7c9d" id="r_a433d50bd943ba8c0269a3398ba3f7c9d"><td class="memItemLeft" align="right" valign="top">boolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSignatureValidator.html#a433d50bd943ba8c0269a3398ba3f7c9d">validateSignature</a> (final String provider, final byte[] payload, final String signature, final String secret, final String timestamp)</td></tr>
 <tr class="memdesc:a433d50bd943ba8c0269a3398ba3f7c9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates webhook signature based on provider type.  <br /></td></tr>
 <tr class="separator:a433d50bd943ba8c0269a3398ba3f7c9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,6 +124,58 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Service for validating webhook signatures from different providers. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a710a1cad4bae1c039ab37d4ba3343c5c" name="a710a1cad4bae1c039ab37d4ba3343c5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a710a1cad4bae1c039ab37d4ba3343c5c">&#9670;&#160;</a></span>validateDiscordSignature()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">boolean area.server.AREA_Back.service.Webhook.WebhookSignatureValidator.validateDiscordSignature </td>
+          <td>(</td>
+          <td class="paramtype">final byte[]&#160;</td>
+          <td class="paramname"><em>payload</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">final String&#160;</td>
+          <td class="paramname"><em>signature</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">final String&#160;</td>
+          <td class="paramname"><em>publicKey</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">final String&#160;</td>
+          <td class="paramname"><em>timestamp</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Validates Discord webhook signature Discord uses Ed25519 signatures with timestamp + body. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">payload</td><td>The raw payload bytes </td></tr>
+    <tr><td class="paramname">signature</td><td>The signature from X-Signature-Ed25519 header </td></tr>
+    <tr><td class="paramname">publicKey</td><td>The webhook public key (hex format) </td></tr>
+    <tr><td class="paramname">timestamp</td><td>The timestamp from X-Signature-Timestamp header </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if signature is valid </dd></dl>
+
+</div>
+</div>
 <a id="aed5a1d5e13b38b018dff9e1ec2742469" name="aed5a1d5e13b38b018dff9e1ec2742469"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aed5a1d5e13b38b018dff9e1ec2742469">&#9670;&#160;</a></span>validateGitHubSignature()</h2>
 
@@ -383,7 +438,7 @@ Public Member Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><b>area</b></li><li class="navelem"><b>server</b></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back.html">AREA_Back</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1service.html">service</a></li><li class="navelem"><a class="el" href="namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Webhook.html">Webhook</a></li><li class="navelem"><a class="el" href="classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookSignatureValidator.html">WebhookSignatureValidator</a></li>
-    <li class="footer">Generated on Thu Oct 23 2025 08:06:14 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
+    <li class="footer">Generated on Fri Oct 24 2025 12:10:35 for AREA Backend by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8 </li>
   </ul>
 </div>
 </body>

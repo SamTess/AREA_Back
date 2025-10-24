@@ -170,6 +170,8 @@ var annotated_dup =
               [ "RedisTokenService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Redis_1_1RedisTokenService" ]
             ] ],
             [ "Webhook", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Webhook.html", [
+              [ "DiscordGatewayService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordGatewayService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordGatewayService" ],
+              [ "DiscordWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService" ],
               [ "GitHubWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService" ],
               [ "GoogleWatchService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService" ],
               [ "GoogleWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService" ],

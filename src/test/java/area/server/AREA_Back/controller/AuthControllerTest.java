@@ -994,7 +994,7 @@ class AuthControllerTest {
         @Test
         void registerShouldReturnInternalServerErrorOnNonRuntimeException() {
             // Given
-            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "John", "Doe", null);
+            RegisterRequest request = new RegisterRequest("test@example.com", "password123", "testuser", "John", "Doe", null);
             // Use a checked exception wrapped to trigger the Exception catch block
             when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
                 .thenAnswer(invocation -> {
@@ -1014,7 +1014,7 @@ class AuthControllerTest {
         @Test
         void loginShouldReturnInternalServerErrorOnNonRuntimeException() {
             // Given
-            LocalLoginRequest request = new LocalLoginRequest("test@example.com", "password123");
+            LocalLoginRequest request = new LocalLoginRequest("test@example.com", null, "password123");
             // Use a checked exception wrapped to trigger the Exception catch block
             when(authService.login(any(LocalLoginRequest.class), any(HttpServletResponse.class)))
                 .thenAnswer(invocation -> {

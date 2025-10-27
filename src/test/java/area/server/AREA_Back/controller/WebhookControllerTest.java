@@ -347,7 +347,7 @@ class WebhookControllerTest {
                         .param("userId", UUID.randomUUID().toString())
                         .content("{}"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Webhook processing failed"));
+                .andExpect(jsonPath("$.error").value("Webhook processing failed: Processing failed"));
     }
 
     @Test

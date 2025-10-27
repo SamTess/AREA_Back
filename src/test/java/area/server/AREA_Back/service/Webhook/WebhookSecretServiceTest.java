@@ -61,7 +61,7 @@ class WebhookSecretServiceTest {
         // Set default secrets via reflection
         ReflectionTestUtils.setField(webhookSecretService, "githubWebhookSecret", "github_secret");
         ReflectionTestUtils.setField(webhookSecretService, "slackWebhookSecret", "slack_secret");
-        ReflectionTestUtils.setField(webhookSecretService, "discordWebhookSecret", "discord_secret");
+        ReflectionTestUtils.setField(webhookSecretService, "discordPublicKey", "discord_secret");
     }
 
     @Test

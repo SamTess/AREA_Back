@@ -243,7 +243,7 @@ class UserServiceConnectionControllerTest {
         mockMvc.perform(get("/api/user/service-connection/" + serviceKey))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.serviceKey").value(serviceKey))
-                .andExpect(jsonPath("$.serviceName").value("Microsoft"))
+                .andExpect(jsonPath("$.serviceName").value("microsoft"))
                 .andExpect(jsonPath("$.connected").value(true))
                 .andExpect(jsonPath("$.primaryAuth").value(false));
     }

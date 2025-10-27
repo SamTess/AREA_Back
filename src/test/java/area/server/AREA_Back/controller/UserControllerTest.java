@@ -4,11 +4,14 @@ import area.server.AREA_Back.dto.UserResponse;
 import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.util.AuthenticationUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
@@ -46,6 +50,7 @@ class UserControllerTest {
 
     private User testUser;
     private UUID userId;
+    private MockedStatic<AuthenticationUtils> authUtils;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +66,16 @@ class UserControllerTest {
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setLastLoginAt(LocalDateTime.now());
         testUser.setAvatarUrl("https://example.com/avatar.jpg");
+        
+        // Setup AuthenticationUtils mock
+        authUtils = mockStatic(AuthenticationUtils.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (authUtils != null) {
+            authUtils.close();
+        }
     }
 
     // Tests for getAllUsers
@@ -237,10 +252,12 @@ class UserControllerTest {
     @Test
     void deleteUserShouldDeleteUserWhenExists() {
         // Given
+        authUtils.when(AuthenticationUtils::getCurrentUserId).thenReturn(userId);
+        authUtils.when(AuthenticationUtils::isCurrentUserAdmin).thenReturn(false);
         when(userRepository.existsById(userId)).thenReturn(true);
 
         // When
-        ResponseEntity<Void> response = userController.deleteUser(userId);
+        ResponseEntity<?> response = userController.deleteUser(userId);
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
@@ -253,10 +270,12 @@ class UserControllerTest {
     @Test
     void deleteUserShouldReturnNotFoundWhenUserDoesNotExist() {
         // Given
+        authUtils.when(AuthenticationUtils::getCurrentUserId).thenReturn(userId);
+        authUtils.when(AuthenticationUtils::isCurrentUserAdmin).thenReturn(false);
         when(userRepository.existsById(userId)).thenReturn(false);
 
         // When
-        ResponseEntity<Void> response = userController.deleteUser(userId);
+        ResponseEntity<?> response = userController.deleteUser(userId);
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

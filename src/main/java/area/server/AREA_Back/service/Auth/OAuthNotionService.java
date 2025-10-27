@@ -93,7 +93,7 @@ public class OAuthNotionService extends OAuthService {
         super(
             "notion",
             "Notion",
-            "https://cdn.simpleicons.org/notion/000000",
+            "https://img.icons8.com/color/48/notion--v1.png",
             "https://api.notion.com/v1/oauth/authorize?client_id=" + notionClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"

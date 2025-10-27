@@ -149,37 +149,48 @@ public class UserServiceConnectionController {
 
     private String mapServiceKeyToOAuthProvider(String serviceKey) {
         return switch (serviceKey.toLowerCase()) {
+            case "discord" -> "discord";
             case "github" -> "github";
             case "google" -> "google";
-            case "microsoft" -> "microsoft";
+            case "notion" -> "notion";
+            case "slack" -> "slack";
+            case "spotify" -> "spotify";
             default -> serviceKey.toLowerCase();
         };
     }
 
     private String mapOAuthProviderToServiceKey(String provider) {
         return switch (provider.toLowerCase()) {
+            case "discord" -> "discord";
             case "github" -> "github";
             case "google" -> "google";
-            case "microsoft" -> "microsoft";
+            case "notion" -> "notion";
+            case "slack" -> "slack";
+            case "spotify" -> "spotify";
             default -> provider.toLowerCase();
         };
     }
 
     private String getServiceDisplayName(String serviceKey) {
         return switch (serviceKey.toLowerCase()) {
+            case "discord" -> "Discord";
             case "github" -> "GitHub";
             case "google" -> "Google";
-            case "microsoft" -> "Microsoft";
+            case "notion" -> "Notion";
+            case "slack" -> "Slack";
+            case "spotify" -> "Spotify";
             default -> serviceKey;
         };
     }
 
     private String getServiceIconUrl(String serviceKey) {
         return switch (serviceKey.toLowerCase()) {
-            case "github" -> "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg";
-            case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/"
-                    + "Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
-            case "microsoft" -> "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg";
+            case "discord" -> "https://img.icons8.com/color/48/discord-logo.png";
+            case "github" -> "https://img.icons8.com/material-outlined/24/github.png";
+            case "google" -> "https://img.icons8.com/color/48/google-logo.png";
+            case "notion" -> "https://img.icons8.com/color/48/notion--v1.png";
+            case "slack" -> "https://img.icons8.com/color/48/slack-new.png";
+            case "spotify" -> "https://img.icons8.com/color/48/spotify.png";
             default -> "/file.svg";
         };
     }

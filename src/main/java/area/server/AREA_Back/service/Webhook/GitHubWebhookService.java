@@ -140,8 +140,13 @@ public class GitHubWebhookService {
             result.put("issueState", issue.get("state"));
         }
 
+        String issueNumber = "unknown";
+        if (issue != null) {
+            issueNumber = String.valueOf(issue.get("number"));
+        }
+
         log.info("GitHub issues event processed: action={}, issue={}",
-            action, issue != null ? issue.get("number") : "unknown");
+            action, issueNumber);
 
         return result;
     }
@@ -163,8 +168,13 @@ public class GitHubWebhookService {
             result.put("prState", pullRequest.get("state"));
         }
 
+        String prNumber = "unknown";
+        if (pullRequest != null) {
+            prNumber = String.valueOf(pullRequest.get("number"));
+        }
+
         log.info("GitHub pull request event processed: action={}, pr={}",
-            action, pullRequest != null ? pullRequest.get("number") : "unknown");
+            action, prNumber);
 
         return result;
     }

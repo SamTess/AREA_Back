@@ -255,7 +255,7 @@ public class GoogleDriveService {
 
         StringBuilder query = new StringBuilder("trashed=false");
 
-        String modifiedTime = lastCheck.format(DateTimeFormatter.ISO_INSTANT);
+        String modifiedTime = lastCheck.atZone(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
         query.append(" and modifiedTime > '").append(modifiedTime).append("'");
 
         if (folderId != null && !folderId.isEmpty()) {

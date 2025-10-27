@@ -135,6 +135,7 @@ var annotated_dup =
                 [ "DiscordActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1DiscordActionService" ],
                 [ "GitHubActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GitHubActionService" ],
                 [ "GoogleActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1GoogleActionService" ],
+                [ "NotionActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1NotionActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1NotionActionService" ],
                 [ "SlackActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SlackActionService" ],
                 [ "SpotifyActionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Area_1_1Services_1_1SpotifyActionService" ]
               ] ],
@@ -153,6 +154,7 @@ var annotated_dup =
               [ "OAuthDiscordService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService" ],
               [ "OAuthGithubService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService" ],
               [ "OAuthGoogleService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService" ],
+              [ "OAuthNotionService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthNotionService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthNotionService" ],
               [ "OAuthService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService" ],
               [ "OAuthSlackService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService" ],
               [ "OAuthSpotifyService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService" ],
@@ -179,6 +181,7 @@ var annotated_dup =
               [ "GitHubWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService" ],
               [ "GoogleWatchService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService" ],
               [ "GoogleWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService" ],
+              [ "NotionWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1NotionWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1NotionWebhookService" ],
               [ "PayloadMappingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1PayloadMappingService" ],
               [ "SlackWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1SlackWebhookService" ],
               [ "WebhookDeduplicationService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1WebhookDeduplicationService" ],

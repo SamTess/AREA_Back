@@ -5,8 +5,9 @@ var searchData=
   ['oauthgithubservice_2',['OAuthGithubService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html#af665ccd316c6d2038e536240c83f3f84',1,'area::server::AREA_Back::service::Auth::OAuthGithubService']]],
   ['oauthgoogleservice_3',['OAuthGoogleService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html#add54788881f1be8ca769858b9f7616fd',1,'area::server::AREA_Back::service::Auth::OAuthGoogleService']]],
   ['oauthlogin_4',['oauthLogin',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService.html#a2dd6afc0421c0ef313e2270e67241b20',1,'area::server::AREA_Back::service::Auth::AuthService']]],
-  ['oauthprovider_5',['OAuthProvider',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html#a9b017ebc098f95d36ca283ecb01a1b35',1,'area::server::AREA_Back::dto::OAuthProvider']]],
-  ['oauthservice_6',['OAuthService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html#a4ae35c4f2dff486bc795444d1c05530a',1,'area::server::AREA_Back::service::Auth::OAuthService']]],
-  ['oauthslackservice_7',['OAuthSlackService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html#add08d87a42da4a0a91d509a675f66d05',1,'area::server::AREA_Back::service::Auth::OAuthSlackService']]],
-  ['oauthspotifyservice_8',['OAuthSpotifyService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html#a9b85dbc8d7764c70ac337c9c2cac615b',1,'area::server::AREA_Back::service::Auth::OAuthSpotifyService']]]
+  ['oauthnotionservice_5',['OAuthNotionService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthNotionService.html#aaffeb6737e14b32308b3d07233a02f9e',1,'area::server::AREA_Back::service::Auth::OAuthNotionService']]],
+  ['oauthprovider_6',['OAuthProvider',['../classarea_1_1server_1_1AREA__Back_1_1dto_1_1OAuthProvider.html#a9b017ebc098f95d36ca283ecb01a1b35',1,'area::server::AREA_Back::dto::OAuthProvider']]],
+  ['oauthservice_7',['OAuthService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthService.html#a4ae35c4f2dff486bc795444d1c05530a',1,'area::server::AREA_Back::service::Auth::OAuthService']]],
+  ['oauthslackservice_8',['OAuthSlackService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSlackService.html#add08d87a42da4a0a91d509a675f66d05',1,'area::server::AREA_Back::service::Auth::OAuthSlackService']]],
+  ['oauthspotifyservice_9',['OAuthSpotifyService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthSpotifyService.html#a9b85dbc8d7764c70ac337c9c2cac615b',1,'area::server::AREA_Back::service::Auth::OAuthSpotifyService']]]
 ];

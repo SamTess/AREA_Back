@@ -6,6 +6,7 @@ var dir_84442afc6f09372cc529fb011ac81949 =
     [ "OAuthDiscordService.java", "OAuthDiscordService_8java.html", "OAuthDiscordService_8java" ],
     [ "OAuthGithubService.java", "OAuthGithubService_8java.html", "OAuthGithubService_8java" ],
     [ "OAuthGoogleService.java", "OAuthGoogleService_8java.html", "OAuthGoogleService_8java" ],
+    [ "OAuthNotionService.java", "OAuthNotionService_8java.html", "OAuthNotionService_8java" ],
     [ "OAuthService.java", "OAuthService_8java.html", "OAuthService_8java" ],
     [ "OAuthSlackService.java", "OAuthSlackService_8java.html", "OAuthSlackService_8java" ],
     [ "OAuthSpotifyService.java", "OAuthSpotifyService_8java.html", "OAuthSpotifyService_8java" ],

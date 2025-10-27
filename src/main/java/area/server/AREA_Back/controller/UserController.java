@@ -6,6 +6,7 @@ import area.server.AREA_Back.entity.User;
 import area.server.AREA_Back.entity.UserLocalIdentity;
 import area.server.AREA_Back.repository.UserLocalIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import area.server.AREA_Back.util.AuthenticationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -192,19 +193,36 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a user",
-               description = "Deletes an existing user")
+               description = "Deletes an existing user. Users can only delete their own account unless they are an admin.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "User deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "User not found")
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Cannot delete another user's account")
     })
-    public ResponseEntity<Void> deleteUser(
+    public ResponseEntity<?> deleteUser(
             @Parameter(description = "User ID")
             @PathVariable UUID id) {
+
+        UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+        boolean isAdmin = AuthenticationUtils.isCurrentUserAdmin();
+
+        if (currentUserId == null) {
+            return ResponseEntity.status(401)
+                .body(java.util.Map.of("error", "Unauthorized"));
+        }
+
+        if (!isAdmin && !currentUserId.equals(id)) {
+            log.warn("User {} attempted to delete account {} without permission", currentUserId, id);
+            return ResponseEntity.status(403)
+                .body(java.util.Map.of("error", "You can only delete your own account"));
+        }
+
         if (!userRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
 
         userRepository.deleteById(id);
+        log.info("User account deleted: {} by user: {}", id, currentUserId);
         return ResponseEntity.noContent().build();
     }
 

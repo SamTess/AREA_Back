@@ -77,7 +77,7 @@ public class OAuthGithubService extends OAuthService {
         super(
             "github",
             "GitHub",
-            "https://cdn.simpleicons.org/github/181717",
+            "https://img.icons8.com/material-outlined/24/github.png",
             "https://github.com/login/oauth/authorize?client_id=" + githubClientId
                 + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
             githubClientId,

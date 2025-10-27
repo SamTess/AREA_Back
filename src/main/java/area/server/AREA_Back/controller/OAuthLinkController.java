@@ -9,12 +9,13 @@ import area.server.AREA_Back.service.Auth.OAuthDiscordService;
 import area.server.AREA_Back.service.Auth.OAuthGithubService;
 import area.server.AREA_Back.service.Auth.OAuthGoogleService;
 import area.server.AREA_Back.service.Auth.OAuthNotionService;
+import area.server.AREA_Back.service.Auth.OAuthSlackService;
+import area.server.AREA_Back.service.Auth.OAuthSpotifyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,9 +32,9 @@ public class OAuthLinkController {
     private final OAuthDiscordService oauthDiscordService;
     private final OAuthGithubService oauthGithubService;
     private final OAuthGoogleService oauthGoogleService;
-
-    @Autowired(required = false)
-    private OAuthNotionService oauthNotionService;
+    private final OAuthNotionService oauthNotionService;
+    private final OAuthSlackService oauthSlackService;
+    private final OAuthSpotifyService oauthSpotifyService;
 
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_NOT_FOUND = 404;
@@ -72,6 +73,12 @@ public class OAuthLinkController {
                     break;
                 case "notion":
                     linkedIdentity = oauthNotionService.linkToExistingUser(currentUser, authorizationCode);
+                    break;
+                case "slack":
+                    linkedIdentity = oauthSlackService.linkToExistingUser(currentUser, authorizationCode);
+                    break;
+                case "spotify":
+                    linkedIdentity = oauthSpotifyService.linkToExistingUser(currentUser, authorizationCode);
                     break;
                 default:
                     return ResponseEntity.status(HTTP_NOT_FOUND).build();
@@ -116,19 +123,21 @@ public class OAuthLinkController {
             case "discord" -> "Discord";
             case "github" -> "GitHub";
             case "google" -> "Google";
-            case "microsoft" -> "Microsoft";
             case "notion" -> "Notion";
+            case "slack" -> "Slack";
+            case "spotify" -> "Spotify";
             default -> provider;
         };
     }
 
     private String getServiceIconUrl(String provider) {
         return switch (provider.toLowerCase()) {
-            case "discord" -> "https://cdn.simpleicons.org/discord/5865F2";
-            case "github" -> "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg";
-            case "google" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png";
-            case "microsoft" -> "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg";
-            case "notion" -> "https://cdn.simpleicons.org/notion/000000";
+            case "discord" -> "https://img.icons8.com/color/48/discord-logo.png";
+            case "github" -> "https://img.icons8.com/material-outlined/24/github.png";
+            case "google" -> "https://img.icons8.com/color/48/google-logo.png";
+            case "notion" -> "https://img.icons8.com/color/48/notion--v1.png";
+            case "slack" -> "https://img.icons8.com/color/48/slack-new.png";
+            case "spotify" -> "https://img.icons8.com/color/48/spotify.png";
             default -> "/file.svg";
         };
     }

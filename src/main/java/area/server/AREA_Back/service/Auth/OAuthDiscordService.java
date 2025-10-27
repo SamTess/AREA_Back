@@ -76,7 +76,7 @@ public class OAuthDiscordService extends OAuthService {
         super(
             "discord",
             "Discord",
-            "https://cdn.simpleicons.org/discord/5865F2",
+            "https://img.icons8.com/color/48/discord-logo.png",
             "https://discord.com/api/oauth2/authorize?client_id=" + discordClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"

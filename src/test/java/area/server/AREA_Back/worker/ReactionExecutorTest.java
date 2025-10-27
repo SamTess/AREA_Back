@@ -10,6 +10,7 @@ import area.server.AREA_Back.entity.enums.ExecutionStatus;
 import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import area.server.AREA_Back.service.Area.Services.GitHubActionService;
 import area.server.AREA_Back.service.Area.Services.GoogleActionService;
+import area.server.AREA_Back.service.Area.Services.NotionActionService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
 
 @ExtendWith(MockitoExtension.class)
 class ReactionExecutorTest {
@@ -50,6 +53,9 @@ class ReactionExecutorTest {
     @Mock
     private area.server.AREA_Back.service.Area.Services.SpotifyActionService spotifyActionService;
 
+    @Mock
+    private NotionActionService notionActionService;
+
     private SimpleMeterRegistry meterRegistry;
 
     private ReactionExecutor reactionExecutor;
@@ -71,16 +77,17 @@ class ReactionExecutorTest {
             discordActionService,
             slackActionService,
             spotifyActionService,
+            notionActionService,
             meterRegistry
         );
 
         service = new Service();
-        service.setKey("email");
-        service.setName("Email Service");
+        service.setKey("github");
+        service.setName("GitHub Service");
 
         actionDefinition = new ActionDefinition();
-        actionDefinition.setKey("send_email");
-        actionDefinition.setName("Send Email");
+        actionDefinition.setKey("create_issue");
+        actionDefinition.setName("Create Issue");
         actionDefinition.setIsExecutable(true);
         actionDefinition.setService(service);
 
@@ -93,8 +100,8 @@ class ReactionExecutorTest {
         actionInstance.setActionDefinition(actionDefinition);
         actionInstance.setUser(user);
         actionInstance.setParams(Map.of(
-            "to", "test@example.com",
-            "subject", "Test Subject"
+            "repository", "owner/repo",
+            "title", "Test Issue"
         ));
 
         execution = new Execution();
@@ -106,7 +113,18 @@ class ReactionExecutorTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void executeReactionSuccess() {
+        // Given
+        Map<String, Object> mockResult = new HashMap<>();
+        mockResult.put("issue_number", 42);
+        mockResult.put("html_url", "https://github.com/owner/repo/issues/42");
+        mockResult.put("status", "created");
+        
+        when(gitHubActionService.executeGitHubAction(
+            anyString(), any(Map.class), any(Map.class), any(UUID.class)
+        )).thenReturn(mockResult);
+
         // When
         ExecutionResult result = reactionExecutor.executeReaction(execution);
 
@@ -117,26 +135,37 @@ class ReactionExecutorTest {
         assertNotNull(result.getOutputPayload());
         assertNotNull(result.getStartedAt());
         assertNotNull(result.getFinishedAt());
-        assertTrue(result.getDurationMs() > 0);
+        assertTrue(result.getDurationMs() >= 0);  // Allow 0ms for very fast execution
         assertFalse(result.isShouldRetry());
     }
 
     @Test
-    void executeReactionEmailService() {
+    @SuppressWarnings("unchecked")
+    void executeReactionGitHubService() {
+        // Given
+        Map<String, Object> mockResult = new HashMap<>();
+        mockResult.put("issue_number", 42);
+        mockResult.put("html_url", "https://github.com/owner/repo/issues/42");
+        mockResult.put("status", "created");
+        
+        when(gitHubActionService.executeGitHubAction(
+            anyString(), any(Map.class), any(Map.class), any(UUID.class)
+        )).thenReturn(mockResult);
+
         // When
         ExecutionResult result = reactionExecutor.executeReaction(execution);
 
         // Then
         assertEquals(ExecutionStatus.OK, result.getStatus());
         assertNotNull(result.getOutputPayload());
-        assertEquals("email", result.getOutputPayload().get("type"));
-        assertEquals("send_email", result.getOutputPayload().get("action"));
-        assertEquals("test@example.com", result.getOutputPayload().get("to"));
-        assertEquals("Test Subject", result.getOutputPayload().get("subject"));
-        assertEquals("sent", result.getOutputPayload().get("status"));
+        assertEquals("github", result.getOutputPayload().get("type"));
+        assertEquals("create_issue", result.getOutputPayload().get("action"));
+        assertEquals(42, result.getOutputPayload().get("issue_number"));
+        assertEquals("https://github.com/owner/repo/issues/42", result.getOutputPayload().get("html_url"));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void executeReactionSlackService() {
         // Given
         service.setKey("slack");
@@ -146,13 +175,14 @@ class ReactionExecutorTest {
             "text", "Test message"
         ));
 
+        Map<String, Object> mockResult = new HashMap<>();
+        mockResult.put("success", true);
+        mockResult.put("channel", "#general");
+        mockResult.put("ts", "1234567890.123456");
+
         when(slackActionService.executeSlackAction(
-            any(), any(), any(), any()
-        )).thenReturn(Map.of(
-            "success", true,
-            "channel", "#general",
-            "ts", "1234567890.123456"
-        ));
+            anyString(), any(Map.class), any(Map.class), any(UUID.class)
+        )).thenReturn(mockResult);
 
         // When
         ExecutionResult result = reactionExecutor.executeReaction(execution);
@@ -218,21 +248,19 @@ class ReactionExecutorTest {
     }
 
     @Test
-    void executeReactionGenericService() {
+    void executeReactionUnsupportedService() {
         // Given
         service.setKey("unknown");
         actionDefinition.setKey("generic_action");
+        when(retryManager.shouldRetry(anyInt(), any())).thenReturn(false);
 
         // When
         ExecutionResult result = reactionExecutor.executeReaction(execution);
 
         // Then
-        assertEquals(ExecutionStatus.OK, result.getStatus());
-        assertNotNull(result.getOutputPayload());
-        assertEquals("generic", result.getOutputPayload().get("type"));
-        assertEquals("unknown", result.getOutputPayload().get("service"));
-        assertEquals("generic_action", result.getOutputPayload().get("action"));
-        assertEquals("executed", result.getOutputPayload().get("status"));
-        assertEquals("success", result.getOutputPayload().get("result"));
+        assertEquals(ExecutionStatus.FAILED, result.getStatus());
+        assertNotNull(result.getErrorMessage());
+        assertTrue(result.getErrorMessage().contains("Service not supported"));
+        assertFalse(result.isShouldRetry());
     }
 }

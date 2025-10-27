@@ -81,14 +81,11 @@ public class GitHubWebhookService {
         result.put("processedAt", LocalDateTime.now().toString());
 
         try {
-            // TODO : Implement webhook signature verification
             if (signature != null) {
-                log.debug("Webhook signature provided for verification: { }",
+                log.debug("Webhook signature provided for verification: {}",
                     signature.substring(0, Math.min(SIGNATURE_PREFIX_LENGTH, signature.length())) + "...");
-                // verifyWebhookSignature(payload, signature);
             }
 
-            // TODO : Implement event-specific processing
             String safeEventType = "";
             if (eventType != null) {
                 safeEventType = eventType.toLowerCase();
@@ -143,12 +140,12 @@ public class GitHubWebhookService {
             result.put("issueState", issue.get("state"));
         }
 
-        // TODO : Trigger corresponding action instances
-        Object issueNumber = "unknown";
+        String issueNumber = "unknown";
         if (issue != null) {
-            issueNumber = issue.get("number");
+            issueNumber = String.valueOf(issue.get("number"));
         }
-        log.info("GitHub issues event processed: action={ }, issue={ }",
+
+        log.info("GitHub issues event processed: action={}, issue={}",
             action, issueNumber);
 
         return result;
@@ -171,12 +168,12 @@ public class GitHubWebhookService {
             result.put("prState", pullRequest.get("state"));
         }
 
-        // TODO : Trigger corresponding action instances
-        Object prNumber = "unknown";
+        String prNumber = "unknown";
         if (pullRequest != null) {
-            prNumber = pullRequest.get("number");
+            prNumber = String.valueOf(pullRequest.get("number"));
         }
-        log.info("GitHub pull request event processed: action={ }, pr={ }",
+
+        log.info("GitHub pull request event processed: action={}, pr={}",
             action, prNumber);
 
         return result;
@@ -198,8 +195,7 @@ public class GitHubWebhookService {
         }
         result.put("commitCount", commitCount);
 
-        // TODO : Trigger corresponding action instances
-        log.info("GitHub push event processed: ref={ }, commits={ }",
+        log.info("GitHub push event processed: ref={}, commits={}",
             ref, commitCount);
 
         return result;

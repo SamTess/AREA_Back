@@ -35,7 +35,6 @@ public class SpotifyActionService {
 
     private static final String SPOTIFY_API_BASE = "https://api.spotify.com/v1";
     private static final String SPOTIFY_PROVIDER_KEY = "spotify";
-    private static final String SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
     private static final int ISO_DATE_LENGTH = 19;
     private static final int MAX_VOLUME = 100;
 
@@ -181,7 +180,13 @@ public class SpotifyActionService {
                         Map<String, Object> item = (Map<String, Object>) elem;
                         items.add(item);
                     } else {
-                        log.warn("Unexpected item type in 'items' list: {}", elem != null ? elem.getClass() : "null");
+                        String className;
+                        if (elem != null) {
+                            className = elem.getClass().toString();
+                        } else {
+                            className = "null";
+                        }
+                        log.warn("Unexpected item type in 'items' list: {}", className);
                     }
                 }
             } else if (itemsObj != null) {
@@ -197,6 +202,7 @@ public class SpotifyActionService {
                                 addedAt.substring(0, ISO_DATE_LENGTH))
                             .toEpochSecond(ZoneOffset.UTC);
                         if (addedEpoch > lastCheckEpoch) {
+                            @SuppressWarnings("unchecked")
                             Map<String, Object> track = (Map<String, Object>) item.get("track");
                             events.add(createTrackEvent(track, "new_saved_track"));
                         }
@@ -236,6 +242,7 @@ public class SpotifyActionService {
             Boolean isPlaying = (Boolean) body.get("is_playing");
 
             if (Boolean.TRUE.equals(isPlaying)) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> item = (Map<String, Object>) body.get("item");
                 if (item != null) {
                     return List.of(createTrackEvent(item, "playback_started"));
@@ -270,6 +277,7 @@ public class SpotifyActionService {
             }
 
             Map<String, Object> body = response.getBody();
+            @SuppressWarnings("unchecked")
             Map<String, Object> item = (Map<String, Object>) body.get("item");
 
             if (item != null) {

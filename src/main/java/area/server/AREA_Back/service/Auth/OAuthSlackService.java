@@ -74,7 +74,7 @@ public class OAuthSlackService extends OAuthService {
         super(
             "slack",
             "Slack",
-            "https://cdn.simpleicons.org/slack/4A154B",
+            "https://img.icons8.com/color/48/slack-new.png",
             "https://slack.com/oauth/v2/authorize?client_id=" + slackClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&scope=channels:manage,chat:write,channels:join,reactions:write,"

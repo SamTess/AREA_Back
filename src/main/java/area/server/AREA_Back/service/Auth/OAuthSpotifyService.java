@@ -79,7 +79,7 @@ public class OAuthSpotifyService extends OAuthService {
     ) {
         super("spotify",
             "Spotify",
-            "https://cdn.simpleicons.org/spotify/1DB954",
+            "https://img.icons8.com/color/48/spotify.png",
             "https://accounts.spotify.com/authorize?"
                 + "client_id=" + spotifyClientId
                 + "&response_type=code"

@@ -300,7 +300,7 @@ class OAuthControllerTest {
         when(discordService.getProviderKey()).thenReturn("discord");
         when(discordService.getProviderLabel()).thenReturn("Discord");
         when(discordService.getProviderLogoUrl())
-            .thenReturn("https://cdn.simpleicons.org/discord/5865F2");
+            .thenReturn("https://img.icons8.com/color/48/discord-logo.png");
         when(discordService.getUserAuthUrl())
             .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test");
         when(discordService.getClientId()).thenReturn("test-discord-client-id");

@@ -290,7 +290,6 @@ public class AreaService {
         response.setUserId(area.getUser().getId());
         response.setUserEmail(area.getUser().getEmail());
 
-        // Enrichir les actions et reactions avec les actionInstanceId
         List<ActionInstance> actionInstances = actionInstanceRepository.findByAreaId(area.getId());
         response.setActions(enrichWithActionInstanceIds(area.getActions(), actionInstances, true));
         response.setReactions(enrichWithActionInstanceIds(area.getReactions(), actionInstances, false));
@@ -328,7 +327,6 @@ public class AreaService {
             String name = (String) item.get("name");
 
             if (actionDefId != null && name != null) {
-                // Trouver l'ActionInstance correspondante par actionDefinitionId, nom et type
                 ActionInstance matchingInstance = allInstances.stream()
                     .filter(ai -> ai.getActionDefinition().getId().toString().equals(actionDefId)
                         && ai.getName().equals(name)
@@ -339,7 +337,6 @@ public class AreaService {
                 if (matchingInstance != null) {
                     enrichedItem.put("id", matchingInstance.getId().toString());
 
-                    // Optionnel : ajouter d'autres informations utiles pour le front
                     enrichedItem.put("serviceId", matchingInstance.getActionDefinition().getService().getId().toString());
                     enrichedItem.put("serviceName", matchingInstance.getActionDefinition().getService().getName());
                     enrichedItem.put("serviceKey", matchingInstance.getActionDefinition().getService().getKey());

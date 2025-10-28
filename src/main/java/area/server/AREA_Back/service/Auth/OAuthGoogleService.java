@@ -354,15 +354,32 @@ public class OAuthGoogleService extends OAuthService {
             }
             this.userRepository.save(user);
         } else {
-            user = new User();
-            user.setEmail(profileData.email);
-            user.setIsActive(true);
-            user.setIsAdmin(false);
-            user.setCreatedAt(LocalDateTime.now());
-            if (profileData.picture != null && !profileData.picture.isEmpty()) {
-                user.setAvatarUrl(profileData.picture);
+            try {
+                user = new User();
+                user.setEmail(profileData.email);
+                String username = generateUsernameFromProfile(profileData);
+                user.setUsername(username);
+                user.setIsActive(true);
+                user.setIsAdmin(false);
+                user.setCreatedAt(LocalDateTime.now());
+                if (profileData.picture != null && !profileData.picture.isEmpty()) {
+                    user.setAvatarUrl(profileData.picture);
+                }
+                user = this.userRepository.save(user);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                log.warn("Race condition detected when creating user, retrying fetch for email: {}", profileData.email);
+                userOpt = userRepository.findByEmail(profileData.email);
+                if (userOpt.isPresent()) {
+                    user = userOpt.get();
+                    user.setLastLoginAt(LocalDateTime.now());
+                    if (profileData.picture != null && !profileData.picture.isEmpty()) {
+                        user.setAvatarUrl(profileData.picture);
+                    }
+                    this.userRepository.save(user);
+                } else {
+                    throw e;
+                }
             }
-            user = this.userRepository.save(user);
         }
 
         Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository
@@ -466,9 +483,12 @@ public class OAuthGoogleService extends OAuthService {
             throw new RuntimeException("Cookie setting failed: " + e.getMessage(), e);
         }
 
+        // Include tokens in response body for mobile clients
         return new AuthResponse(
             "Login successful",
-            userResponse
+            userResponse,
+            accessToken,
+            refreshToken
         );
     }
 
@@ -531,5 +551,44 @@ public class OAuthGoogleService extends OAuthService {
             this.locale = locale;
             this.verifiedEmail = verifiedEmail;
         }
+    }
+
+    /**
+     * Génère un username unique à partir des données du profil OAuth.
+     * Tente d'utiliser le nom, sinon la partie avant @ de l'email.
+     * Ajoute un suffixe numérique si le username existe déjà.
+     */
+    private String generateUsernameFromProfile(UserProfileData profileData) {
+        String baseUsername;
+        
+        // Essayer d'utiliser le givenName ou name
+        if (profileData.givenName != null && !profileData.givenName.trim().isEmpty()) {
+            baseUsername = profileData.givenName.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", ""); // Enlever caractères spéciaux
+        } else if (profileData.name != null && !profileData.name.trim().isEmpty()) {
+            baseUsername = profileData.name.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else if (profileData.email != null && !profileData.email.isEmpty()) {
+            // Fallback: utiliser la partie avant @ de l'email
+            baseUsername = profileData.email.split("@")[0].toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else {
+            baseUsername = "user";
+        }
+        
+        // S'assurer que le username n'est pas vide
+        if (baseUsername.isEmpty()) {
+            baseUsername = "user";
+        }
+        
+        // Vérifier si le username existe déjà, ajouter un suffixe si nécessaire
+        String username = baseUsername;
+        int suffix = 1;
+        while (userRepository.findByUsername(username).isPresent()) {
+            username = baseUsername + suffix;
+            suffix++;
+        }
+        
+        return username;
     }
 }

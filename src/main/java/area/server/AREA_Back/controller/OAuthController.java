@@ -43,6 +43,9 @@ public class OAuthController {
 
     @GetMapping("/{provider}/authorize")
     public ResponseEntity<String> authorize(@PathVariable("provider") String provider,
+                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String mobile_redirect,
+                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String origin,
+                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String mode,
                                           HttpServletResponse response) {
 
         Optional<OAuthService> svc = oauthServices.stream()
@@ -55,6 +58,17 @@ public class OAuthController {
 
         try {
             String authorizationUrl = svc.get().getUserAuthUrl();
+            if (mobile_redirect != null && !mobile_redirect.isEmpty()) {
+                String state = java.util.Base64.getEncoder().encodeToString(
+                    String.format("{\"mobile_redirect\":\"%s\",\"origin\":\"%s\",\"mode\":\"%s\",\"provider\":\"%s\"}",
+                        mobile_redirect,
+                        origin != null ? origin : "web",
+                        mode != null ? mode : "login",
+                        provider.toLowerCase())
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                );
+                authorizationUrl += "&state=" + java.net.URLEncoder.encode(state, java.nio.charset.StandardCharsets.UTF_8);
+            }
             response.setHeader("Location", authorizationUrl);
             response.setStatus(HttpServletResponse.SC_FOUND);
             return ResponseEntity.status(HttpStatus.FOUND).body("Redirecting to " + provider + "...");

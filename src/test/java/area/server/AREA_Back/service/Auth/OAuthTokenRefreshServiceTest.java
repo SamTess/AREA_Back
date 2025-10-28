@@ -210,7 +210,8 @@ class OAuthTokenRefreshServiceTest {
             HttpStatus.OK
         );
 
-        ArgumentCaptor<HttpEntity> requestCaptor = ArgumentCaptor.forClass(HttpEntity.class);
+        ArgumentCaptor<HttpEntity<MultiValueMap<String, String>>> requestCaptor = 
+            ArgumentCaptor.forClass(HttpEntity.class);
 
         when(restTemplate.exchange(
             eq("https://accounts.spotify.com/api/token"),
@@ -303,7 +304,8 @@ class OAuthTokenRefreshServiceTest {
             HttpStatus.OK
         );
 
-        ArgumentCaptor<HttpEntity> requestCaptor = ArgumentCaptor.forClass(HttpEntity.class);
+        ArgumentCaptor<HttpEntity<MultiValueMap<String, String>>> requestCaptor = 
+            ArgumentCaptor.forClass(HttpEntity.class);
 
         when(restTemplate.exchange(
             eq("https://oauth2.googleapis.com/token"),

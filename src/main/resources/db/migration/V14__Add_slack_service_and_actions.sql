@@ -6,8 +6,8 @@
 -- Add Slack service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url)
 VALUES ('slack', 'Slack', 'OAUTH2', true, 'https://api.slack.com/docs',
-        'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg',
-        'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg')
+        'https://img.icons8.com/color/96/slack-new.png',
+        'https://img.icons8.com/color/96/slack-new.png')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,

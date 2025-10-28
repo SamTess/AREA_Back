@@ -6,8 +6,8 @@
 -- Add GitHub service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url) 
 VALUES ('github', 'GitHub', 'OAUTH2', true, 'https://docs.github.com/en/rest', 
-        'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg', 
-        'https://upload.wikimedia.org/wikipedia/commons/c/c2/GitHub_Invertocat_Logo.svg')
+        'https://img.icons8.com/material-outlined/96/github.png', 
+        'https://img.icons8.com/material-outlined/96/github.png')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,

@@ -6,8 +6,8 @@
 -- Add Notion service
 INSERT INTO area.a_services (key, name, auth, is_active, docs_url, icon_light_url, icon_dark_url)
 VALUES ('notion', 'Notion', 'OAUTH2', true, 'https://developers.notion.com/reference',
-        'https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png',
-        'https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png')
+        'https://img.icons8.com/color/96/notion--v1.png',
+        'https://img.icons8.com/color/96/notion--v1.png')
 ON CONFLICT (key) DO UPDATE SET
     name = EXCLUDED.name,
     auth = EXCLUDED.auth,

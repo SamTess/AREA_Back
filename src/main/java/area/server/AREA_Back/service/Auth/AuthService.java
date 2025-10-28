@@ -22,6 +22,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -328,7 +331,8 @@ public class AuthService {
 
         return new AuthResponse(
             "OAuth login successful",
-            mapToUserResponse(user, localIdentity.getIsEmailVerified())
+            mapToUserResponse(user, localIdentity.getIsEmailVerified()),
+            accessToken
         );
     }
 
@@ -564,6 +568,15 @@ public class AuthService {
     }
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            try {
+                return UUID.fromString(userDetails.getUsername());
+            } catch (IllegalArgumentException e) {
+            }
+        }
+
         String accessToken = getTokenFromCookie(request, AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME);
         if (accessToken == null) {
             return null;

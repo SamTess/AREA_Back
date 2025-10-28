@@ -465,12 +465,23 @@ public class AreaController {
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         try {
-            String accessToken = extractAccessTokenFromCookies(request);
-            if (accessToken == null) {
-                throw new RuntimeException("Access token not found in cookies");
+            org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                org.springframework.security.core.userdetails.UserDetails userDetails = 
+                    (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
+                String username = userDetails.getUsername();
+                return UUID.fromString(username);
             }
 
-            return jwtService.extractUserIdFromAccessToken(accessToken);
+            String accessToken = extractAccessTokenFromCookies(request);
+            if (accessToken != null) {
+                UUID userId = jwtService.extractUserIdFromAccessToken(accessToken);
+                return userId;
+            }
+            
+            throw new RuntimeException("User not authenticated - no SecurityContext or cookies found");
         } catch (Exception e) {
             log.error("Failed to extract user ID from request: {}", e.getMessage());
             throw new RuntimeException("Failed to extract user ID", e);

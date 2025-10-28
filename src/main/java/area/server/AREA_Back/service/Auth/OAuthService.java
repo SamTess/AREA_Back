@@ -66,6 +66,13 @@ public abstract class OAuthService {
     public String getUserAuthUrl() {
         return userAuthUrl;
     }
+    public String getUserAuthUrl(String state) {
+        if (state != null && !state.isEmpty()) {
+            String separator = userAuthUrl.contains("?") ? "&" : "?";
+            return userAuthUrl + separator + "state=" + state;
+        }
+        return userAuthUrl;
+    }
     public String getClientId() {
         return clientId;
     }

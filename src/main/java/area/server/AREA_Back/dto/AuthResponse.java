@@ -10,4 +10,14 @@ import lombok.NoArgsConstructor;
 public class AuthResponse {
     private String message;
     private UserResponse user;
+    private String accessToken;
+    
+    /**
+     * Constructor without token (for web clients using cookies)
+     */
+    public AuthResponse(String message, UserResponse user) {
+        this.message = message;
+        this.user = user;
+        this.accessToken = null;
+    }
 }

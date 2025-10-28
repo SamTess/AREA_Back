@@ -45,10 +45,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String authToken = extractTokenFromCookies(request);
+        String authToken = extractTokenFromAuthorizationHeader(request);
 
         if (authToken == null) {
-            log.debug("No auth token found in cookies for path: {}", requestPath);
+            authToken = extractTokenFromCookies(request);
+        }
+
+        if (authToken == null) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -105,6 +108,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Extract JWT token from Authorization header (Bearer token)
+     * Used by mobile clients
+     */
+    private String extractTokenFromAuthorizationHeader(final HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            return token;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Extract JWT token from cookies
+     * Used by web clients
+     */
     private String extractTokenFromCookies(final HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;

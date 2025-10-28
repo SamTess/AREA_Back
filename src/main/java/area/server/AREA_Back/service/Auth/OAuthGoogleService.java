@@ -362,6 +362,17 @@ public class OAuthGoogleService extends OAuthService {
             if (profileData.picture != null && !profileData.picture.isEmpty()) {
                 user.setAvatarUrl(profileData.picture);
             }
+
+            String username = generateUsername(profileData);
+            user.setUsername(username);
+
+            if (profileData.givenName != null && !profileData.givenName.isEmpty()) {
+                user.setFirstname(profileData.givenName);
+            }
+            if (profileData.familyName != null && !profileData.familyName.isEmpty()) {
+                user.setLastname(profileData.familyName);
+            }
+            
             user = this.userRepository.save(user);
         }
 
@@ -468,7 +479,8 @@ public class OAuthGoogleService extends OAuthService {
 
         return new AuthResponse(
             "Login successful",
-            userResponse
+            userResponse,
+            accessToken
         );
     }
 
@@ -477,6 +489,36 @@ public class OAuthGoogleService extends OAuthService {
             return LocalDateTime.now().plusHours(1);
         }
         return LocalDateTime.now().plusSeconds(expiresIn);
+    }
+
+    /**
+     * Generate a unique username from Google profile data
+     * Tries in order: email prefix, name, "google_user" + random
+     */
+    private String generateUsername(UserProfileData profileData) {
+        String baseUsername = null;
+        
+        if (profileData.email != null && !profileData.email.isEmpty()) {
+            baseUsername = profileData.email.split("@")[0];
+        }
+        else if (profileData.givenName != null && !profileData.givenName.isEmpty()) {
+            baseUsername = profileData.givenName.toLowerCase().replaceAll("[^a-z0-9]", "");
+        }
+        else if (profileData.name != null && !profileData.name.isEmpty()) {
+            baseUsername = profileData.name.toLowerCase().replaceAll("[^a-z0-9]", "");
+        }
+        else {
+            baseUsername = "google_user";
+        }
+
+        String username = baseUsername;
+        int attempt = 0;
+        while (userRepository.findByUsername(username).isPresent() && attempt < 100) {
+            username = baseUsername + "_" + (int) (Math.random() * 10000);
+            attempt++;
+        }
+        
+        return username;
     }
 
     private static class GoogleTokenResponse {

@@ -237,4 +237,115 @@ class UserControllerUpdateTest {
         assertThat(userResponse.getEmail()).isEqualTo("test@example.com");
         verify(passwordEncoder, never()).encode(anyString());
     }
+
+    @Test
+    void updateUserShouldUpdateIsActiveStatus() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setIsActive(false);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(testUser.getIsActive()).isFalse();
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateUserShouldUpdateIsAdminStatus() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setIsAdmin(true);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(testUser.getIsAdmin()).isTrue();
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateUserShouldUpdateAvatarUrl() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setAvatarUrl("https://newavatar.com/image.png");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(testUser.getAvatarUrl()).isEqualTo("https://newavatar.com/image.png");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateUserShouldNotUpdatePasswordWhenEmptyString() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setPassword("");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(localIdentityRepository, never()).save(any(UserLocalIdentity.class));
+    }
+
+    @Test
+    void updateUserShouldAllowSameEmailForSameUser() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setEmail("test@example.com"); // Same email as current user
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateUserShouldUpdateEmailWithoutLocalIdentity() {
+        // Given
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setEmail("newemail@example.com");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("newemail@example.com")).thenReturn(Optional.empty());
+        when(localIdentityRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        ResponseEntity<?> response = userController.updateUser(userId, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(testUser.getEmail()).isEqualTo("newemail@example.com");
+        verify(userRepository).save(any(User.class));
+        verify(localIdentityRepository, never()).save(any(UserLocalIdentity.class));
+    }
 }

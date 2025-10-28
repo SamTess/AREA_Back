@@ -395,4 +395,490 @@ class GoogleEventPollingServiceTest {
         double finalFailures = meterRegistry.counter("google_polling_failures").count();
         assertEquals(initialFailures + 1, finalFailures);
     }
+
+    @Test
+    void testProcessActionInstanceWithDisabledInstance() {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(false);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+
+        // When
+        googleEventPollingService.pollGoogleEvents();
+
+        // Then - should not check for activation modes
+        verify(activationModeRepository, never()).findByActionInstanceAndTypeAndEnabled(
+            any(ActionInstance.class), any(ActivationModeType.class), anyBoolean());
+    }
+
+    @Test
+    void testProcessActionInstanceWithEmptyActivationModes() {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(Collections.emptyList());
+
+        // When
+        googleEventPollingService.pollGoogleEvents();
+
+        // Then - should not call Google service
+        verify(googleActionService, never()).checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class));
+    }
+
+    @Test
+    void testProcessActionInstanceWithSuccessfulEventProcessing() throws Exception {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300);
+        activationMode.setConfig(config);
+
+        Map<String, Object> event1 = new HashMap<>();
+        event1.put("messageId", "123");
+        event1.put("subject", "Test Email");
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            eq("gmail_new_email"), anyMap(), eq(user.getId()), any(LocalDateTime.class)))
+            .thenReturn(List.of(event1));
+
+        double initialEventsFound = meterRegistry.counter("google_events_found").count();
+
+        // When
+        googleEventPollingService.pollGoogleEvents();
+
+        // Then
+        verify(googleActionService).checkGoogleEvents(
+            eq("gmail_new_email"), anyMap(), eq(user.getId()), any(LocalDateTime.class));
+        verify(executionTriggerService).triggerAreaExecution(
+            eq(actionInstance), eq(ActivationModeType.POLL), eq(event1));
+        
+        double finalEventsFound = meterRegistry.counter("google_events_found").count();
+        assertEquals(initialEventsFound + 1, finalEventsFound);
+    }
+
+    @Test
+    void testProcessActionInstanceWithMultipleEvents() throws Exception {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("calendar_new_event");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 60);
+        activationMode.setConfig(config);
+
+        Map<String, Object> event1 = new HashMap<>();
+        event1.put("eventId", "event1");
+        
+        Map<String, Object> event2 = new HashMap<>();
+        event2.put("eventId", "event2");
+        
+        Map<String, Object> event3 = new HashMap<>();
+        event3.put("eventId", "event3");
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            eq("calendar_new_event"), anyMap(), eq(user.getId()), any(LocalDateTime.class)))
+            .thenReturn(List.of(event1, event2, event3));
+
+        double initialEventsFound = meterRegistry.counter("google_events_found").count();
+
+        // When
+        googleEventPollingService.pollGoogleEvents();
+
+        // Then
+        verify(executionTriggerService, times(3)).triggerAreaExecution(
+            eq(actionInstance), eq(ActivationModeType.POLL), anyMap());
+        
+        double finalEventsFound = meterRegistry.counter("google_events_found").count();
+        assertEquals(initialEventsFound + 3, finalEventsFound);
+    }
+
+    @Test
+    void testProcessActionInstanceWithGoogleServiceException() {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300);
+        activationMode.setConfig(config);
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class)))
+            .thenThrow(new RuntimeException("Google API error"));
+
+        // When - should not throw exception
+        assertDoesNotThrow(() -> {
+            googleEventPollingService.pollGoogleEvents();
+        });
+
+        // Then - should handle exception gracefully
+        verify(googleActionService).checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class));
+    }
+
+    @Test
+    void testShouldPollNowWithFirstPoll() throws Exception {
+        // Given
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300);
+        activationMode.setConfig(config);
+
+        // Use reflection to access private method
+        var method = GoogleEventPollingService.class.getDeclaredMethod("shouldPollNow", ActivationMode.class);
+        method.setAccessible(true);
+
+        // When
+        boolean result = (boolean) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        assertTrue(result, "Should poll on first check");
+    }
+
+    @Test
+    void testShouldPollNowWithIntervalNotElapsed() throws Exception {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300); // 5 minutes
+        activationMode.setConfig(config);
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class)))
+            .thenReturn(Collections.emptyList());
+
+        // First poll
+        googleEventPollingService.pollGoogleEvents();
+
+        // Use reflection to check shouldPollNow
+        var method = GoogleEventPollingService.class.getDeclaredMethod("shouldPollNow", ActivationMode.class);
+        method.setAccessible(true);
+
+        // When - immediately after first poll
+        boolean result = (boolean) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        assertFalse(result, "Should not poll immediately after first poll");
+    }
+
+    @Test
+    void testGetPollingIntervalWithDefaultValue() throws Exception {
+        // Given
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setConfig(new HashMap<>());
+
+        // Use reflection to access private method
+        var method = GoogleEventPollingService.class.getDeclaredMethod("getPollingInterval", ActivationMode.class);
+        method.setAccessible(true);
+
+        // When
+        int interval = (int) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        assertEquals(300, interval, "Should return default polling interval");
+    }
+
+    @Test
+    void testGetPollingIntervalWithCustomValue() throws Exception {
+        // Given
+        ActivationMode activationMode = new ActivationMode();
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 120);
+        activationMode.setConfig(config);
+
+        // Use reflection to access private method
+        var method = GoogleEventPollingService.class.getDeclaredMethod("getPollingInterval", ActivationMode.class);
+        method.setAccessible(true);
+
+        // When
+        int interval = (int) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        assertEquals(120, interval, "Should return custom polling interval");
+    }
+
+    @Test
+    void testCalculateLastCheckTimeWithDefaultInterval() throws Exception {
+        // Given
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setConfig(new HashMap<>());
+
+        // Use reflection to access private method
+        var method = GoogleEventPollingService.class.getDeclaredMethod("calculateLastCheckTime", ActivationMode.class);
+        method.setAccessible(true);
+
+        LocalDateTime before = LocalDateTime.now().minusSeconds(300);
+
+        // When
+        LocalDateTime result = (LocalDateTime) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        LocalDateTime after = LocalDateTime.now().minusSeconds(300);
+        assertTrue(result.isAfter(before.minusSeconds(2)) && result.isBefore(after.plusSeconds(2)),
+            "Should calculate last check time based on default interval");
+    }
+
+    @Test
+    void testCalculateLastCheckTimeWithCustomInterval() throws Exception {
+        // Given
+        ActivationMode activationMode = new ActivationMode();
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 600);
+        activationMode.setConfig(config);
+
+        // Use reflection to access private method
+        var method = GoogleEventPollingService.class.getDeclaredMethod("calculateLastCheckTime", ActivationMode.class);
+        method.setAccessible(true);
+
+        LocalDateTime before = LocalDateTime.now().minusSeconds(600);
+
+        // When
+        LocalDateTime result = (LocalDateTime) method.invoke(googleEventPollingService, activationMode);
+
+        // Then
+        LocalDateTime after = LocalDateTime.now().minusSeconds(600);
+        assertTrue(result.isAfter(before.minusSeconds(2)) && result.isBefore(after.plusSeconds(2)),
+            "Should calculate last check time based on custom interval");
+    }
+
+    @Test
+    void testProcessActionInstanceUpdatesLastPollTime() throws Exception {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300);
+        activationMode.setConfig(config);
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class)))
+            .thenReturn(Collections.emptyList());
+
+        // When - first poll
+        googleEventPollingService.pollGoogleEvents();
+
+        // Use reflection to check shouldPollNow
+        var method = GoogleEventPollingService.class.getDeclaredMethod("shouldPollNow", ActivationMode.class);
+        method.setAccessible(true);
+        
+        boolean shouldPoll = (boolean) method.invoke(googleEventPollingService, activationMode);
+
+        // Then - should not poll again immediately
+        assertFalse(shouldPoll, "Last poll time should be updated");
+    }
+
+    @Test
+    void testProcessActionInstanceWithExecutionTriggerException() throws Exception {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        ActivationMode activationMode = new ActivationMode();
+        activationMode.setActionInstance(actionInstance);
+        activationMode.setType(ActivationModeType.POLL);
+        activationMode.setEnabled(true);
+        Map<String, Object> config = new HashMap<>();
+        config.put("pollingInterval", 300);
+        activationMode.setConfig(config);
+
+        Map<String, Object> event = new HashMap<>();
+        event.put("messageId", "123");
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            actionInstance, ActivationModeType.POLL, true))
+            .thenReturn(List.of(activationMode));
+        when(googleActionService.checkGoogleEvents(
+            anyString(), anyMap(), any(UUID.class), any(LocalDateTime.class)))
+            .thenReturn(List.of(event));
+        doThrow(new RuntimeException("Execution failed"))
+            .when(executionTriggerService).triggerAreaExecution(
+                any(ActionInstance.class), any(ActivationModeType.class), anyMap());
+
+        // When - should handle exception gracefully
+        assertDoesNotThrow(() -> {
+            googleEventPollingService.pollGoogleEvents();
+        });
+
+        // Then - should have attempted to trigger execution
+        verify(executionTriggerService).triggerAreaExecution(
+            eq(actionInstance), eq(ActivationModeType.POLL), eq(event));
+    }
+
+    @Test
+    void testProcessActionInstanceHandlesExceptionInProcessing() {
+        // Given
+        User user = new User();
+        user.setId(UUID.randomUUID());
+
+        ActionDefinition actionDef = new ActionDefinition();
+        actionDef.setKey("gmail_new_email");
+
+        ActionInstance actionInstance = new ActionInstance();
+        actionInstance.setId(UUID.randomUUID());
+        actionInstance.setEnabled(true);
+        actionInstance.setUser(user);
+        actionInstance.setActionDefinition(actionDef);
+        actionInstance.setParams(new HashMap<>());
+
+        when(actionInstanceRepository.findActiveGoogleActionInstances())
+            .thenReturn(List.of(actionInstance));
+        when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(
+            any(ActionInstance.class), any(ActivationModeType.class), anyBoolean()))
+            .thenThrow(new RuntimeException("Database error during activation mode fetch"));
+
+        double initialFailures = meterRegistry.counter("google_polling_failures").count();
+
+        // When
+        assertDoesNotThrow(() -> {
+            googleEventPollingService.pollGoogleEvents();
+        });
+
+        // Then
+        double finalFailures = meterRegistry.counter("google_polling_failures").count();
+        assertEquals(initialFailures + 1, finalFailures);
+    }
 }

@@ -289,12 +289,68 @@ public class AreaService {
         response.setEnabled(area.getEnabled());
         response.setUserId(area.getUser().getId());
         response.setUserEmail(area.getUser().getEmail());
-        response.setActions(area.getActions());
-        response.setReactions(area.getReactions());
+
+        List<ActionInstance> actionInstances = actionInstanceRepository.findByAreaId(area.getId());
+        response.setActions(enrichWithActionInstanceIds(area.getActions(), actionInstances, true));
+        response.setReactions(enrichWithActionInstanceIds(area.getReactions(), actionInstances, false));
+
         response.setLinks(actionLinkService.getActionLinksByArea(area.getId()));
         response.setCreatedAt(area.getCreatedAt());
         response.setUpdatedAt(area.getUpdatedAt());
         return response;
+    }
+
+    /**
+     * Enriches action/reaction maps with their corresponding ActionInstance IDs.
+     * This is crucial for the frontend to map links between actions and reactions.
+     *
+     * @param jsonbData the original JSONB data from the database
+     * @param allInstances all ActionInstances for this area
+     * @param isAction true for actions (event-capable), false for reactions (executable)
+     * @return enriched maps with "id" field containing the ActionInstance UUID
+     */
+    private List<Map<String, Object>> enrichWithActionInstanceIds(
+            List<Map<String, Object>> jsonbData,
+            List<ActionInstance> allInstances,
+            boolean isAction) {
+
+        if (jsonbData == null || jsonbData.isEmpty()) {
+            return jsonbData != null ? jsonbData : new ArrayList<>();
+        }
+
+        List<Map<String, Object>> enriched = new ArrayList<>();
+
+        for (Map<String, Object> item : jsonbData) {
+            Map<String, Object> enrichedItem = new HashMap<>(item);
+
+            String actionDefId = (String) item.get("actionDefinitionId");
+            String name = (String) item.get("name");
+
+            if (actionDefId != null && name != null) {
+                ActionInstance matchingInstance = allInstances.stream()
+                    .filter(ai -> ai.getActionDefinition().getId().toString().equals(actionDefId)
+                        && ai.getName().equals(name)
+                        && ai.getActionDefinition().getIsEventCapable() == isAction)
+                    .findFirst()
+                    .orElse(null);
+
+                if (matchingInstance != null) {
+                    enrichedItem.put("id", matchingInstance.getId().toString());
+
+                    enrichedItem.put("serviceId", matchingInstance.getActionDefinition().getService().getId().toString());
+                    enrichedItem.put("serviceName", matchingInstance.getActionDefinition().getService().getName());
+                    enrichedItem.put("serviceKey", matchingInstance.getActionDefinition().getService().getKey());
+                    enrichedItem.put("actionKey", matchingInstance.getActionDefinition().getKey());
+                } else {
+                    log.warn("No matching ActionInstance found for actionDefinitionId={}, name={}, isAction={}",
+                        actionDefId, name, isAction);
+                }
+            }
+
+            enriched.add(enrichedItem);
+        }
+
+        return enriched;
     }
 
     public Map<String, Object> triggerAreaManually(UUID areaId, Map<String, Object> inputPayload) {

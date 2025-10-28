@@ -162,4 +162,115 @@ class RetryManagerTest {
         assertNull(stats.getNextRetryTime());
         assertTrue(stats.hasReachedMaxAttempts());
     }
+
+    @Test
+    void shouldNotRetryForAuthorizationError() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("Authorization error"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldNotRetryForInvalidCredentials() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("Invalid credentials"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldNotRetryForAccessDenied() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("Access denied"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldNotRetryForForbidden() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("Forbidden"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldNotRetryForBadRequest() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("Bad request"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldNotRetryForDoesNotExist() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException("User does not exist"));
+
+        // Then
+        assertFalse(shouldRetry);
+    }
+
+    @Test
+    void shouldRetryForNullError() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, null);
+
+        // Then
+        assertTrue(shouldRetry);
+    }
+
+    @Test
+    void shouldRetryForErrorWithoutMessage() {
+        // When
+        boolean shouldRetry = retryManager.shouldRetry(0, new RuntimeException());
+
+        // Then
+        assertTrue(shouldRetry);
+    }
+
+    @Test
+    void shouldHandleUppercaseErrorMessages() {
+        // When
+        boolean shouldRetry1 = retryManager.shouldRetry(0, new RuntimeException("AUTHENTICATION FAILED"));
+        boolean shouldRetry2 = retryManager.shouldRetry(0, new RuntimeException("VALIDATION ERROR"));
+
+        // Then
+        assertFalse(shouldRetry1);
+        assertFalse(shouldRetry2);
+    }
+
+    @Test
+    void calculateNextRetryTimeForMultipleAttempts() {
+        // When
+        LocalDateTime retry0 = retryManager.calculateNextRetryTime(0);
+        LocalDateTime retry1 = retryManager.calculateNextRetryTime(1);
+        LocalDateTime retry2 = retryManager.calculateNextRetryTime(2);
+        LocalDateTime retry3 = retryManager.calculateNextRetryTime(3);
+        LocalDateTime retry4 = retryManager.calculateNextRetryTime(4);
+
+        // Then
+        assertNotNull(retry0);
+        assertNotNull(retry1);
+        assertNotNull(retry2);
+        assertNotNull(retry3);
+        assertNotNull(retry4);
+    }
+
+    @Test
+    void calculateNextRetryTimeAboveMaxAttempts() {
+        // When
+        LocalDateTime retry6 = retryManager.calculateNextRetryTime(6);
+        LocalDateTime retry10 = retryManager.calculateNextRetryTime(10);
+
+        // Then
+        assertNull(retry6);
+        assertNull(retry10);
+    }
 }

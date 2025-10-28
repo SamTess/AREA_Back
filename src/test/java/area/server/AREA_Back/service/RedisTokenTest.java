@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.SetOperations;
 
 import area.server.AREA_Back.service.Auth.JwtService;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
@@ -14,10 +15,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +38,9 @@ class RedisTokenServiceTest {
 
     @Mock
     private ValueOperations<String, Object> valueOperations;
+
+    @Mock
+    private SetOperations<String, Object> setOperations;
 
     @Mock
     private JwtService jwtService;
@@ -389,5 +396,375 @@ class RedisTokenServiceTest {
 
         // Then
         assertNull(result);
+    }
+
+    // ===== Tests for JTI-related methods =====
+
+    @Test
+    void testStoreAccessTokenWithJti() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testAccessToken = "test.access.token";
+        String testJti = "test-jti-123";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(jwtService.getAccessTokenExpirationMs()).thenReturn(900000L);
+        when(jwtService.extractJtiFromAccessToken(testAccessToken)).thenReturn(testJti);
+
+        // When
+        redisTokenService.storeAccessToken(testAccessToken, testUserId);
+
+        // Then
+        verify(valueOperations).set(
+                eq("access:" + testAccessToken),
+                eq(testUserId.toString()),
+                eq(Duration.ofMillis(900000L))
+        );
+        verify(valueOperations).set(
+                eq("access:jti:" + testJti),
+                eq(testUserId.toString()),
+                eq(Duration.ofMillis(900000L))
+        );
+        verify(setOperations).add(eq("user:tokens:" + testUserId.toString()), eq(testJti));
+        verify(redisTemplate).expire(eq("user:tokens:" + testUserId.toString()), eq(Duration.ofMillis(900000L)));
+    }
+
+    @Test
+    void testStoreAccessTokenWithJtiException() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testAccessToken = "test.access.token";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(jwtService.getAccessTokenExpirationMs()).thenReturn(900000L);
+        when(jwtService.extractJtiFromAccessToken(testAccessToken)).thenThrow(new RuntimeException("JTI extraction failed"));
+
+        // When
+        redisTokenService.storeAccessToken(testAccessToken, testUserId);
+
+        // Then
+        verify(valueOperations).set(
+                eq("access:" + testAccessToken),
+                eq(testUserId.toString()),
+                eq(Duration.ofMillis(900000L))
+        );
+        // JTI operations should not be called due to exception
+    }
+
+    @Test
+    void testStoreRefreshTokenWithJti() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testRefreshToken = "test.refresh.token";
+        String testJti = "refresh-jti-456";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(jwtService.getRefreshTokenExpirationMs()).thenReturn(604800000L);
+        when(jwtService.extractJtiFromRefreshToken(testRefreshToken)).thenReturn(testJti);
+
+        // When
+        redisTokenService.storeRefreshToken(testUserId, testRefreshToken);
+
+        // Then
+        verify(valueOperations).set(
+                eq("refresh:" + testUserId.toString()),
+                eq(testRefreshToken),
+                eq(Duration.ofMillis(604800000L))
+        );
+        verify(valueOperations).set(
+                eq("refresh:jti:" + testJti),
+                eq(testUserId.toString()),
+                eq(Duration.ofMillis(604800000L))
+        );
+    }
+
+    @Test
+    void testStoreRefreshTokenWithJtiException() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testRefreshToken = "test.refresh.token";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(jwtService.getRefreshTokenExpirationMs()).thenReturn(604800000L);
+        when(jwtService.extractJtiFromRefreshToken(testRefreshToken)).thenThrow(new RuntimeException("JTI extraction failed"));
+
+        // When
+        redisTokenService.storeRefreshToken(testUserId, testRefreshToken);
+
+        // Then
+        verify(valueOperations).set(
+                eq("refresh:" + testUserId.toString()),
+                eq(testRefreshToken),
+                eq(Duration.ofMillis(604800000L))
+        );
+        // JTI operations should not be called due to exception
+    }
+
+    @Test
+    void testDeleteAccessTokenWithJti() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testAccessToken = "test.access.token";
+        String testJti = "test-jti-123";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(jwtService.extractJtiFromAccessToken(testAccessToken)).thenReturn(testJti);
+        when(valueOperations.get("access:" + testAccessToken)).thenReturn(testUserId.toString());
+
+        // When
+        redisTokenService.deleteAccessToken(testAccessToken);
+
+        // Then
+        verify(redisTemplate).delete("access:" + testAccessToken);
+        verify(redisTemplate).delete("access:jti:" + testJti);
+        verify(setOperations).remove("user:tokens:" + testUserId.toString(), testJti);
+    }
+
+    @Test
+    void testDeleteAccessTokenWithJtiException() {
+        // Given
+        String testAccessToken = "test.access.token";
+        when(jwtService.extractJtiFromAccessToken(testAccessToken)).thenThrow(new RuntimeException("JTI extraction failed"));
+
+        // When
+        redisTokenService.deleteAccessToken(testAccessToken);
+
+        // Then
+        verify(redisTemplate).delete("access:" + testAccessToken);
+        // JTI cleanup should fail gracefully
+    }
+
+    @Test
+    void testDeleteRefreshTokenWithJti() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testRefreshToken = "test.refresh.token";
+        String testJti = "refresh-jti-456";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("refresh:" + testUserId.toString())).thenReturn(testRefreshToken);
+        when(jwtService.extractJtiFromRefreshToken(testRefreshToken)).thenReturn(testJti);
+
+        // When
+        redisTokenService.deleteRefreshToken(testUserId);
+
+        // Then
+        verify(redisTemplate).delete("refresh:" + testUserId.toString());
+        verify(redisTemplate).delete("refresh:jti:" + testJti);
+    }
+
+    @Test
+    void testDeleteRefreshTokenWithJtiException() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        String testRefreshToken = "test.refresh.token";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("refresh:" + testUserId.toString())).thenReturn(testRefreshToken);
+        when(jwtService.extractJtiFromRefreshToken(testRefreshToken)).thenThrow(new RuntimeException("JTI extraction failed"));
+
+        // When
+        redisTokenService.deleteRefreshToken(testUserId);
+
+        // Then
+        verify(redisTemplate).delete("refresh:" + testUserId.toString());
+        // JTI cleanup should fail gracefully
+    }
+
+    @Test
+    void testRevokeAccessTokenByJti() {
+        // Given
+        String testJti = "test-jti-123";
+        UUID testUserId = UUID.randomUUID();
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(valueOperations.get("access:jti:" + testJti)).thenReturn(testUserId.toString());
+
+        // When
+        redisTokenService.revokeAccessTokenByJti(testJti);
+
+        // Then
+        verify(setOperations).remove("user:tokens:" + testUserId.toString(), testJti);
+        verify(redisTemplate).delete("access:jti:" + testJti);
+    }
+
+    @Test
+    void testRevokeAccessTokenByJtiWithNullUserId() {
+        // Given
+        String testJti = "test-jti-123";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("access:jti:" + testJti)).thenReturn(null);
+
+        // When
+        redisTokenService.revokeAccessTokenByJti(testJti);
+
+        // Then
+        verify(redisTemplate).delete("access:jti:" + testJti);
+        verify(redisTemplate, never()).opsForSet();
+    }
+
+    @Test
+    void testRevokeAccessTokenByJtiWithInvalidUUID() {
+        // Given
+        String testJti = "test-jti-123";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("access:jti:" + testJti)).thenReturn("invalid-uuid");
+
+        // When
+        redisTokenService.revokeAccessTokenByJti(testJti);
+
+        // Then
+        verify(redisTemplate).delete("access:jti:" + testJti);
+    }
+
+    @Test
+    void testRevokeRefreshTokenByJti() {
+        // Given
+        String testJti = "refresh-jti-456";
+
+        // When
+        redisTokenService.revokeRefreshTokenByJti(testJti);
+
+        // Then
+        verify(redisTemplate).delete("refresh:jti:" + testJti);
+    }
+
+    @Test
+    void testGetUserActiveTokenJtis() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        Set<Object> expectedJtis = new HashSet<>();
+        expectedJtis.add("jti-1");
+        expectedJtis.add("jti-2");
+        expectedJtis.add("jti-3");
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("user:tokens:" + testUserId.toString())).thenReturn(expectedJtis);
+
+        // When
+        Set<Object> result = redisTokenService.getUserActiveTokenJtis(testUserId);
+
+        // Then
+        assertEquals(expectedJtis, result);
+        assertEquals(3, result.size());
+        verify(setOperations).members("user:tokens:" + testUserId.toString());
+    }
+
+    @Test
+    void testGetUserActiveTokenJtisReturnsEmptySet() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        Set<Object> emptySet = new HashSet<>();
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("user:tokens:" + testUserId.toString())).thenReturn(emptySet);
+
+        // When
+        Set<Object> result = redisTokenService.getUserActiveTokenJtis(testUserId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testRevokeAllUserAccessTokens() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        Set<Object> jtis = new HashSet<>();
+        jtis.add("jti-1");
+        jtis.add("jti-2");
+        jtis.add("jti-3");
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("user:tokens:" + testUserId.toString())).thenReturn(jtis);
+
+        // When
+        redisTokenService.revokeAllUserAccessTokens(testUserId);
+
+        // Then
+        verify(redisTemplate).delete("access:jti:jti-1");
+        verify(redisTemplate).delete("access:jti:jti-2");
+        verify(redisTemplate).delete("access:jti:jti-3");
+        verify(redisTemplate).delete("user:tokens:" + testUserId.toString());
+    }
+
+    @Test
+    void testRevokeAllUserAccessTokensWithNullJtis() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("user:tokens:" + testUserId.toString())).thenReturn(null);
+
+        // When
+        redisTokenService.revokeAllUserAccessTokens(testUserId);
+
+        // Then
+        String userTokensKey = "user:tokens:" + testUserId.toString();
+        verify(redisTemplate, never()).delete(eq(userTokensKey));
+    }
+
+    @Test
+    void testRevokeAllUserAccessTokensWithEmptyJtis() {
+        // Given
+        UUID testUserId = UUID.randomUUID();
+        Set<Object> emptySet = new HashSet<>();
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(setOperations.members("user:tokens:" + testUserId.toString())).thenReturn(emptySet);
+
+        // When
+        redisTokenService.revokeAllUserAccessTokens(testUserId);
+
+        // Then
+        String userTokensKey = "user:tokens:" + testUserId.toString();
+        verify(redisTemplate, never()).delete(eq(userTokensKey));
+    }
+
+    @Test
+    void testIsAccessTokenValidByJti() {
+        // Given
+        String testJti = "test-jti-123";
+        when(redisTemplate.hasKey("access:jti:" + testJti)).thenReturn(true);
+
+        // When
+        boolean result = redisTokenService.isAccessTokenValidByJti(testJti);
+
+        // Then
+        assertTrue(result);
+        verify(redisTemplate).hasKey("access:jti:" + testJti);
+    }
+
+    @Test
+    void testIsAccessTokenValidByJtiReturnsFalse() {
+        // Given
+        String testJti = "test-jti-123";
+        when(redisTemplate.hasKey("access:jti:" + testJti)).thenReturn(false);
+
+        // When
+        boolean result = redisTokenService.isAccessTokenValidByJti(testJti);
+
+        // Then
+        assertFalse(result);
+        verify(redisTemplate).hasKey("access:jti:" + testJti);
+    }
+
+    @Test
+    void testIsRefreshTokenValidByJti() {
+        // Given
+        String testJti = "refresh-jti-456";
+        when(redisTemplate.hasKey("refresh:jti:" + testJti)).thenReturn(true);
+
+        // When
+        boolean result = redisTokenService.isRefreshTokenValidByJti(testJti);
+
+        // Then
+        assertTrue(result);
+        verify(redisTemplate).hasKey("refresh:jti:" + testJti);
+    }
+
+    @Test
+    void testIsRefreshTokenValidByJtiReturnsFalse() {
+        // Given
+        String testJti = "refresh-jti-456";
+        when(redisTemplate.hasKey("refresh:jti:" + testJti)).thenReturn(false);
+
+        // When
+        boolean result = redisTokenService.isRefreshTokenValidByJti(testJti);
+
+        // Then
+        assertFalse(result);
+        verify(redisTemplate).hasKey("refresh:jti:" + testJti);
     }
 }

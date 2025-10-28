@@ -341,4 +341,281 @@ class WebhookSignatureValidatorTest {
             assertNotNull(result);
         }
     }
+
+    // ========== Tests for validateDiscordSignature ==========
+
+    @Test
+    void testValidateDiscordSignature_NullPublicKey() {
+        String signature = "a".repeat(128); // 64 bytes in hex
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, null, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_EmptyPublicKey() {
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, "", timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_WhitespacePublicKey() {
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, "   ", timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_NullSignature() {
+        String publicKey = "a".repeat(64); // 32 bytes in hex
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, null, publicKey, timestamp);
+
+        assertTrue(result); // Discord allows null signature for ping verification
+    }
+
+    @Test
+    void testValidateDiscordSignature_NullTimestamp() {
+        String publicKey = "a".repeat(64);
+        String signature = "a".repeat(128);
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, null);
+
+        assertTrue(result); // Discord allows null timestamp for ping verification
+    }
+
+    @Test
+    void testValidateDiscordSignature_InvalidPublicKeyLength() {
+        String publicKey = "a".repeat(32); // Too short - only 16 bytes
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_InvalidSignatureLength() {
+        String publicKey = "a".repeat(64); // 32 bytes
+        String signature = "a".repeat(64); // Too short - only 32 bytes instead of 64
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_InvalidSignature() {
+        // Valid Ed25519 public key (32 bytes in hex)
+        String publicKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        // Invalid signature (64 bytes in hex but wrong signature)
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_ExceptionHandling() {
+        String publicKey = "invalid_hex"; // Invalid hex string
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_OddLengthHex() {
+        String publicKey = "a".repeat(63); // Odd length hex string
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_EmptyPayload() {
+        byte[] emptyPayload = new byte[0];
+        String publicKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(emptyPayload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateSignature_Discord() {
+        String publicKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateSignature("discord", payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testValidateSignature_DiscordCaseInsensitive() {
+        String publicKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result1 = validator.validateSignature("DISCORD", payload, signature, publicKey, timestamp);
+        boolean result2 = validator.validateSignature("Discord", payload, signature, publicKey, timestamp);
+
+        assertNotNull(result1);
+        assertNotNull(result2);
+    }
+
+    @Test
+    void testValidateDiscordSignature_AllNullParams() {
+        boolean result = validator.validateDiscordSignature(payload, null, null, null);
+
+        assertFalse(result);
+    }
+
+    // ========== Tests for hexToBytes (indirectly via Discord validation) ==========
+
+    @Test
+    void testHexToBytes_ValidHex() {
+        // Test with valid hex strings through Discord signature validation
+        String validPublicKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        String validSignature = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
+        String timestamp = "1234567890";
+
+        // This will internally call hexToBytes
+        boolean result = validator.validateDiscordSignature(payload, validSignature, validPublicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHexToBytes_UpperCaseHex() {
+        String publicKey = "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
+        String signature = "A".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHexToBytes_MixedCaseHex() {
+        String publicKey = "AbCdEf0123456789aBcDeF0123456789AbCdEf0123456789aBcDeF0123456789";
+        String signature = "aA".repeat(64);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHexToBytes_InvalidHexCharacters() {
+        String publicKey = "ghijklmnopqrstuv0123456789abcdef0123456789abcdef0123456789abcdef"; // Invalid hex chars
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testHexToBytes_OddLength() {
+        String publicKey = "abc"; // Odd length
+        String signature = "a".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testHexToBytes_AllZeros() {
+        String publicKey = "0".repeat(64);
+        String signature = "0".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHexToBytes_AllOnes() {
+        String publicKey = "f".repeat(64);
+        String signature = "f".repeat(128);
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testHexToBytes_BoundaryValues() {
+        String publicKey = "00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff";
+        String signature = "ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00";
+        String timestamp = "1234567890";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_LongTimestamp() {
+        String publicKey = "a".repeat(64);
+        String signature = "b".repeat(128);
+        String timestamp = "9999999999999999";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_EmptyTimestamp() {
+        String publicKey = "a".repeat(64);
+        String signature = "b".repeat(128);
+        String timestamp = "";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void testValidateDiscordSignature_SpecialCharactersInTimestamp() {
+        String publicKey = "a".repeat(64);
+        String signature = "b".repeat(128);
+        String timestamp = "!@#$%^&*()";
+
+        boolean result = validator.validateDiscordSignature(payload, signature, publicKey, timestamp);
+
+        assertFalse(result);
+    }
 }

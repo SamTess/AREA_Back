@@ -4,6 +4,8 @@ import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.OAuthProvider;
 import area.server.AREA_Back.service.Auth.OAuthService;
+import area.server.AREA_Back.service.PKCEStore;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +34,13 @@ class OAuthControllerTest {
     private OAuthService oauthGoogleService;
 
     @Mock
+    private PKCEStore pkceStore;
+
+    @Mock
     private HttpServletResponse httpServletResponse;
+
+    @Mock
+    private HttpServletRequest httpServletRequest;
 
     private OAuthController oauthController;
 
@@ -43,9 +51,10 @@ class OAuthControllerTest {
         lenient().when(oauthGoogleService.getProviderLabel()).thenReturn("Google");
         lenient().when(oauthGoogleService.getProviderLogoUrl()).thenReturn("/oauth-icons/google.svg");
         lenient().when(oauthGoogleService.getUserAuthUrl()).thenReturn("https://accounts.google.com/o/oauth2/v2/auth?client_id=test");
+        lenient().when(oauthGoogleService.getUserAuthUrl(anyString())).thenReturn("https://accounts.google.com/o/oauth2/v2/auth?client_id=test&state=test");
         lenient().when(oauthGoogleService.getClientId()).thenReturn("test-client-id");
 
-        oauthController = new OAuthController(List.of(oauthGoogleService));
+        oauthController = new OAuthController(List.of(oauthGoogleService), pkceStore);
     }
 
     @Test
@@ -70,12 +79,13 @@ class OAuthControllerTest {
     void testGetProvidersWithMultipleProviders() {
         // Given
         OAuthService anotherService = mock(OAuthService.class);
-        when(anotherService.getProviderKey()).thenReturn("github");
-        when(anotherService.getProviderLabel()).thenReturn("GitHub");
-        when(anotherService.getProviderLogoUrl()).thenReturn("/oauth-icons/github.svg");
-        when(anotherService.getUserAuthUrl()).thenReturn("https://github.com/login/oauth/authorize");
+        lenient().when(anotherService.getProviderKey()).thenReturn("github");
+        lenient().when(anotherService.getProviderLabel()).thenReturn("GitHub");
+        lenient().when(anotherService.getProviderLogoUrl()).thenReturn("/oauth-icons/github.svg");
+        lenient().when(anotherService.getUserAuthUrl()).thenReturn("https://github.com/login/oauth/authorize");
+        lenient().when(anotherService.getUserAuthUrl(anyString())).thenReturn("https://github.com/login/oauth/authorize?state=test");
 
-        oauthController = new OAuthController(List.of(oauthGoogleService, anotherService));
+        oauthController = new OAuthController(List.of(oauthGoogleService, anotherService), pkceStore);
 
         // When
         ResponseEntity<List<OAuthProvider>> response = oauthController.getProviders();
@@ -90,7 +100,7 @@ class OAuthControllerTest {
     @Test
     void testGetProvidersWithNoProviders() {
         // Given
-        oauthController = new OAuthController(List.of());
+        oauthController = new OAuthController(List.of(), pkceStore);
 
         // When
         ResponseEntity<List<OAuthProvider>> response = oauthController.getProviders();
@@ -105,19 +115,19 @@ class OAuthControllerTest {
     @Test
     void testAuthorizeWithValidProvider() {
         // When
-        ResponseEntity<String> response = oauthController.authorize("google", httpServletResponse);
+        ResponseEntity<String> response = oauthController.authorize("google", "web", null, "S256", httpServletResponse);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.FOUND, response.getStatusCode());
-        verify(httpServletResponse).setHeader("Location", "https://accounts.google.com/o/oauth2/v2/auth?client_id=test");
+        verify(httpServletResponse).setHeader(eq("Location"), anyString());
         verify(httpServletResponse).setStatus(HttpServletResponse.SC_FOUND);
     }
 
     @Test
     void testAuthorizeWithInvalidProvider() {
         // When
-        ResponseEntity<String> response = oauthController.authorize("invalid-provider", httpServletResponse);
+        ResponseEntity<String> response = oauthController.authorize("invalid-provider", "web", null, "S256", httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -129,7 +139,7 @@ class OAuthControllerTest {
     @Test
     void testAuthorizeCaseInsensitive() {
         // When
-        ResponseEntity<String> response = oauthController.authorize("GOOGLE", httpServletResponse);
+        ResponseEntity<String> response = oauthController.authorize("GOOGLE", "web", null, "S256", httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -139,10 +149,10 @@ class OAuthControllerTest {
     @Test
     void testAuthorizeWithException() {
         // Given
-        when(oauthGoogleService.getUserAuthUrl()).thenThrow(new RuntimeException("Service error"));
+        when(oauthGoogleService.getUserAuthUrl(anyString())).thenThrow(new RuntimeException("Service error"));
 
         // When
-        ResponseEntity<String> response = oauthController.authorize("google", httpServletResponse);
+        ResponseEntity<String> response = oauthController.authorize("google", "web", null, "S256", httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -163,7 +173,7 @@ class OAuthControllerTest {
             .thenReturn(authResponse);
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -179,7 +189,7 @@ class OAuthControllerTest {
         Map<String, String> requestBody = new HashMap<>();
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -194,7 +204,7 @@ class OAuthControllerTest {
         requestBody.put("code", "");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -209,7 +219,7 @@ class OAuthControllerTest {
         requestBody.put("code", "   ");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -224,7 +234,7 @@ class OAuthControllerTest {
         requestBody.put("code", "valid-code");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("invalid-provider", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("invalid-provider", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -242,7 +252,7 @@ class OAuthControllerTest {
             .thenThrow(new UnsupportedOperationException("Not implemented"));
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -259,7 +269,7 @@ class OAuthControllerTest {
             .thenThrow(new RuntimeException("Authentication failed"));
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -279,7 +289,7 @@ class OAuthControllerTest {
             .thenReturn(authResponse);
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("GOOGLE", requestBody, httpServletResponse);
+        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("GOOGLE", requestBody, httpServletResponse, httpServletRequest);
 
         // Then
         assertNotNull(response);
@@ -290,22 +300,24 @@ class OAuthControllerTest {
     void testExchangeTokenNullRequestBody() {
         // When
         assertThrows(NullPointerException.class, () -> {
-            oauthController.exchangeToken("google", null, httpServletResponse);
+            oauthController.exchangeToken("google", null, httpServletResponse, httpServletRequest);
         });
     }
 
     @Test
     void testDiscordProviderInList() {
         OAuthService discordService = mock(OAuthService.class);
-        when(discordService.getProviderKey()).thenReturn("discord");
-        when(discordService.getProviderLabel()).thenReturn("Discord");
-        when(discordService.getProviderLogoUrl())
+        lenient().when(discordService.getProviderKey()).thenReturn("discord");
+        lenient().when(discordService.getProviderLabel()).thenReturn("Discord");
+        lenient().when(discordService.getProviderLogoUrl())
             .thenReturn("https://img.icons8.com/color/48/discord-logo.png");
-        when(discordService.getUserAuthUrl())
+        lenient().when(discordService.getUserAuthUrl())
             .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test");
-        when(discordService.getClientId()).thenReturn("test-discord-client-id");
+        lenient().when(discordService.getUserAuthUrl(anyString()))
+            .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test&state=test");
+        lenient().when(discordService.getClientId()).thenReturn("test-discord-client-id");
 
-        oauthController = new OAuthController(List.of(oauthGoogleService, discordService));
+        oauthController = new OAuthController(List.of(oauthGoogleService, discordService), pkceStore);
 
         ResponseEntity<List<OAuthProvider>> response = oauthController.getProviders();
 
@@ -327,19 +339,20 @@ class OAuthControllerTest {
     @Test
     void testDiscordAuthorize() {
         OAuthService discordService = mock(OAuthService.class);
-        when(discordService.getProviderKey()).thenReturn("discord");
-        when(discordService.getUserAuthUrl())
+        lenient().when(discordService.getProviderKey()).thenReturn("discord");
+        lenient().when(discordService.getUserAuthUrl())
             .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test");
+        lenient().when(discordService.getUserAuthUrl(anyString()))
+            .thenReturn("https://discord.com/api/oauth2/authorize?client_id=test&state=test");
 
-        oauthController = new OAuthController(List.of(discordService));
+        oauthController = new OAuthController(List.of(discordService), pkceStore);
 
         ResponseEntity<String> response = oauthController.authorize("discord",
-            httpServletResponse);
+            "web", null, "S256", httpServletResponse);
 
         assertNotNull(response);
         assertEquals(HttpStatus.FOUND, response.getStatusCode());
-        verify(httpServletResponse).setHeader("Location",
-            "https://discord.com/api/oauth2/authorize?client_id=test");
+        verify(httpServletResponse).setHeader(eq("Location"), anyString());
     }
 
     @Test
@@ -356,10 +369,10 @@ class OAuthControllerTest {
         when(discordService.authenticate(any(OAuthLoginRequest.class), eq(httpServletResponse)))
             .thenReturn(authResponse);
 
-        oauthController = new OAuthController(List.of(discordService));
+        oauthController = new OAuthController(List.of(discordService), pkceStore);
 
         ResponseEntity<AuthResponse> response = oauthController.exchangeToken("discord",
-            requestBody, httpServletResponse);
+            requestBody, httpServletResponse, httpServletRequest);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());

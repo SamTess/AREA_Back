@@ -111,7 +111,6 @@ public class GoogleEventPollingService {
         }
     }
 
-    @Transactional(readOnly = true)
     private void managePollingTasks() {
         try {
             List<ActionInstance> googleActionInstances = actionInstanceRepository

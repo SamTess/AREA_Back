@@ -38,7 +38,6 @@ public class GitHubEventPollingService {
     private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300;
     private static final int MINIMUM_POLLING_INTERVAL_SECONDS = 1;
     private static final int SCHEDULER_CHECK_INTERVAL_SECONDS = 5;
-    private static final int THREAD_POOL_SIZE = 10;
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private final GitHubActionService gitHubActionService;
@@ -77,7 +76,11 @@ public class GitHubEventPollingService {
     }
 
     public void startScheduler() {
-        scheduler = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "github-polling-scheduler");
+            thread.setDaemon(true);
+            return thread;
+        });
         managerTask = scheduler.scheduleAtFixedRate(
             this::managePollingTasks,
             0,

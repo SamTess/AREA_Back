@@ -111,6 +111,7 @@ public class DiscordEventPollingService {
         }
     }
 
+    @Transactional(readOnly = true)
     private void managePollingTasks() {
         try {
             List<ActionInstance> discordActionInstances = actionInstanceRepository

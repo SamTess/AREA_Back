@@ -249,23 +249,23 @@ class JwtServiceTest {
 
     @Test
     void testEmptySecretHandling() {
-        // Test with empty secrets - JwtService should generate secure key and not throw exception
+        // Test with empty secrets - JwtService should throw exception on init
         ReflectionTestUtils.setField(jwtService, "accessTokenSecret", "");
 
-        // Should not throw exception, should generate token with secure key
-        String token = jwtService.generateAccessToken(testUserId, testEmail);
-        assertNotNull(token);
-        assertFalse(token.isEmpty());
+        // Should throw exception when trying to validate secrets
+        assertThrows(IllegalStateException.class, () -> {
+            jwtService.initMetrics();
+        });
     }
 
     @Test
     void testNullSecretHandling() {
-        // Test with null secrets - JwtService should generate secure key and not throw exception
+        // Test with null secrets - JwtService should throw exception on init
         ReflectionTestUtils.setField(jwtService, "accessTokenSecret", null);
 
-        // Should not throw exception, should generate token with secure key
-        String token = jwtService.generateAccessToken(testUserId, testEmail);
-        assertNotNull(token);
-        assertFalse(token.isEmpty());
+        // Should throw exception when trying to validate secrets
+        assertThrows(IllegalStateException.class, () -> {
+            jwtService.initMetrics();
+        });
     }
 }

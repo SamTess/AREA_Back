@@ -796,7 +796,7 @@ class SlackActionServiceTest {
 
     // Test checkUserJoined() - success
     @Test
-    void testCheckUserJoinedSuccess() {
+    void testCheckUserJoinedSuccess() throws Exception {
         setupMockToken();
 
         Map<String, Object> params = Map.of("channel", "C123");
@@ -810,6 +810,14 @@ class SlackActionServiceTest {
             any(HttpEntity.class),
             any(ParameterizedTypeReference.class)
         )).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+
+        // Set previous members to empty to simulate all current members are new
+        var knownChannelMembersField = SlackActionService.class.getDeclaredField("knownChannelMembers");
+        knownChannelMembersField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Set<String>> knownChannelMembers = (Map<String, Set<String>>) knownChannelMembersField.get(slackActionService);
+        String stateKey = testUserId.toString() + ":C123";
+        knownChannelMembers.put(stateKey, Set.of());
 
         List<Map<String, Object>> result = slackActionService.checkSlackEvents(
             "user_joined", params, testUserId, LocalDateTime.now()

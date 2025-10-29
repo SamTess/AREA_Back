@@ -380,6 +380,12 @@ public class SlackWebhookService {
 
             for (ActionInstance actionInstance : matchingInstances) {
                 if (actionInstance.getActionDefinition().getKey().equals(actionKey)) {
+                    if (!eventMatchesActionParams(actionInstance, eventData)) {
+                        log.debug("Event does not match action instance {} params, skipping",
+                                actionInstance.getId());
+                        continue;
+                    }
+
                     try {
                         executionTriggerService.triggerAreaExecution(
                             actionInstance,
@@ -394,5 +400,41 @@ public class SlackWebhookService {
         } catch (Exception e) {
             log.error("Failed to find matching Slack action instances: {}", e.getMessage(), e);
         }
+    }
+
+    /**
+     * Check if the event data matches the action instance's configured parameters
+     */
+    private boolean eventMatchesActionParams(ActionInstance actionInstance, Map<String, Object> eventData) {
+        Map<String, Object> params = actionInstance.getParams();
+        if (params == null || params.isEmpty()) {
+            return true;
+        }
+
+        if (params.containsKey("channel")) {
+            String configuredChannel = (String) params.get("channel");
+            String eventChannel = (String) eventData.get("channel");
+
+            if (configuredChannel != null && !configuredChannel.isEmpty()) {
+                if (!configuredChannel.equals(eventChannel)) {
+                    log.trace("Channel mismatch: configured={}, event={}", configuredChannel, eventChannel);
+                    return false;
+                }
+            }
+        }
+
+        if (params.containsKey("contains_text")) {
+            String containsText = (String) params.get("contains_text");
+            String messageText = (String) eventData.get("text");
+
+            if (containsText != null && !containsText.isEmpty()) {
+                if (messageText == null || !messageText.contains(containsText)) {
+                    log.trace("Text filter mismatch: required='{}', actual='{}'", containsText, messageText);
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

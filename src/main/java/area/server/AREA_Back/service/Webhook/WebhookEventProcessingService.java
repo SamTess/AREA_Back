@@ -66,7 +66,26 @@ public class WebhookEventProcessingService {
         return instances.stream()
             .filter(instance -> hasWebhookActivationMode(instance))
             .filter(instance -> matchesActionType(instance, action))
+            .filter(instance -> isAreaEnabled(instance))
             .toList();
+    }
+
+    /**
+     * Check if the ActionInstance's Area is enabled
+     */
+    private boolean isAreaEnabled(ActionInstance instance) {
+        if (instance.getArea() == null) {
+            log.warn("ActionInstance {} has no associated Area", instance.getId());
+            return false;
+        }
+
+        if (!instance.getArea().getEnabled()) {
+            log.debug("Skipping action instance {} - AREA {} is disabled",
+                     instance.getId(), instance.getArea().getId());
+            return false;
+        }
+
+        return true;
     }
 
     private boolean hasWebhookActivationMode(ActionInstance instance) {

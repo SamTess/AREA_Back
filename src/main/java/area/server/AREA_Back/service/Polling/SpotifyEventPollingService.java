@@ -10,9 +10,9 @@ import area.server.AREA_Back.service.Area.Services.SpotifyActionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SpotifyEventPollingService {
 
     private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 60;
+    private static final int MINIMUM_POLLING_INTERVAL_SECONDS = 1;
+    private static final int SCHEDULER_CHECK_INTERVAL_SECONDS = 5;
+    private static final int THREAD_POOL_SIZE = 10;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private final SpotifyActionService spotifyActionService;
     private final ActionInstanceRepository actionInstanceRepository;
@@ -40,47 +48,139 @@ public class SpotifyEventPollingService {
     private Counter pollingFailures;
 
     private final Map<UUID, LocalDateTime> lastPollTimes = new ConcurrentHashMap<>();
+    private final Map<UUID, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> managerTask;
 
     @PostConstruct
+    public void init() {
+        initMetrics();
+        startScheduler();
+    }
+
     public void initMetrics() {
         pollingCycles = meterRegistry.counter("spotify_polling_cycles");
         eventsFound = meterRegistry.counter("spotify_events_found");
         pollingFailures = meterRegistry.counter("spotify_polling_failures");
     }
 
-    @Scheduled(fixedRate = 10000)
-    public void pollSpotifyEvents() {
-        pollingCycles.increment();
-        log.debug("Starting Spotify events polling cycle");
+    public void startScheduler() {
+        scheduler = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 
+        managerTask = scheduler.scheduleAtFixedRate(
+            this::managePollingTasks,
+            0,
+            SCHEDULER_CHECK_INTERVAL_SECONDS,
+            TimeUnit.SECONDS
+        );
+
+        log.info("SpotifyEventPollingService scheduler started");
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        log.info("Shutting down SpotifyEventPollingService");
+
+        if (managerTask != null) {
+            managerTask.cancel(false);
+        }
+
+        scheduledTasks.values().forEach(task -> task.cancel(false));
+        scheduledTasks.clear();
+
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * Manager task that periodically checks for new or updated action instances
+     * and creates/updates their individual polling schedules
+     */
+    private void managePollingTasks() {
         try {
             List<ActionInstance> spotifyActionInstances = actionInstanceRepository
                 .findActiveSpotifyActionInstances();
 
-            log.debug("Found {} Spotify action instances to check", spotifyActionInstances.size());
+            log.debug("Managing polling tasks for {} Spotify action instances", spotifyActionInstances.size());
+
+            scheduledTasks.keySet().removeIf(actionInstanceId -> {
+                boolean exists = spotifyActionInstances.stream()
+                    .anyMatch(ai -> ai.getId().equals(actionInstanceId));
+                if (!exists) {
+                    ScheduledFuture<?> task = scheduledTasks.get(actionInstanceId);
+                    if (task != null) {
+                        task.cancel(false);
+                    }
+                    log.debug("Removed polling task for deleted action instance {}", actionInstanceId);
+                    return true;
+                }
+                return false;
+            });
 
             for (ActionInstance actionInstance : spotifyActionInstances) {
-                try {
-                    processActionInstance(actionInstance);
-                } catch (Exception e) {
-                    pollingFailures.increment();
-                    log.error("Failed to process Spotify action instance {}: {}",
-                             actionInstance.getId(), e.getMessage(), e);
+                if (!actionInstance.getEnabled()) {
+                    continue;
+                }
+
+                if (actionInstance.getArea() != null && !actionInstance.getArea().getEnabled()) {
+                    continue;
+                }
+
+                List<ActivationMode> activationModes = activationModeRepository
+                    .findByActionInstanceAndTypeAndEnabled(actionInstance, ActivationModeType.POLL, true);
+
+                if (activationModes.isEmpty()) {
+                    continue;
+                }
+
+                ActivationMode activationMode = activationModes.get(0);
+                int pollingInterval = getPollingInterval(activationMode);
+                UUID actionInstanceId = actionInstance.getId();
+
+                ScheduledFuture<?> existingTask = scheduledTasks.get(actionInstanceId);
+                if (existingTask == null || existingTask.isCancelled() || existingTask.isDone()) {
+                    if (managerTask == null) {
+                        if (shouldPollNow(activationMode)) {
+                            processActionInstance(actionInstance);
+                        }
+                    } else {
+                        ScheduledFuture<?> newTask = scheduler.scheduleAtFixedRate(
+                            () -> processActionInstance(actionInstance),
+                            0,
+                            pollingInterval,
+                            TimeUnit.SECONDS
+                        );
+                        scheduledTasks.put(actionInstanceId, newTask);
+                        log.info("Scheduled polling task for action instance {} with interval {} seconds",
+                                actionInstanceId, pollingInterval);
+                    }
                 }
             }
 
-            log.debug("Completed Spotify events polling cycle, processed {} instances",
-                     spotifyActionInstances.size());
-
         } catch (Exception e) {
             pollingFailures.increment();
-            log.error("Failed to complete Spotify events polling cycle: {}", e.getMessage(), e);
+            log.error("Error managing polling tasks: {}", e.getMessage(), e);
         }
     }
 
     @Transactional
     private void processActionInstance(ActionInstance actionInstance) {
         if (!actionInstance.getEnabled()) {
+            return;
+        }
+
+        if (actionInstance.getArea() != null && !actionInstance.getArea().getEnabled()) {
+            log.debug("Skipping action instance {} - AREA {} is disabled",
+                     actionInstance.getId(), actionInstance.getArea().getId());
             return;
         }
 
@@ -92,13 +192,6 @@ public class SpotifyEventPollingService {
         }
 
         ActivationMode activationMode = activationModes.get(0);
-
-        if (!shouldPollNow(activationMode)) {
-            log.trace("Skipping poll for action instance {} - interval not elapsed",
-                     actionInstance.getId());
-            return;
-        }
-
         LocalDateTime lastCheck = calculateLastCheckTime(activationMode);
 
         log.debug("Polling Spotify events for action instance {} with interval {} seconds",
@@ -132,6 +225,7 @@ public class SpotifyEventPollingService {
             }
 
         } catch (Exception e) {
+            pollingFailures.increment();
             log.error("Failed to check Spotify events for action instance {}: {}",
                      actionInstance.getId(), e.getMessage(), e);
         } finally {
@@ -139,23 +233,21 @@ public class SpotifyEventPollingService {
         }
     }
 
-    private boolean shouldPollNow(ActivationMode activationMode) {
-        UUID actionInstanceId = activationMode.getActionInstance().getId();
-        LocalDateTime lastPoll = lastPollTimes.get(actionInstanceId);
-
-        if (lastPoll == null) {
-            return true;
-        }
-
-        int pollingInterval = getPollingInterval(activationMode);
-        LocalDateTime nextPollTime = lastPoll.plusSeconds(pollingInterval);
-
-        return LocalDateTime.now().isAfter(nextPollTime);
-    }
-
     private int getPollingInterval(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        return (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
+        Integer configuredInterval = (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
+
+        if (configuredInterval != null && configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
+            log.warn("Polling interval {} seconds is below minimum {}, using minimum",
+                    configuredInterval, MINIMUM_POLLING_INTERVAL_SECONDS);
+            return MINIMUM_POLLING_INTERVAL_SECONDS;
+        }
+
+        if (configuredInterval != null) {
+            return configuredInterval;
+        } else {
+            return DEFAULT_POLLING_INTERVAL_SECONDS;
+        }
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
@@ -168,5 +260,27 @@ public class SpotifyEventPollingService {
 
         int pollingInterval = getPollingInterval(activationMode);
         return LocalDateTime.now().minusSeconds(pollingInterval);
+    }
+
+    private boolean shouldPollNow(ActivationMode activationMode) {
+        UUID actionInstanceId = activationMode.getActionInstance().getId();
+        LocalDateTime lastPoll = lastPollTimes.get(actionInstanceId);
+
+        if (lastPoll == null) {
+            return true;
+        }
+
+        int intervalSeconds = getPollingInterval(activationMode);
+        LocalDateTime nextPollTime = lastPoll.plusSeconds(intervalSeconds);
+
+        return LocalDateTime.now().isAfter(nextPollTime);
+    }
+
+    /**
+     * Public method to trigger polling for testing purposes.
+     */
+    public void pollSpotifyEvents() {
+        pollingCycles.increment();
+        managePollingTasks();
     }
 }

@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 public class OAuthCallbackController {
 
-	@GetMapping("/oauth-callback")
+	@GetMapping("/api/oauth-callback")
 	public void handleOAuthCallback(
 			@RequestParam(required = false) String code,
 			@RequestParam(required = false) String state,
@@ -34,12 +34,14 @@ public class OAuthCallbackController {
 			if (state != null && !state.isEmpty()) {
 				try {
 					String decoded = new String(Base64.getDecoder().decode(state), StandardCharsets.UTF_8);
+					log.debug("Decoded OAuth state: {}", decoded);
 
 					ObjectMapper objectMapper = new ObjectMapper();
 					JsonNode stateJson = objectMapper.readTree(decoded);
 
 					if (stateJson.has("mobile_redirect")) {
 						mobileRedirect = stateJson.get("mobile_redirect").asText();
+						log.info("Mobile OAuth request detected with redirect: {}", mobileRedirect);
 					}
 
 					if (stateJson.has("mode")) {
@@ -50,7 +52,7 @@ public class OAuthCallbackController {
 						provider = stateJson.get("provider").asText();
 					}
 				} catch (Exception e) {
-					log.error("Failed to decode state", e);
+					log.error("Failed to decode state: {}", state, e);
 				}
 			}
 
@@ -79,7 +81,14 @@ public class OAuthCallbackController {
 
 			String frontendUrl = System.getenv("FRONTEND_URL");
 			if (frontendUrl == null || frontendUrl.isEmpty() || frontendUrl.contains("{{")) {
-				frontendUrl = "http://localhost:3000";
+				// Use HTTPS by default in production, HTTP only for local development
+				String env = System.getenv("SPRING_PROFILES_ACTIVE");
+				if ("prod".equals(env) || "production".equals(env)) {
+					log.warn("FRONTEND_URL not set in production, using default HTTPS URL");
+					frontendUrl = "https://localhost:3000";
+				} else {
+					frontendUrl = "http://localhost:3000";
+				}
 			}
 
 			StringBuilder webRedirectUrl = new StringBuilder(frontendUrl);

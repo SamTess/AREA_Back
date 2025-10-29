@@ -266,25 +266,27 @@ public class GoogleEventPollingService {
 
     private int getPollingInterval(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        Integer configuredInterval = (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
+        Integer configuredInterval = (Integer) config.get("poll_interval");
 
-        if (configuredInterval != null && configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
+        if (configuredInterval == null) {
+            configuredInterval = (Integer) config.get("interval_seconds");
+        }
+
+        if (configuredInterval == null) {
+            configuredInterval = DEFAULT_POLLING_INTERVAL_SECONDS;
+        }
+
+        if (configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
             log.warn("Polling interval {} seconds is below minimum {}, using minimum",
                     configuredInterval, MINIMUM_POLLING_INTERVAL_SECONDS);
             return MINIMUM_POLLING_INTERVAL_SECONDS;
         }
 
-        if (configuredInterval != null) {
-            return configuredInterval;
-        } else {
-            return DEFAULT_POLLING_INTERVAL_SECONDS;
-        }
+        return configuredInterval;
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
-        Map<String, Object> config = activationMode.getConfig();
-        Integer intervalSeconds = (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
-
+        int intervalSeconds = getPollingInterval(activationMode);
         return LocalDateTime.now().minusSeconds(intervalSeconds);
     }
 

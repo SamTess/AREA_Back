@@ -305,14 +305,14 @@ class DiscordEventPollingServiceTest {
     void testShouldPollNowIntervalElapsed() throws Exception {
         UUID instanceId = UUID.randomUUID();
         ActionInstance actionInstance = createMockActionInstance(instanceId, true);
-        ActivationMode activationMode = createMockActivationMode(actionInstance, 1); // 1 second interval
+        ActivationMode activationMode = createMockActivationMode(actionInstance, 10); // 10 second interval
         
-        // Set last poll time to 2 seconds ago
+        // Set last poll time to 15 seconds ago
         Field lastPollTimesField = DiscordEventPollingService.class.getDeclaredField("lastPollTimes");
         lastPollTimesField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<UUID, LocalDateTime> lastPollTimes = (Map<UUID, LocalDateTime>) lastPollTimesField.get(discordEventPollingService);
-        lastPollTimes.put(instanceId, LocalDateTime.now().minusSeconds(2));
+        lastPollTimes.put(instanceId, LocalDateTime.now().minusSeconds(15));
         
         when(actionInstanceRepository.findActiveDiscordActionInstances())
             .thenReturn(Collections.singletonList(actionInstance));
@@ -347,7 +347,7 @@ class DiscordEventPollingServiceTest {
         ActionInstance actionInstance = createMockActionInstance(UUID.randomUUID(), true);
         ActivationMode activationMode = mock(ActivationMode.class);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 600);
+        config.put("poll_interval", 600);
         when(activationMode.getActionInstance()).thenReturn(actionInstance);
         when(activationMode.getConfig()).thenReturn(config);
         
@@ -378,7 +378,7 @@ class DiscordEventPollingServiceTest {
     void testCalculateLastCheckTimeCustom() throws Exception {
         ActivationMode activationMode = mock(ActivationMode.class);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 600);
+        config.put("poll_interval", 600);
         when(activationMode.getConfig()).thenReturn(config);
         
         Method calculateLastCheckTimeMethod = DiscordEventPollingService.class.getDeclaredMethod("calculateLastCheckTime", ActivationMode.class);
@@ -411,7 +411,7 @@ class DiscordEventPollingServiceTest {
     private ActivationMode createMockActivationMode(ActionInstance actionInstance, int pollingInterval) {
         ActivationMode activationMode = mock(ActivationMode.class);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", pollingInterval);
+        config.put("poll_interval", pollingInterval);
         
         when(activationMode.getActionInstance()).thenReturn(actionInstance);
         when(activationMode.getConfig()).thenReturn(config);

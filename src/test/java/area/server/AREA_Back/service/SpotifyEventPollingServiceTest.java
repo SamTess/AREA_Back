@@ -520,7 +520,7 @@ class SpotifyEventPollingServiceTest {
         activationMode.setEnabled(true);
 
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", pollingInterval);
+        config.put("poll_interval", pollingInterval);
         activationMode.setConfig(config);
 
         return activationMode;

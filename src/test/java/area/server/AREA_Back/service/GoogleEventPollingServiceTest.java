@@ -695,7 +695,7 @@ class GoogleEventPollingServiceTest {
         // Given
         ActivationMode activationMode = new ActivationMode();
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 120);
+        config.put("poll_interval", 120);
         activationMode.setConfig(config);
 
         // Use reflection to access private method
@@ -735,7 +735,7 @@ class GoogleEventPollingServiceTest {
         // Given
         ActivationMode activationMode = new ActivationMode();
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 600);
+        config.put("poll_interval", 600);
         activationMode.setConfig(config);
 
         // Use reflection to access private method
@@ -774,7 +774,7 @@ class GoogleEventPollingServiceTest {
         activationMode.setType(ActivationModeType.POLL);
         activationMode.setEnabled(true);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         when(actionInstanceRepository.findActiveGoogleActionInstances())
@@ -820,7 +820,7 @@ class GoogleEventPollingServiceTest {
         activationMode.setType(ActivationModeType.POLL);
         activationMode.setEnabled(true);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         Map<String, Object> event = new HashMap<>();

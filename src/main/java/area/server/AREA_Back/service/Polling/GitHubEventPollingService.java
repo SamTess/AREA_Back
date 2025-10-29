@@ -259,28 +259,27 @@ public class GitHubEventPollingService {
 
     private int getPollingInterval(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        Integer configuredInterval = (Integer) config.getOrDefault(
-            "interval_seconds", DEFAULT_POLLING_INTERVAL_SECONDS);
+        Integer configuredInterval = (Integer) config.get("poll_interval");
 
-        if (configuredInterval != null && configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
+        if (configuredInterval == null) {
+            configuredInterval = (Integer) config.get("interval_seconds");
+        }
+
+        if (configuredInterval == null) {
+            configuredInterval = DEFAULT_POLLING_INTERVAL_SECONDS;
+        }
+
+        if (configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
             log.warn("Polling interval {} seconds is below minimum {}, using minimum",
                     configuredInterval, MINIMUM_POLLING_INTERVAL_SECONDS);
             return MINIMUM_POLLING_INTERVAL_SECONDS;
         }
 
-        if (configuredInterval != null) {
-            return configuredInterval;
-        } else {
-            return DEFAULT_POLLING_INTERVAL_SECONDS;
-        }
+        return configuredInterval;
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
-        Map<String, Object> config = activationMode.getConfig();
-        String key = "interval_seconds";
-        Object defaultValue = DEFAULT_POLLING_INTERVAL_SECONDS;
-        Integer intervalSeconds = (Integer) config.getOrDefault(key, defaultValue);
-
+        int intervalSeconds = getPollingInterval(activationMode);
         return LocalDateTime.now().minusSeconds(intervalSeconds);
     }
 

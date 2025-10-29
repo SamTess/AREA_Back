@@ -103,7 +103,6 @@ public class SlackEventPollingService {
         }
     }
 
-    @Transactional(readOnly = true)
     private void managePollingTasks() {
         try {
             List<ActionInstance> slackActionInstances = actionInstanceRepository

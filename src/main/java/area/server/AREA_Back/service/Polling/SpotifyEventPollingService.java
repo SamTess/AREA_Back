@@ -108,7 +108,6 @@ public class SpotifyEventPollingService {
      * Manager task that periodically checks for new or updated action instances
      * and creates/updates their individual polling schedules
      */
-    @Transactional(readOnly = true)
     private void managePollingTasks() {
         try {
             List<ActionInstance> spotifyActionInstances = actionInstanceRepository

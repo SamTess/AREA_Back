@@ -115,6 +115,7 @@ public class GitHubEventPollingService {
         }
     }
 
+    @Transactional(readOnly = true)
     private void managePollingTasks() {
         try {
             List<ActionInstance> githubActionInstances = actionInstanceRepository

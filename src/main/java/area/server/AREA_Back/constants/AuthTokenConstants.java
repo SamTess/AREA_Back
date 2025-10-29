@@ -46,6 +46,11 @@ public final class AuthTokenConstants {
     public static final String REDIS_USER_TOKENS_PREFIX = "user:tokens:";
 
     /**
+     * Redis prefix for used refresh tokens (replay detection)
+     */
+    public static final String REDIS_USED_REFRESH_PREFIX = "used:refresh:";
+
+    /**
      * Token type in the JWT payload for access tokens
      */
     public static final String ACCESS_TOKEN_TYPE = "access";

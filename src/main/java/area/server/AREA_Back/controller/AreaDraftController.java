@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -319,26 +318,18 @@ public class AreaDraftController {
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         try {
-            String accessToken = extractAccessTokenFromCookies(request);
+            UUID userId = area.server.AREA_Back.util.AuthenticationUtils.getCurrentUserId();
+            if (userId != null) {
+                return userId;
+            }
+            String accessToken = area.server.AREA_Back.util.AuthenticationUtils.extractAccessToken(request);
             if (accessToken == null) {
-                throw new RuntimeException("Access token not found in cookies");
+                throw new RuntimeException("Access token not found");
             }
             return jwtService.extractUserIdFromAccessToken(accessToken);
         } catch (Exception e) {
             log.error("Failed to extract user ID from request: {}", e.getMessage());
             throw new RuntimeException("Failed to extract user ID", e);
         }
-    }
-
-    private String extractAccessTokenFromCookies(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("authToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
     }
 }

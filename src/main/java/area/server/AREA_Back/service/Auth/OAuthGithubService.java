@@ -79,7 +79,7 @@ public class OAuthGithubService extends OAuthService {
             "GitHub",
             "https://img.icons8.com/material-outlined/24/github.png",
             "https://github.com/login/oauth/authorize?client_id=" + githubClientId
-                + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/oauth-callback",
+                + "&scope=user:email&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback",
             githubClientId,
             githubClientSecret,
             jwtService,
@@ -242,7 +242,7 @@ public class OAuthGithubService extends OAuthService {
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
             body.add("code", authorizationCode);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
 
             HttpEntity<MultiValueMap<String, String>> githubRequest = new HttpEntity<>(body, headers);
 

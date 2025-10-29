@@ -76,7 +76,7 @@ public class OAuthSlackService extends OAuthService {
             "Slack",
             "https://img.icons8.com/color/48/slack-new.png",
             "https://slack.com/oauth/v2/authorize?client_id=" + slackClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&scope=channels:manage,chat:write,channels:join,reactions:write,"
                 + "pins:write,channels:read,channels:history,users:read,files:read"
                 + "&user_scope=identity.basic,identity.email,identity.avatar",
@@ -293,7 +293,7 @@ public class OAuthSlackService extends OAuthService {
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
             body.add("code", authorizationCode);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
 
             HttpEntity<MultiValueMap<String, String>> slackRequest = new HttpEntity<>(body, headers);
 

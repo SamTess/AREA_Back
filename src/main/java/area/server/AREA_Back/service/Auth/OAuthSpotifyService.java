@@ -83,7 +83,7 @@ public class OAuthSpotifyService extends OAuthService {
             "https://accounts.spotify.com/authorize?"
                 + "client_id=" + spotifyClientId
                 + "&response_type=code"
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&scope=" + SPOTIFY_SCOPES,
             spotifyClientId,
             spotifyClientSecret,
@@ -293,7 +293,7 @@ public class OAuthSpotifyService extends OAuthService {
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             body.add("grant_type", "authorization_code");
             body.add("code", authorizationCode);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
 
             HttpEntity<MultiValueMap<String, String>> spotifyRequest = new HttpEntity<>(body, headers);
 

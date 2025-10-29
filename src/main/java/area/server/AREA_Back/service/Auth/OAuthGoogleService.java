@@ -94,7 +94,7 @@ public class OAuthGoogleService extends OAuthService {
             "Google",
             "https://img.icons8.com/?size=100&id=17949&format=png&color=000000",
             "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&response_type=code"
                 + "&scope=openid%20email%20profile"
                 + "%20https://www.googleapis.com/auth/gmail.readonly"
@@ -262,7 +262,7 @@ public class OAuthGoogleService extends OAuthService {
             body.add("code", authorizationCode);
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
             body.add("grant_type", "authorization_code");
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);

@@ -2,21 +2,23 @@ package area.server.AREA_Back.controller;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.Map;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import area.server.AREA_Back.service.Auth.OAuthStateService;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Controller
+@RequiredArgsConstructor
 public class OAuthCallbackController {
+
+	private final OAuthStateService oauthStateService;
 
 	@GetMapping("/api/oauth-callback")
 	public void handleOAuthCallback(
@@ -33,26 +35,21 @@ public class OAuthCallbackController {
 
 			if (state != null && !state.isEmpty()) {
 				try {
-					String decoded = new String(Base64.getDecoder().decode(state), StandardCharsets.UTF_8);
-					log.debug("Decoded OAuth state: {}", decoded);
-
-					ObjectMapper objectMapper = new ObjectMapper();
-					JsonNode stateJson = objectMapper.readTree(decoded);
-
-					if (stateJson.has("mobile_redirect")) {
-						mobileRedirect = stateJson.get("mobile_redirect").asText();
-						log.info("Mobile OAuth request detected with redirect: {}", mobileRedirect);
-					}
-
-					if (stateJson.has("mode")) {
-						mode = stateJson.get("mode").asText();
-					}
-
-					if (stateJson.has("provider")) {
-						provider = stateJson.get("provider").asText();
-					}
+					Map<String, String> stateData = oauthStateService.validateAndParseState(state);
+					mobileRedirect = stateData.get("mobile_redirect");
+					mode = stateData.getOrDefault("mode", "login");
+					provider = stateData.getOrDefault("provider", "google");
+					log.info("OAuth state validated successfully for provider: {}", provider);
+				} catch (SecurityException e) {
+					log.error("OAuth state validation failed: {}", e.getMessage());
+					response.sendError(HttpServletResponse.SC_FORBIDDEN,
+						"Invalid OAuth state - possible security attack");
+					return;
 				} catch (Exception e) {
-					log.error("Failed to decode state: {}", state, e);
+					log.error("Failed to parse OAuth state", e);
+					response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+						"Invalid OAuth state format");
+					return;
 				}
 			}
 
@@ -81,7 +78,6 @@ public class OAuthCallbackController {
 
 			String frontendUrl = System.getenv("FRONTEND_URL");
 			if (frontendUrl == null || frontendUrl.isEmpty() || frontendUrl.contains("{{")) {
-				// Use HTTPS by default in production, HTTP only for local development
 				String env = System.getenv("SPRING_PROFILES_ACTIVE");
 				if ("prod".equals(env) || "production".equals(env)) {
 					log.warn("FRONTEND_URL not set in production, using default HTTPS URL");

@@ -39,6 +39,18 @@ public class ExecutionTriggerService {
         log.info("Triggering AREA execution for action instance: {} (activation: {})",
                 actionInstance.getId(), activationMode);
 
+        if (actionInstance.getArea() != null && !actionInstance.getArea().getEnabled()) {
+            log.warn("Skipping execution for action instance {} - AREA {} is disabled",
+                    actionInstance.getId(), actionInstance.getArea().getId());
+            return;
+        }
+
+        if (!actionInstance.getEnabled()) {
+            log.warn("Skipping execution for action instance {} - ActionInstance is disabled",
+                    actionInstance.getId());
+            return;
+        }
+
         try {
             var linkedActions = actionLinkRepository
                     .findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());

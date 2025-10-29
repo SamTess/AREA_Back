@@ -69,7 +69,7 @@
     <!-- OAuth Discord Service constructor has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"
               files="OAuthDiscordService\.java"
-              lines="60"/>
+              lines="62"/>
 
     <!-- OAuth base Service has many dependencies from Spring DI -->
     <suppress checks="ParameterNumber"

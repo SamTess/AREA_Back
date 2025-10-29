@@ -676,6 +676,7 @@ class SpotifyActionServiceTest {
         item.put("name", "Changed Track");
         item.put("uri", "spotify:track:456");
         response.put("item", item);
+        response.put("is_playing", true);
 
         when(restTemplate.exchange(
             contains("/currently-playing"),

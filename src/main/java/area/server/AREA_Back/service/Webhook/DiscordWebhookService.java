@@ -58,6 +58,7 @@ public class DiscordWebhookService {
                 .register(meterRegistry);
     }
 
+    @Transactional
     public Map<String, Object> processWebhook(Map<String, Object> payload, String signature, String timestamp) {
         webhookCounter.increment();
         log.info("Processing Discord webhook");
@@ -240,7 +241,6 @@ public class DiscordWebhookService {
         );
     }
 
-    @Transactional
     private void triggerMatchingActions(String actionKey, Map<String, Object> eventData) {
         try {
             List<ActionInstance> matchingInstances = actionInstanceRepository
@@ -254,6 +254,12 @@ public class DiscordWebhookService {
                 log.debug("Checking action instance with definition key: {}", definitionKey);
 
                 if (definitionKey.equals(actionKey)) {
+                    if (!eventMatchesActionParams(actionInstance, eventData)) {
+                        log.debug("Event does not match action instance {} params, skipping",
+                                actionInstance.getId());
+                        continue;
+                    }
+
                     try {
                         log.info("Triggering AREA execution for Discord event: {} (instance: {})",
                             actionKey, actionInstance.getId());
@@ -270,5 +276,41 @@ public class DiscordWebhookService {
         } catch (Exception e) {
             log.error("Failed to find matching Discord action instances: {}", e.getMessage(), e);
         }
+    }
+
+    /**
+     * Check if the event data matches the action instance's configured parameters
+     */
+    private boolean eventMatchesActionParams(ActionInstance actionInstance, Map<String, Object> eventData) {
+        Map<String, Object> params = actionInstance.getParams();
+        if (params == null || params.isEmpty()) {
+            return true;
+        }
+
+        if (params.containsKey("channel_id")) {
+            String configuredChannel = (String) params.get("channel_id");
+            String eventChannel = (String) eventData.get("channel_id");
+
+            if (configuredChannel != null && !configuredChannel.isEmpty()) {
+                if (!configuredChannel.equals(eventChannel)) {
+                    log.trace("Channel mismatch: configured={}, event={}", configuredChannel, eventChannel);
+                    return false;
+                }
+            }
+        }
+
+        if (params.containsKey("guild_id")) {
+            String configuredGuild = (String) params.get("guild_id");
+            String eventGuild = (String) eventData.get("guild_id");
+
+            if (configuredGuild != null && !configuredGuild.isEmpty()) {
+                if (!configuredGuild.equals(eventGuild)) {
+                    log.trace("Guild mismatch: configured={}, event={}", configuredGuild, eventGuild);
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

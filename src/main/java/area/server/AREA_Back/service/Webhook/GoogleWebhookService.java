@@ -159,7 +159,7 @@ public class GoogleWebhookService {
         if (notification.has("emailAddress")) {
             emailAddress = notification.get("emailAddress").asText();
         }
-        
+
         String historyId = null;
         if (notification.has("historyId")) {
             historyId = notification.get("historyId").asText();
@@ -211,12 +211,38 @@ public class GoogleWebhookService {
     }
 
     /**
-     * Find user by Gmail email address
+     * Find user by Gmail email address from Google OAuth identity token_meta
      */
     private UUID findUserByGmailAddress(String emailAddress) {
-        return userRepository.findByEmail(emailAddress)
+        UUID userId = userRepository.findByEmail(emailAddress)
             .map(User::getId)
             .orElse(null);
+
+        if (userId != null) {
+            return userId;
+        }
+
+        List<UserOAuthIdentity> googleIdentities = userOAuthIdentityRepository.findByProvider("google");
+        for (UserOAuthIdentity identity : googleIdentities) {
+            if (identity.getTokenMeta() != null && !identity.getTokenMeta().isEmpty()) {
+                try {
+                    String tokenMetaJson = objectMapper.writeValueAsString(identity.getTokenMeta());
+                    JsonNode meta = objectMapper.readTree(tokenMetaJson);
+                    if (meta.has("email")) {
+                        String gmailAddress = meta.get("email").asText();
+                        if (emailAddress.equalsIgnoreCase(gmailAddress)) {
+                            log.debug("Found user by Gmail address in OAuth token_meta: {}", emailAddress);
+                            return identity.getUser().getId();
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to parse token_meta for OAuth identity {}: {}",
+                        identity.getId(), e.getMessage());
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

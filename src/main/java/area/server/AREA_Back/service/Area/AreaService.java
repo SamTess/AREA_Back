@@ -315,7 +315,11 @@ public class AreaService {
             boolean isAction) {
 
         if (jsonbData == null || jsonbData.isEmpty()) {
-            return jsonbData != null ? jsonbData : new ArrayList<>();
+            if (jsonbData != null) {
+                return jsonbData;
+            } else {
+                return new ArrayList<>();
+            }
         }
 
         List<Map<String, Object>> enriched = new ArrayList<>();
@@ -337,7 +341,8 @@ public class AreaService {
                 if (matchingInstance != null) {
                     enrichedItem.put("id", matchingInstance.getId().toString());
 
-                    enrichedItem.put("serviceId", matchingInstance.getActionDefinition().getService().getId().toString());
+                    enrichedItem.put("serviceId",
+                        matchingInstance.getActionDefinition().getService().getId().toString());
                     enrichedItem.put("serviceName", matchingInstance.getActionDefinition().getService().getName());
                     enrichedItem.put("serviceKey", matchingInstance.getActionDefinition().getService().getKey());
                     enrichedItem.put("actionKey", matchingInstance.getActionDefinition().getKey());

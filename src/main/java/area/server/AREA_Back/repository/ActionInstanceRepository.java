@@ -91,17 +91,17 @@ public interface ActionInstanceRepository extends JpaRepository<ActionInstance, 
     List<ActionInstance> findActiveSpotifyActionInstances();
 
     @Query("SELECT ai FROM ActionInstance ai "
-           + "JOIN ai.actionDefinition ad "
-           + "JOIN ad.service s "
+           + "JOIN FETCH ai.actionDefinition ad "
+           + "JOIN FETCH ad.service s "
            + "WHERE ai.user.id = :userId "
            + "AND s.key = :serviceKey "
            + "AND ai.enabled = true")
-    List<ActionInstance> findEnabledActionInstancesByUserAndService(@Param("userId") UUID userId, 
+    List<ActionInstance> findEnabledActionInstancesByUserAndService(@Param("userId") UUID userId,
                                                                    @Param("serviceKey") String serviceKey);
 
     @Query("SELECT ai FROM ActionInstance ai "
-           + "JOIN ai.actionDefinition ad "
-           + "JOIN ad.service s "
+           + "JOIN FETCH ai.actionDefinition ad "
+           + "JOIN FETCH ad.service s "
            + "WHERE s.key = :serviceKey "
            + "AND ai.enabled = true")
     List<ActionInstance> findEnabledActionInstancesByService(@Param("serviceKey") String serviceKey);

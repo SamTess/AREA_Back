@@ -515,7 +515,7 @@ public class OAuthGoogleService extends OAuthService {
         String baseUsername;
         if (profileData.givenName != null && !profileData.givenName.trim().isEmpty()) {
             baseUsername = profileData.givenName.trim().toLowerCase()
-                .replaceAll("[^a-z0-9]", ""); // Enlever caractères spéciaux
+                .replaceAll("[^a-z0-9]", "");
         } else if (profileData.name != null && !profileData.name.trim().isEmpty()) {
             baseUsername = profileData.name.trim().toLowerCase()
                 .replaceAll("[^a-z0-9]", "");
@@ -530,9 +530,18 @@ public class OAuthGoogleService extends OAuthService {
         }
         String username = baseUsername;
         int suffix = 1;
+        int maxAttempts = 100;
+        int attempts = 0;
         while (userRepository.findByUsername(username).isPresent()) {
+            if (attempts >= maxAttempts) {
+                log.error("Failed to generate unique username after {} attempts for base: {}", maxAttempts, baseUsername);
+                throw new RuntimeException(
+                    "Unable to generate unique username after " + maxAttempts + " attempts. Please try again."
+                );
+            }
             username = baseUsername + suffix;
             suffix++;
+            attempts++;
         }
         return username;
     }

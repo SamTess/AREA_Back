@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Introduction](#introduction)
+- [System Diagrams](#system-diagrams)
 - [System Architecture](#system-architecture)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
@@ -13,6 +14,23 @@
 ## Introduction
 
 The AREA Backend is a Spring Boot-based REST API that serves as the core engine for the AREA automation platform. It provides user management, service integration, automation creation, and execution capabilities through a robust microservices-oriented architecture.
+
+## System Diagrams
+
+For detailed visual representations of the system architecture and workflows, refer to our comprehensive [System Diagrams](./diagrams/README.md) documentation:
+
+### Class Diagrams
+- **[Core Entities](./diagrams/01-core-entities-class-diagram.md)**: Complete domain model with all main entities and relationships
+- **[Authentication System](./diagrams/02-authentication-class-diagram.md)**: JWT, OAuth2, and service account management
+- **[Service Integration Architecture](./diagrams/03-service-integration-class-diagram.md)**: External service integration and action execution
+
+### Sequence Diagrams
+- **[OAuth Authentication Flow](./diagrams/04-oauth-flow-sequence.md)**: User login and service account connection
+- **[AREA Creation Flow](./diagrams/05-area-creation-sequence.md)**: Complete workflow creation process
+- **[AREA Execution Flow](./diagrams/06-area-execution-sequence.md)**: Trigger detection to reaction completion
+- **[Webhook System](./diagrams/07-webhook-system-sequence.md)**: Webhook registration, validation, and processing
+
+These diagrams provide essential visual documentation of the system's most important components and workflows.
 
 ## System Architecture
 

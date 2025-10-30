@@ -210,7 +210,18 @@ Database migrations are located in `src/main/resources/db/migration/` and are au
 
 Detailed documentation is available in the `docs/` directory:
 
+### Technical Documentation
+- **[System Diagrams](docs/technical/diagrams/README.md)** - UML class and sequence diagrams
+  - [Core Entities Class Diagram](docs/technical/diagrams/01-core-entities-class-diagram.md)
+  - [Authentication System Class Diagram](docs/technical/diagrams/02-authentication-class-diagram.md)
+  - [Service Integration Architecture](docs/technical/diagrams/03-service-integration-class-diagram.md)
+  - [OAuth Authentication Flow](docs/technical/diagrams/04-oauth-flow-sequence.md)
+  - [AREA Creation Flow](docs/technical/diagrams/05-area-creation-sequence.md)
+  - [AREA Execution Flow](docs/technical/diagrams/06-area-execution-sequence.md)
+  - [Webhook System](docs/technical/diagrams/07-webhook-system-sequence.md)
 - [API Documentation](docs/technical/06-api-documentation.md) - Complete API reference
+
+### Guides
 - [User Email Verification Guide](docs/user-email-verification-guide.md) - Email verification and password reset
 - [Email Configuration Guide](docs/email-configuration-guide.md) - SMTP and Resend setup
 - [Unit Testing Guide](docs/unit-testing-guide.md) - Testing best practices

@@ -42,8 +42,7 @@ public class SecurityConfig {
             "https://*.ngrok-free.app",
             "https://*.ngrok.io",
             "http://10.0.2.2:*",
-            "http://192.168.*.*:*",
-            "http://196.168.*.*:*"
+            "http://192.168.*.*:*"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(

@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -193,7 +194,8 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a user",
-               description = "Deletes an existing user. Users can only delete their own account unless they are an admin.")
+               description = "Deletes an existing user. Users can only delete their own account "
+                           + "unless they are an admin.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "User deleted successfully"),
         @ApiResponse(responseCode = "404", description = "User not found"),
@@ -207,13 +209,13 @@ public class UserController {
         boolean isAdmin = AuthenticationUtils.isCurrentUserAdmin();
 
         if (currentUserId == null) {
-            return ResponseEntity.status(401)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(java.util.Map.of("error", "Unauthorized"));
         }
 
         if (!isAdmin && !currentUserId.equals(id)) {
             log.warn("User {} attempted to delete account {} without permission", currentUserId, id);
-            return ResponseEntity.status(403)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(java.util.Map.of("error", "You can only delete your own account"));
         }
 

@@ -163,13 +163,15 @@ class OAuthControllerTest {
             .thenReturn(authResponse);
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getMessage());
+        assertTrue(response.getBody() instanceof AuthResponse);
+        AuthResponse resultAuthResponse = (AuthResponse) response.getBody();
+        assertNotNull(resultAuthResponse);
+        assertNotNull(resultAuthResponse.getMessage());
         verify(oauthGoogleService).authenticate(any(OAuthLoginRequest.class), eq(httpServletResponse));
     }
 
@@ -179,7 +181,7 @@ class OAuthControllerTest {
         Map<String, String> requestBody = new HashMap<>();
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -194,7 +196,7 @@ class OAuthControllerTest {
         requestBody.put("code", "");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -209,7 +211,7 @@ class OAuthControllerTest {
         requestBody.put("code", "   ");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -224,7 +226,7 @@ class OAuthControllerTest {
         requestBody.put("code", "valid-code");
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("invalid-provider", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("invalid-provider", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -242,7 +244,7 @@ class OAuthControllerTest {
             .thenThrow(new UnsupportedOperationException("Not implemented"));
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -259,7 +261,7 @@ class OAuthControllerTest {
             .thenThrow(new RuntimeException("Authentication failed"));
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("google", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -279,7 +281,7 @@ class OAuthControllerTest {
             .thenReturn(authResponse);
 
         // When
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("GOOGLE", requestBody, httpServletResponse);
+        ResponseEntity<?> response = oauthController.exchangeToken("GOOGLE", requestBody, httpServletResponse);
 
         // Then
         assertNotNull(response);
@@ -358,7 +360,7 @@ class OAuthControllerTest {
 
         oauthController = new OAuthController(List.of(discordService));
 
-        ResponseEntity<AuthResponse> response = oauthController.exchangeToken("discord",
+        ResponseEntity<?> response = oauthController.exchangeToken("discord",
             requestBody, httpServletResponse);
 
         assertNotNull(response);

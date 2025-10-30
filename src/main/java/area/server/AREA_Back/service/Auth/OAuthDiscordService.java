@@ -28,6 +28,7 @@ import area.server.AREA_Back.entity.UserOAuthIdentity;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
+import area.server.AREA_Back.service.Webhook.DiscordWelcomeService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -49,6 +50,7 @@ public class OAuthDiscordService extends OAuthService {
     private final UserRepository userRepository;
     private final MeterRegistry meterRegistry;
     private final AuthService authService;
+    private final DiscordWelcomeService discordWelcomeService;
 
     private Counter oauthLoginSuccessCounter;
     private Counter oauthLoginFailureCounter;
@@ -56,7 +58,7 @@ public class OAuthDiscordService extends OAuthService {
     private Counter tokenExchangeCalls;
     private Counter tokenExchangeFailures;
 
-    @SuppressWarnings("ParameterNumber")
+    @SuppressWarnings({"ParameterNumber", "checkstyle:ParameterNumber"})
     public OAuthDiscordService(
         @Value("${spring.security.oauth2.client.registration.discord.client-id}") final String discordClientId,
         @Value("${spring.security.oauth2.client.registration.discord.client-secret}")
@@ -71,6 +73,7 @@ public class OAuthDiscordService extends OAuthService {
         final UserOAuthIdentityRepository userOAuthIdentityRepository,
         final UserRepository userRepository,
         final AuthService authService,
+        final DiscordWelcomeService discordWelcomeService,
         final RestTemplate restTemplate
     ) {
         super(
@@ -80,7 +83,8 @@ public class OAuthDiscordService extends OAuthService {
             "https://discord.com/api/oauth2/authorize?client_id=" + discordClientId
                 + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
                 + "&response_type=code"
-                + "&scope=bot%20identify%20guilds%20email%20messages.read",
+                + "&scope=bot%20identify%20guilds%20email%20messages.read"
+                + "&permissions=8",
             discordClientId,
             discordClientSecret,
             jwtService,
@@ -93,6 +97,7 @@ public class OAuthDiscordService extends OAuthService {
         this.userOAuthIdentityRepository = userOAuthIdentityRepository;
         this.userRepository = userRepository;
         this.authService = authService;
+        this.discordWelcomeService = discordWelcomeService;
         this.restTemplate = restTemplate;
     }
 
@@ -152,6 +157,12 @@ public class OAuthDiscordService extends OAuthService {
 
             userOAuthIdentityRepository.save(oauth);
             log.info("Saved OAuth identity successfully");
+
+            try {
+                discordWelcomeService.sendWelcomeMessagesToNewGuilds(tokenResponse.accessToken);
+            } catch (Exception e) {
+                log.warn("Failed to send Discord welcome messages, but OAuth succeeded: {}", e.getMessage());
+            }
 
             oauthLoginSuccessCounter.increment();
             log.info("Discord OAuth authentication completed successfully for user: {}", user.getId());
@@ -217,6 +228,13 @@ public class OAuthDiscordService extends OAuthService {
             oauth = userOAuthIdentityRepository.save(oauth);
             log.info("Successfully linked Discord account {} to user {}",
                     profileData.userIdentifier, existingUser.getId());
+
+            try {
+                discordWelcomeService.sendWelcomeMessagesToNewGuilds(tokenResponse.accessToken);
+            } catch (Exception e) {
+                log.warn("Failed to send Discord welcome messages, but account linking succeeded: {}", e.getMessage());
+            }
+
             return oauth;
         } catch (Exception e) {
             log.error("Failed to link Discord account to existing user", e);

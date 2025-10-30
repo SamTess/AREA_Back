@@ -10,9 +10,9 @@ import area.server.AREA_Back.service.Area.Services.DiscordActionService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DiscordEventPollingService {
 
     private static final int DEFAULT_POLLING_INTERVAL_SECONDS = 300;
+    private static final int MINIMUM_POLLING_INTERVAL_SECONDS = 1;
+    private static final int SCHEDULER_CHECK_INTERVAL_SECONDS = 5;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private final DiscordActionService discordActionService;
     private final ActionInstanceRepository actionInstanceRepository;
@@ -40,55 +47,144 @@ public class DiscordEventPollingService {
     private Counter pollingFailures;
 
     private final Map<UUID, LocalDateTime> lastPollTimes = new ConcurrentHashMap<>();
+    private final Map<UUID, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> managerTask;
 
-    @PostConstruct
+        @PostConstruct
+    public void init() {
+        initMetrics();
+        startScheduler();
+    }
+
     public void initMetrics() {
-        this.pollingCycles = Counter.builder("discord.polling.cycles")
-            .description("Number of Discord polling cycles")
+        pollingCycles = Counter.builder("discord.polling.cycles")
+            .description("Total number of Discord polling cycles executed")
             .register(meterRegistry);
 
-        this.eventsFound = Counter.builder("discord.polling.events_found")
-            .description("Number of Discord events found")
+        eventsFound = Counter.builder("discord.polling.events_found")
+            .description("Total number of Discord events found")
             .register(meterRegistry);
 
-        this.pollingFailures = Counter.builder("discord.polling.failures")
-            .description("Number of Discord polling failures")
+        pollingFailures = Counter.builder("discord.polling.failures")
+            .description("Total number of Discord polling failures")
             .register(meterRegistry);
     }
 
-    @Scheduled(fixedRate = 10000)
-    public void pollDiscordEvents() {
-        pollingCycles.increment();
-        log.info("Starting Discord events polling cycle");
+    public void startScheduler() {
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "discord-polling-scheduler");
+            thread.setDaemon(true);
+            return thread;
+        });
+        managerTask = scheduler.scheduleAtFixedRate(
+            this::managePollingTasks,
+            0,
+            SCHEDULER_CHECK_INTERVAL_SECONDS,
+            TimeUnit.SECONDS
+        );
 
+        log.info("DiscordEventPollingService scheduler started");
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        log.info("Shutting down DiscordEventPollingService");
+
+        if (managerTask != null) {
+            managerTask.cancel(false);
+        }
+
+        scheduledTasks.values().forEach(task -> task.cancel(false));
+        scheduledTasks.clear();
+
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private void managePollingTasks() {
         try {
             List<ActionInstance> discordActionInstances = actionInstanceRepository
                 .findActiveDiscordActionInstances();
 
-            log.info("Found {} Discord action instances to check", discordActionInstances.size());
+            log.debug("Managing polling tasks for {} Discord action instances", discordActionInstances.size());
+
+            scheduledTasks.keySet().removeIf(actionInstanceId -> {
+                boolean exists = discordActionInstances.stream()
+                    .anyMatch(ai -> ai.getId().equals(actionInstanceId));
+                if (!exists) {
+                    ScheduledFuture<?> task = scheduledTasks.get(actionInstanceId);
+                    if (task != null) {
+                        task.cancel(false);
+                    }
+                    log.debug("Removed polling task for deleted action instance {}", actionInstanceId);
+                    return true;
+                }
+                return false;
+            });
 
             for (ActionInstance actionInstance : discordActionInstances) {
-                try {
-                    processActionInstance(actionInstance);
-                } catch (Exception e) {
-                    pollingFailures.increment();
-                    log.error("Failed to process Discord action instance {}: {}",
-                             actionInstance.getId(), e.getMessage(), e);
+                if (!actionInstance.getEnabled()) {
+                    continue;
+                }
+
+                if (actionInstance.getArea() != null && !actionInstance.getArea().getEnabled()) {
+                    continue;
+                }
+
+                List<ActivationMode> activationModes = activationModeRepository
+                    .findByActionInstanceAndTypeAndEnabled(actionInstance, ActivationModeType.POLL, true);
+
+                if (activationModes.isEmpty()) {
+                    continue;
+                }
+
+                ActivationMode activationMode = activationModes.get(0);
+                int pollingInterval = getPollingInterval(activationMode);
+                UUID actionInstanceId = actionInstance.getId();
+
+                ScheduledFuture<?> existingTask = scheduledTasks.get(actionInstanceId);
+                if (existingTask == null || existingTask.isCancelled() || existingTask.isDone()) {
+                    if (managerTask == null) {
+                        processActionInstance(actionInstance);
+                    } else {
+                        ScheduledFuture<?> newTask = scheduler.scheduleAtFixedRate(
+                            () -> processActionInstance(actionInstance),
+                            0,
+                            pollingInterval,
+                            TimeUnit.SECONDS
+                        );
+                        scheduledTasks.put(actionInstanceId, newTask);
+                        log.info("Scheduled polling task for action instance {} with interval {} seconds",
+                                actionInstanceId, pollingInterval);
+                    }
                 }
             }
 
-            log.info("Completed Discord events polling cycle, processed {} instances",
-                     discordActionInstances.size());
-
         } catch (Exception e) {
             pollingFailures.increment();
-            log.error("Failed to complete Discord events polling cycle: {}", e.getMessage(), e);
+            log.error("Error managing polling tasks: {}", e.getMessage(), e);
         }
     }
 
     @Transactional
     private void processActionInstance(ActionInstance actionInstance) {
         if (!actionInstance.getEnabled()) {
+            return;
+        }
+
+        if (actionInstance.getArea() != null && !actionInstance.getArea().getEnabled()) {
+            log.debug("Skipping action instance {} - AREA {} is disabled",
+                     actionInstance.getId(), actionInstance.getArea().getId());
             return;
         }
 
@@ -149,6 +245,7 @@ public class DiscordEventPollingService {
             }
 
         } catch (Exception e) {
+            pollingFailures.increment();
             log.error("Failed to check Discord events for action instance {}: {}",
                      actionInstance.getId(), e.getMessage(), e);
         } finally {
@@ -172,13 +269,35 @@ public class DiscordEventPollingService {
 
     private int getPollingInterval(ActivationMode activationMode) {
         Map<String, Object> config = activationMode.getConfig();
-        return (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
+        Integer configuredInterval = (Integer) config.get("poll_interval");
+
+        if (configuredInterval == null) {
+            configuredInterval = (Integer) config.get("interval_seconds");
+        }
+
+        if (configuredInterval == null) {
+            configuredInterval = DEFAULT_POLLING_INTERVAL_SECONDS;
+        }
+
+        if (configuredInterval < MINIMUM_POLLING_INTERVAL_SECONDS) {
+            log.warn("Polling interval {} seconds is below minimum {}, using minimum",
+                    configuredInterval, MINIMUM_POLLING_INTERVAL_SECONDS);
+            return MINIMUM_POLLING_INTERVAL_SECONDS;
+        }
+
+        return configuredInterval;
     }
 
     private LocalDateTime calculateLastCheckTime(ActivationMode activationMode) {
-        Map<String, Object> config = activationMode.getConfig();
-        Integer intervalSeconds = (Integer) config.getOrDefault("pollingInterval", DEFAULT_POLLING_INTERVAL_SECONDS);
-
+        int intervalSeconds = getPollingInterval(activationMode);
         return LocalDateTime.now().minusSeconds(intervalSeconds);
+    }
+
+    /**
+     * Public method to trigger polling for testing purposes.
+     */
+    public void pollDiscordEvents() {
+        pollingCycles.increment();
+        managePollingTasks();
     }
 }

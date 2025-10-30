@@ -66,6 +66,11 @@ class WebhookEventProcessingServiceTest {
         actionInstance.setId(UUID.randomUUID());
         actionInstance.setActionDefinition(actionDefinition);
 
+        Area area = new Area();
+        area.setId(UUID.randomUUID());
+        area.setEnabled(true);
+        actionInstance.setArea(area);
+
         webhookActivationMode = new ActivationMode();
         webhookActivationMode.setType(ActivationModeType.WEBHOOK);
         webhookActivationMode.setEnabled(true);
@@ -172,7 +177,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testProcessWebhookEvent_GitHubIssues() {
         actionDefinition.setKey("new_issue");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -190,7 +195,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testProcessWebhookEvent_GitHubPullRequest() {
         actionDefinition.setKey("new_pull_request");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -208,7 +213,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testProcessWebhookEvent_GitHubPush() {
         actionDefinition.setKey("push_to_branch");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -227,7 +232,7 @@ class WebhookEventProcessingServiceTest {
     void testProcessWebhookEvent_SlackMessage() {
         service.setKey("slack");
         actionDefinition.setKey("new_message");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -246,7 +251,7 @@ class WebhookEventProcessingServiceTest {
     void testProcessWebhookEvent_SlackReaction() {
         service.setKey("slack");
         actionDefinition.setKey("reaction_added");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -354,7 +359,7 @@ class WebhookEventProcessingServiceTest {
     void testProcessWebhookEvent_DiscordService() {
         service.setKey("discord");
         actionDefinition.setKey("new_message");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findAll())
@@ -372,7 +377,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_IssueUpdated() {
         actionDefinition.setKey("issue_updated");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -390,7 +395,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_PullRequestUpdated() {
         actionDefinition.setKey("pr_updated");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -408,7 +413,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_CommitPushed() {
         actionDefinition.setKey("commit_pushed");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -426,7 +431,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_NewRelease() {
         actionDefinition.setKey("new_release");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -444,7 +449,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_RepositoryStarred() {
         actionDefinition.setKey("repository_starred");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -462,7 +467,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_RepositoryForked() {
         actionDefinition.setKey("repository_forked");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -480,7 +485,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesGitHubAction_Ping() {
         actionDefinition.setKey("any_action");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "github"))
@@ -499,7 +504,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesSlackAction_MessagePosted() {
         service.setKey("slack");
         actionDefinition.setKey("message_posted");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "slack"))
@@ -518,7 +523,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesSlackAction_MemberJoined() {
         service.setKey("slack");
         actionDefinition.setKey("member_joined");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "slack"))
@@ -537,7 +542,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesSlackAction_AppMention() {
         service.setKey("slack");
         actionDefinition.setKey("app_mention");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "slack"))
@@ -556,7 +561,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesSlackAction_Default() {
         service.setKey("slack");
         actionDefinition.setKey("custom_event");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "slack"))
@@ -575,7 +580,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_MessageCreated() {
         service.setKey("discord");
         actionDefinition.setKey("message_created");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -594,7 +599,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_ReactionAdded() {
         service.setKey("discord");
         actionDefinition.setKey("reaction_added");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -613,7 +618,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_MemberJoined() {
         service.setKey("discord");
         actionDefinition.setKey("member_joined");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -632,7 +637,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_ChannelCreated() {
         service.setKey("discord");
         actionDefinition.setKey("channel_created");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -651,7 +656,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_ServerJoined() {
         service.setKey("discord");
         actionDefinition.setKey("server_joined");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -670,7 +675,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesDiscordAction_Default() {
         service.setKey("discord");
         actionDefinition.setKey("unknown_action");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "discord"))
@@ -689,7 +694,7 @@ class WebhookEventProcessingServiceTest {
     void testMatchesActionType_FallbackContains() {
         service.setKey("custom_service");
         actionDefinition.setKey("custom_action_test");
-        
+
         Map<String, Object> payload = new HashMap<>();
 
         when(actionInstanceRepository.findEnabledActionInstancesByUserAndService(userId, "custom_service"))
@@ -708,12 +713,12 @@ class WebhookEventProcessingServiceTest {
     void testCreateExecutionForWebhook_WithActionLinks() {
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
         actionLink.setTargetActionInstance(targetInstance);
-        
+
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("field1", "value1");
         actionLink.setMapping(mapping);
@@ -756,7 +761,7 @@ class WebhookEventProcessingServiceTest {
     void testCreateExecutionForWebhook_NoChainActivationMode() {
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -788,12 +793,12 @@ class WebhookEventProcessingServiceTest {
     void testCreateExecutionForWebhook_WithMappingException() {
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
         actionLink.setTargetActionInstance(targetInstance);
-        
+
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("field1", "value1");
         actionLink.setMapping(mapping);
@@ -855,7 +860,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("issue_updated");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -896,7 +901,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("issue_updated");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -937,7 +942,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("issue_closed");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -978,7 +983,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("pr_updated");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1019,7 +1024,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("pr_merged");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1061,7 +1066,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("new_message");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1103,7 +1108,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("reaction_added");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1145,7 +1150,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("member_joined");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1187,7 +1192,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("new_message");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1229,7 +1234,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("new_message");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1271,7 +1276,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("message_reaction");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1313,7 +1318,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("message_reaction");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1355,7 +1360,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("new_member");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1397,7 +1402,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("new_member");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1439,7 +1444,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("channel_created");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1481,7 +1486,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("channel_created");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);
@@ -1520,7 +1525,7 @@ class WebhookEventProcessingServiceTest {
     @Test
     void testMatchesEventSubType_NonMatchingAction() {
         actionDefinition.setKey("new_issue");
-        
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("action", "closed");
 
@@ -1545,7 +1550,7 @@ class WebhookEventProcessingServiceTest {
         actionDefinition.setKey("some_action");
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
-        
+
         ActionInstance targetInstance = new ActionInstance();
         targetInstance.setId(UUID.randomUUID());
         targetInstance.setActionDefinition(actionDefinition);

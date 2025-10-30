@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +56,9 @@ public class SpotifyActionService {
     private Counter spotifyActionsExecuted;
     private Counter spotifyActionsFailed;
     private Counter spotifyEventsChecked;
+
+    private final Map<UUID, String> lastKnownTrackIds = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> lastKnownPlaybackStates = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -127,15 +131,18 @@ public class SpotifyActionService {
                 return Collections.emptyList();
             }
 
+            Map<String, Object> enrichedParams = new HashMap<>(actionParams);
+            enrichedParams.put("_internal_user_id", userId);
+
             switch (actionKey) {
                 case "new_saved_track":
-                    return checkNewSavedTracks(spotifyToken, actionParams, lastCheck);
+                    return checkNewSavedTracks(spotifyToken, enrichedParams, lastCheck);
                 case "playback_started":
-                    return checkPlaybackStarted(spotifyToken, actionParams, lastCheck);
+                    return checkPlaybackStarted(spotifyToken, enrichedParams, lastCheck);
                 case "track_changed":
-                    return checkTrackChanged(spotifyToken, actionParams, lastCheck);
+                    return checkTrackChanged(spotifyToken, enrichedParams, lastCheck);
                 case "playlist_updated":
-                    return checkPlaylistUpdated(spotifyToken, actionParams, lastCheck);
+                    return checkPlaylistUpdated(spotifyToken, enrichedParams, lastCheck);
                 default:
                     log.warn("Unknown Spotify trigger: {}", actionKey);
                     return Collections.emptyList();
@@ -241,10 +248,44 @@ public class SpotifyActionService {
             Map<String, Object> body = response.getBody();
             Boolean isPlaying = (Boolean) body.get("is_playing");
 
-            if (Boolean.TRUE.equals(isPlaying)) {
+            Object userIdObj = params.get("_internal_user_id");
+            UUID userId = null;
+            if (userIdObj instanceof UUID) {
+                userId = (UUID) userIdObj;
+            } else if (userIdObj instanceof String) {
+                try {
+                    userId = UUID.fromString((String) userIdObj);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid userId format in params: {}", userIdObj);
+                }
+            }
+
+            if (userId == null) {
+                if (Boolean.TRUE.equals(isPlaying)) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> item = (Map<String, Object>) body.get("item");
+                    if (item != null) {
+                        return List.of(createTrackEvent(item, "playback_started"));
+                    }
+                }
+                return Collections.emptyList();
+            }
+
+            Boolean lastPlaybackState = lastKnownPlaybackStates.get(userId);
+            boolean wasNotPlaying = (lastPlaybackState == null) || !lastPlaybackState;
+            boolean isNowPlaying = Boolean.TRUE.equals(isPlaying);
+
+            lastKnownPlaybackStates.put(userId, isNowPlaying);
+
+            if (wasNotPlaying && isNowPlaying) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> item = (Map<String, Object>) body.get("item");
                 if (item != null) {
+                    String trackId = (String) item.get("id");
+                    if (trackId != null) {
+                        lastKnownTrackIds.put(userId, trackId);
+                    }
+                    log.debug("Playback started for user {}", userId);
                     return List.of(createTrackEvent(item, "playback_started"));
                 }
             }
@@ -277,13 +318,50 @@ public class SpotifyActionService {
             }
 
             Map<String, Object> body = response.getBody();
+
             @SuppressWarnings("unchecked")
             Map<String, Object> item = (Map<String, Object>) body.get("item");
+            Boolean isPlaying = (Boolean) body.get("is_playing");
 
-            if (item != null) {
+            if (item == null) {
+                return Collections.emptyList();
+            }
+
+            String currentTrackId = (String) item.get("id");
+            if (currentTrackId == null) {
+                return Collections.emptyList();
+            }
+
+            Object userIdObj = params.get("_internal_user_id");
+            UUID userId = null;
+            if (userIdObj instanceof UUID) {
+                userId = (UUID) userIdObj;
+            } else if (userIdObj instanceof String) {
+                try {
+                    userId = UUID.fromString((String) userIdObj);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid userId format in params: {}", userIdObj);
+                }
+            }
+
+            if (userId == null) {
+                log.debug("No userId available for track change detection, triggering event");
                 return List.of(createTrackEvent(item, "track_changed"));
             }
 
+            String lastKnownTrackId = lastKnownTrackIds.get(userId);
+
+            boolean trackChanged = !currentTrackId.equals(lastKnownTrackId);
+
+            lastKnownTrackIds.put(userId, currentTrackId);
+            lastKnownPlaybackStates.put(userId, Boolean.TRUE.equals(isPlaying));
+            if (trackChanged && Boolean.TRUE.equals(isPlaying)) {
+                log.debug("Track changed for user {}: {} -> {}", userId, lastKnownTrackId, currentTrackId);
+                return List.of(createTrackEvent(item, "track_changed"));
+            }
+
+            log.trace("No track change detected for user {} (current: {}, playing: {})",
+                     userId, currentTrackId, isPlaying);
             return Collections.emptyList();
         } catch (Exception e) {
             log.error("Error checking track changed: {}", e.getMessage(), e);

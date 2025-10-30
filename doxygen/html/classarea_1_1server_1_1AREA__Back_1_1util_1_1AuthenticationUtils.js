@@ -1,5 +1,6 @@
 var classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils =
 [
+    [ "extractAccessToken", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html#ab2fec8adf70ead034a845b53eac341ed", null ],
     [ "getCurrentUser", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html#af87e80b84dd923f88a788d185a5269e2", null ],
     [ "getCurrentUserEmail", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html#a3274ad4428752408442387475da05156", null ],
     [ "getCurrentUserEntity", "classarea_1_1server_1_1AREA__Back_1_1util_1_1AuthenticationUtils.html#a333f9a6443e6cd3c1d6d5a8f2c373555", null ],

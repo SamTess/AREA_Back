@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['oauthcontroller_0',['OAuthController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a4a68928e2d9b6f9dcb89990112b02a31',1,'area::server::AREA_Back::controller::OAuthController']]],
+  ['oauthcontroller_0',['OAuthController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a90fc69380af78bc6610b83dc61315a24',1,'area::server::AREA_Back::controller::OAuthController']]],
   ['oauthdiscordservice_1',['OAuthDiscordService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html#a4eb6be81df0c3e987e85048163136686',1,'area::server::AREA_Back::service::Auth::OAuthDiscordService']]],
   ['oauthgithubservice_2',['OAuthGithubService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html#af665ccd316c6d2038e536240c83f3f84',1,'area::server::AREA_Back::service::Auth::OAuthGithubService']]],
   ['oauthgoogleservice_3',['OAuthGoogleService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html#add54788881f1be8ca769858b9f7616fd',1,'area::server::AREA_Back::service::Auth::OAuthGoogleService']]],

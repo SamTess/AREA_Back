@@ -66,6 +66,7 @@ var hierarchy =
     [ "area.server.AREA_Back.service.Polling.DiscordEventPollingService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Polling_1_1DiscordEventPollingService.html", null ],
     [ "area.server.AREA_Back.service.Webhook.DiscordGatewayService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordGatewayService.html", null ],
     [ "area.server.AREA_Back.service.Webhook.DiscordWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService.html", null ],
+    [ "area.server.AREA_Back.service.Webhook.DiscordWelcomeService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWelcomeService.html", null ],
     [ "area.server.AREA_Back.service.Auth.EmailService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1EmailService.html", null ],
     [ "area.server.AREA_Back.entity.Event", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1Event.html", null ],
     [ "area.server.AREA_Back.entity.Execution", "classarea_1_1server_1_1AREA__Back_1_1entity_1_1Execution.html", null ],

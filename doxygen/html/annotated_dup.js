@@ -178,6 +178,7 @@ var annotated_dup =
             [ "Webhook", "namespacearea_1_1server_1_1AREA__Back_1_1service_1_1Webhook.html", [
               [ "DiscordGatewayService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordGatewayService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordGatewayService" ],
               [ "DiscordWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWebhookService" ],
+              [ "DiscordWelcomeService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWelcomeService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1DiscordWelcomeService" ],
               [ "GitHubWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GitHubWebhookService" ],
               [ "GoogleWatchService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWatchService" ],
               [ "GoogleWebhookService", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService.html", "classarea_1_1server_1_1AREA__Back_1_1service_1_1Webhook_1_1GoogleWebhookService" ],

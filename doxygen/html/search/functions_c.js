@@ -1,7 +1,7 @@
 var searchData=
 [
   ['oauthcontroller_0',['OAuthController',['../classarea_1_1server_1_1AREA__Back_1_1controller_1_1OAuthController.html#a4a68928e2d9b6f9dcb89990112b02a31',1,'area::server::AREA_Back::controller::OAuthController']]],
-  ['oauthdiscordservice_1',['OAuthDiscordService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html#aeafad888bc5703953d1c717ed706db79',1,'area::server::AREA_Back::service::Auth::OAuthDiscordService']]],
+  ['oauthdiscordservice_1',['OAuthDiscordService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthDiscordService.html#a4eb6be81df0c3e987e85048163136686',1,'area::server::AREA_Back::service::Auth::OAuthDiscordService']]],
   ['oauthgithubservice_2',['OAuthGithubService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGithubService.html#af665ccd316c6d2038e536240c83f3f84',1,'area::server::AREA_Back::service::Auth::OAuthGithubService']]],
   ['oauthgoogleservice_3',['OAuthGoogleService',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1OAuthGoogleService.html#add54788881f1be8ca769858b9f7616fd',1,'area::server::AREA_Back::service::Auth::OAuthGoogleService']]],
   ['oauthlogin_4',['oauthLogin',['../classarea_1_1server_1_1AREA__Back_1_1service_1_1Auth_1_1AuthService.html#a2dd6afc0421c0ef313e2270e67241b20',1,'area::server::AREA_Back::service::Auth::AuthService']]],

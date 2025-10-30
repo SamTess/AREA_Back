@@ -7,5 +7,6 @@ var searchData=
   ['discordactionservice_2ejava_4',['DiscordActionService.java',['../DiscordActionService_8java.html',1,'']]],
   ['discordeventpollingservice_2ejava_5',['DiscordEventPollingService.java',['../DiscordEventPollingService_8java.html',1,'']]],
   ['discordgatewayservice_2ejava_6',['DiscordGatewayService.java',['../DiscordGatewayService_8java.html',1,'']]],
-  ['discordwebhookservice_2ejava_7',['DiscordWebhookService.java',['../DiscordWebhookService_8java.html',1,'']]]
+  ['discordwebhookservice_2ejava_7',['DiscordWebhookService.java',['../DiscordWebhookService_8java.html',1,'']]],
+  ['discordwelcomeservice_2ejava_8',['DiscordWelcomeService.java',['../DiscordWelcomeService_8java.html',1,'']]]
 ];

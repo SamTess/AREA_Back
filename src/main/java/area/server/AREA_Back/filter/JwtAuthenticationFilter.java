@@ -46,9 +46,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String authToken = extractTokenFromCookies(request);
+        if (authToken == null) {
+            authToken = extractTokenFromAuthorizationHeader(request);
+        }
 
         if (authToken == null) {
-            log.debug("No auth token found in cookies for path: {}", requestPath);
+            log.debug("No auth token found in cookies or Authorization header for path: {}", requestPath);
             filterChain.doFilter(request, response);
             return;
         }
@@ -117,6 +120,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .orElse(null);
     }
 
+    private String extractTokenFromAuthorizationHeader(final HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        return authHeader.substring(7);
+    }
+
     private boolean isPublicEndpoint(final String path) {
         return path.equals("/api/auth/login")
                || path.equals("/api/auth/register")
@@ -124,6 +135,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                || path.equals("/api/auth/reset-password")
                || path.equals("/api/auth/verify")
                || path.startsWith("/api/oauth/")
+               || path.equals("/api/oauth-callback")
                || path.startsWith("/swagger-ui/")
                || path.startsWith("/v3/api-docs/")
                || path.equals("/swagger-ui.html")

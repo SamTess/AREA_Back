@@ -71,6 +71,56 @@ public class JwtService {
         tokenValidationFailures = Counter.builder("jwt.validation_failures")
                 .description("Total number of JWT validation failures")
                 .register(meterRegistry);
+        validateJwtSecrets();
+    }
+
+    /**
+     * Validate that JWT secrets are properly configured.
+     * Fails fast if secrets are missing or too short.
+     */
+    private void validateJwtSecrets() {
+        if (accessTokenSecret == null || accessTokenSecret.trim().isEmpty()) {
+            log.error("JWT_ACCESS_SECRET is not set! Application cannot start securely.");
+            throw new IllegalStateException(
+                "JWT_ACCESS_SECRET is mandatory. Please set it in environment variables. " +
+                "Generate with: openssl rand -base64 32"
+            );
+        }
+        if (refreshTokenSecret == null || refreshTokenSecret.trim().isEmpty()) {
+            log.error("JWT_REFRESH_SECRET is not set! Application cannot start securely.");
+            throw new IllegalStateException(
+                "JWT_REFRESH_SECRET is mandatory. Please set it in environment variables. " +
+                "Generate with: openssl rand -base64 32"
+            );
+        }
+        try {
+            byte[] accessKeyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(accessTokenSecret);
+            if (accessKeyBytes.length < MIN_KEY_LENGTH_BYTES) {
+                throw new IllegalStateException(
+                    String.format("JWT_ACCESS_SECRET must be at least 256 bits (32 bytes). " +
+                    "Current: %d bits. Generate with: openssl rand -base64 32",
+                    accessKeyBytes.length * BITS_PER_BYTE)
+                );
+            }
+            byte[] refreshKeyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(refreshTokenSecret);
+            if (refreshKeyBytes.length < MIN_KEY_LENGTH_BYTES) {
+                throw new IllegalStateException(
+                    String.format("JWT_REFRESH_SECRET must be at least 256 bits (32 bytes). " +
+                    "Current: %d bits. Generate with: openssl rand -base64 32",
+                    refreshKeyBytes.length * BITS_PER_BYTE)
+                );
+            }
+            log.info("JWT secrets validated successfully (access: {} bits, refresh: {} bits)",
+                accessKeyBytes.length * BITS_PER_BYTE,
+                refreshKeyBytes.length * BITS_PER_BYTE);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("JWT secrets are not valid Base64 encoded strings");
+            throw new IllegalStateException(
+                "JWT secrets must be Base64 encoded. Generate with: openssl rand -base64 32", e
+            );
+        }
     }
 
     public String generateAccessToken(UUID userId, String email) {
@@ -210,46 +260,25 @@ public class JwtService {
     }
 
     private SecretKey getAccessTokenSigningKey() {
-        log.debug("Getting access token signing key, secret configured: { }",
-            accessTokenSecret != null && !accessTokenSecret.trim().isEmpty());
-
-        if (accessTokenSecret == null || accessTokenSecret.trim().isEmpty()) {
-            log.warn("No access token secret provided, generating a secure key");
-            return Jwts.SIG.HS256.key().build();
-        }
+        log.debug("Getting access token signing key");
 
         try {
             byte[] keyBytes = Decoders.BASE64.decode(accessTokenSecret);
-            if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Access token secret is too short ({ } bits), generating secure key",
-                        keyBytes.length * BITS_PER_BYTE);
-                return Jwts.SIG.HS256.key().build();
-            }
-            log.debug("Using configured access token secret ({ } bytes)", keyBytes.length);
+            log.debug("Using configured access token secret ({} bytes)", keyBytes.length);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid access token secret format, generating secure key: { }", e.getMessage());
-            return Jwts.SIG.HS256.key().build();
+            log.error("Failed to decode access token secret: {}", e.getMessage());
+            throw new IllegalStateException("Invalid JWT_ACCESS_SECRET configuration", e);
         }
     }
 
     private SecretKey getRefreshTokenSigningKey() {
-        if (refreshTokenSecret == null || refreshTokenSecret.trim().isEmpty()) {
-            log.warn("No refresh token secret provided, generating a secure key");
-            return Jwts.SIG.HS256.key().build();
-        }
-
         try {
             byte[] keyBytes = Decoders.BASE64.decode(refreshTokenSecret);
-            if (keyBytes.length < MIN_KEY_LENGTH_BYTES) {
-                log.warn("Refresh token secret is too short ({ } bits), generating secure key",
-                        keyBytes.length * BITS_PER_BYTE);
-                return Jwts.SIG.HS256.key().build();
-            }
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            log.warn("Invalid refresh token secret format, generating secure key: { }", e.getMessage());
-            return Jwts.SIG.HS256.key().build();
+            log.error("Failed to decode refresh token secret: {}", e.getMessage());
+            throw new IllegalStateException("Invalid JWT_REFRESH_SECRET configuration", e);
         }
     }
 

@@ -148,7 +148,7 @@ class OAuthDiscordServiceTest {
         String authUrl = oauthDiscordService.getUserAuthUrl();
         assertTrue(authUrl.contains("discord.com/api/oauth2/authorize"));
         assertTrue(authUrl.contains("client_id=test-client-id"));
-        assertTrue(authUrl.contains("redirect_uri=http://localhost:3000/oauth-callback"));
+        assertTrue(authUrl.contains("redirect_uri=http://localhost:3000/api/oauth-callback"));
     }
 
     @Test

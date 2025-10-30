@@ -94,7 +94,7 @@ public class OAuthGoogleService extends OAuthService {
             "Google",
             "https://img.icons8.com/?size=100&id=17949&format=png&color=000000",
             "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&response_type=code"
                 + "&scope=openid%20email%20profile"
                 + "%20https://www.googleapis.com/auth/gmail.readonly"
@@ -262,7 +262,7 @@ public class OAuthGoogleService extends OAuthService {
             body.add("code", authorizationCode);
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
             body.add("grant_type", "authorization_code");
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
@@ -354,15 +354,32 @@ public class OAuthGoogleService extends OAuthService {
             }
             this.userRepository.save(user);
         } else {
-            user = new User();
-            user.setEmail(profileData.email);
-            user.setIsActive(true);
-            user.setIsAdmin(false);
-            user.setCreatedAt(LocalDateTime.now());
-            if (profileData.picture != null && !profileData.picture.isEmpty()) {
-                user.setAvatarUrl(profileData.picture);
+            try {
+                user = new User();
+                user.setEmail(profileData.email);
+                String username = generateUsernameFromProfile(profileData);
+                user.setUsername(username);
+                user.setIsActive(true);
+                user.setIsAdmin(false);
+                user.setCreatedAt(LocalDateTime.now());
+                if (profileData.picture != null && !profileData.picture.isEmpty()) {
+                    user.setAvatarUrl(profileData.picture);
+                }
+                user = this.userRepository.save(user);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                log.warn("Race condition detected when creating user, retrying fetch for email: {}", profileData.email);
+                userOpt = userRepository.findByEmail(profileData.email);
+                if (userOpt.isPresent()) {
+                    user = userOpt.get();
+                    user.setLastLoginAt(LocalDateTime.now());
+                    if (profileData.picture != null && !profileData.picture.isEmpty()) {
+                        user.setAvatarUrl(profileData.picture);
+                    }
+                    this.userRepository.save(user);
+                } else {
+                    throw e;
+                }
             }
-            user = this.userRepository.save(user);
         }
 
         Optional<UserOAuthIdentity> oauthOpt = userOAuthIdentityRepository
@@ -466,9 +483,12 @@ public class OAuthGoogleService extends OAuthService {
             throw new RuntimeException("Cookie setting failed: " + e.getMessage(), e);
         }
 
+        // Include tokens in response body for mobile clients
         return new AuthResponse(
             "Login successful",
-            userResponse
+            userResponse,
+            accessToken,
+            refreshToken
         );
     }
 
@@ -491,6 +511,40 @@ public class OAuthGoogleService extends OAuthService {
         }
     }
 
+    private String generateUsernameFromProfile(UserProfileData profileData) {
+        String baseUsername;
+        if (profileData.givenName != null && !profileData.givenName.trim().isEmpty()) {
+            baseUsername = profileData.givenName.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else if (profileData.name != null && !profileData.name.trim().isEmpty()) {
+            baseUsername = profileData.name.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else if (profileData.email != null && !profileData.email.isEmpty()) {
+            baseUsername = profileData.email.split("@")[0].toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else {
+            baseUsername = "user";
+        }
+        if (baseUsername.isEmpty()) {
+            baseUsername = "user";
+        }
+        String username = baseUsername;
+        int suffix = 1;
+        int maxAttempts = 100;
+        int attempts = 0;
+        while (userRepository.findByUsername(username).isPresent()) {
+            if (attempts >= maxAttempts) {
+                log.error("Failed to generate unique username after {} attempts for base: {}", maxAttempts, baseUsername);
+                throw new RuntimeException(
+                    "Unable to generate unique username after " + maxAttempts + " attempts. Please try again."
+                );
+            }
+            username = baseUsername + suffix;
+            suffix++;
+            attempts++;
+        }
+        return username;
+    }
     private static class UserProfileData {
         String email;
         String userIdentifier;

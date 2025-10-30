@@ -38,11 +38,7 @@ public class SecurityConfig {
             "http://localhost:3000",
             "http://localhost:*",
             "https://*.areaaaaaaaaaaaaaaaaaaa.space",
-            "https://areaaaaaaaaaaaaaaaaaaa.space",
-            "https://*.ngrok-free.app",
-            "https://*.ngrok.io",
-            "http://10.0.2.2:*",
-            "http://192.168.*.*:*"
+            "https://areaaaaaaaaaaaaaaaaaaa.space"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(

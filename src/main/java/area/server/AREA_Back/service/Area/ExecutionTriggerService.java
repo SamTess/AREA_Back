@@ -52,44 +52,60 @@ public class ExecutionTriggerService {
         }
 
         try {
+            boolean isExecutable = actionInstance.getActionDefinition().getIsExecutable();
+            Execution execution = null;
+            if (isExecutable) {
+                execution = executionService.createExecutionWithActivationType(
+                    actionInstance,
+                    activationMode,
+                    inputPayload,
+                    correlationId
+                );
+
+                AreaEventMessage message = new AreaEventMessage();
+                message.setExecutionId(execution.getId());
+                message.setActionInstanceId(actionInstance.getId());
+                message.setAreaId(actionInstance.getArea().getId());
+                message.setEventType(activationMode.toString().toLowerCase());
+                message.setSource("trigger_service");
+                message.setPayload(inputPayload);
+                message.setCorrelationId(correlationId);
+
+                redisEventService.publishAreaEvent(message);
+
+                log.info("Successfully triggered execution: {} for action instance: {}",
+                        execution.getId(), actionInstance.getName());
+            } else {
+                log.debug("Action instance {} is not executable (event-only), skipping execution",
+                         actionInstance.getName());
+            }
             var linkedActions = actionLinkRepository
                     .findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());
 
             if (!linkedActions.isEmpty()) {
-                log.info("Action {} is a trigger with {} linked reactions, triggering them directly",
+                log.info("Action {} has {} linked reactions, triggering them in order",
                          actionInstance.getName(), linkedActions.size());
+                linkedActions.sort((l1, l2) -> {
+                    Integer order1 = l1.getOrder() != null ? l1.getOrder() : 0;
+                    Integer order2 = l2.getOrder() != null ? l2.getOrder() : 0;
+                    return order1.compareTo(order2);
+                });
 
                 for (var link : linkedActions) {
                     try {
-                        triggerAreaExecution(link.getTargetActionInstance(), ActivationModeType.MANUAL, inputPayload);
+                        log.info("Triggering chained reaction {} (order: {}) from {}",
+                                link.getTargetActionInstance().getName(),
+                                link.getOrder(),
+                                actionInstance.getName());
+                        triggerAreaExecution(link.getTargetActionInstance(), ActivationModeType.CHAIN, inputPayload);
                     } catch (Exception e) {
-                        log.error("Failed to trigger linked reaction {} for trigger {}: {}",
-                                 link.getTargetActionInstance().getName(), actionInstance.getName(), e.getMessage());
+                        log.error("Failed to trigger chained reaction {} from {}: {}",
+                                 link.getTargetActionInstance().getName(),
+                                 actionInstance.getName(),
+                                 e.getMessage());
                     }
                 }
-                return;
             }
-
-            Execution execution = executionService.createExecutionWithActivationType(
-                actionInstance,
-                activationMode,
-                inputPayload,
-                correlationId
-            );
-
-            AreaEventMessage message = new AreaEventMessage();
-            message.setExecutionId(execution.getId());
-            message.setActionInstanceId(actionInstance.getId());
-            message.setAreaId(actionInstance.getArea().getId());
-            message.setEventType(activationMode.toString().toLowerCase());
-            message.setSource("trigger_service");
-            message.setPayload(inputPayload);
-            message.setCorrelationId(correlationId);
-
-            redisEventService.publishAreaEvent(message);
-
-            log.info("Successfully triggered execution: {} for AREA: {}",
-                    execution.getId(), actionInstance.getArea().getId());
 
         } catch (Exception e) {
             log.error("Failed to trigger AREA execution for action instance {}: {}",

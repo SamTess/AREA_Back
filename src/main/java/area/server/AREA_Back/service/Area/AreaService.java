@@ -3,6 +3,8 @@ package area.server.AREA_Back.service.Area;
 import area.server.AREA_Back.dto.AreaActionRequest;
 import area.server.AREA_Back.dto.AreaReactionRequest;
 import area.server.AREA_Back.dto.AreaResponse;
+import area.server.AREA_Back.dto.BatchCreateActionLinksRequest;
+import area.server.AREA_Back.dto.CreateActionLinkRequest;
 import area.server.AREA_Back.dto.CreateAreaWithActionsRequest;
 import area.server.AREA_Back.dto.CreateAreaWithActionsAndLinksRequest;
 import area.server.AREA_Back.entity.ActionDefinition;
@@ -731,12 +733,11 @@ public class AreaService {
     private void createActionLinks(Area area,
             List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections,
             Map<String, UUID> serviceIdMapping) {
+        List<BatchCreateActionLinksRequest.ActionLinkData> linkRequests = new ArrayList<>();
         for (CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest connection : connections) {
             UUID sourceActionId = serviceIdMapping.get(connection.getSourceServiceId());
             UUID targetActionId = serviceIdMapping.get(connection.getTargetServiceId());
-
             if (sourceActionId != null && targetActionId != null) {
-                // Validate that source and target are different (no self-referencing links)
                 if (sourceActionId.equals(targetActionId)) {
                     log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
                             connection.getSourceServiceId(), connection.getTargetServiceId(), sourceActionId);
@@ -745,27 +746,27 @@ public class AreaService {
                                      "Cannot create a link from an action to itself.",
                                      connection.getSourceServiceId(), connection.getTargetServiceId()));
                 }
-                try {
-                    area.server.AREA_Back.dto.CreateActionLinkRequest linkRequest =
-                        new area.server.AREA_Back.dto.CreateActionLinkRequest();
-                    linkRequest.setSourceActionInstanceId(sourceActionId);
-                    linkRequest.setTargetActionInstanceId(targetActionId);
-                    linkRequest.setLinkType(connection.getLinkType());
-                    linkRequest.setMapping(connection.getMapping());
-                    linkRequest.setCondition(connection.getCondition());
-                    linkRequest.setOrder(connection.getOrder());
-
-                    actionLinkService.createActionLink(linkRequest, area.getId());
-                    log.debug("Created link: {} -> {}", sourceActionId, targetActionId);
-                } catch (Exception e) {
-                    log.error("Failed to create action link from {} to {}: {}",
-                            sourceActionId, targetActionId, e.getMessage());
-                    throw e;
-                }
+                BatchCreateActionLinksRequest.ActionLinkData linkData = new BatchCreateActionLinksRequest.ActionLinkData();
+                linkData.setSourceActionInstanceId(sourceActionId);
+                linkData.setTargetActionInstanceId(targetActionId);
+                linkData.setLinkType(connection.getLinkType());
+                linkData.setMapping(connection.getMapping());
+                linkData.setCondition(connection.getCondition());
+                linkData.setOrder(connection.getOrder());
+                linkRequests.add(linkData);
+                log.debug("Prepared link: {} -> {} (order: {})", sourceActionId, targetActionId, connection.getOrder());
             } else {
                 log.warn("Cannot create link: source {} or target {} not found in mapping",
                         connection.getSourceServiceId(), connection.getTargetServiceId());
             }
+        }
+        if (!linkRequests.isEmpty()) {
+            log.info("Creating {} links in batch", linkRequests.size());
+            BatchCreateActionLinksRequest batchRequest = new BatchCreateActionLinksRequest();
+            batchRequest.setAreaId(area.getId());
+            batchRequest.setLinks(linkRequests);
+            actionLinkService.createActionLinksBatch(batchRequest);
+            log.info("Successfully created {} links", linkRequests.size());
         }
     }
 
@@ -789,7 +790,6 @@ public class AreaService {
             UUID targetActionId = serviceIdMapping.get(targetServiceId);
 
             if (sourceActionId != null && targetActionId != null) {
-                // Validate that source and target are different (no self-referencing links)
                 if (sourceActionId.equals(targetActionId)) {
                     log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
                             sourceServiceId, targetServiceId, sourceActionId);

@@ -3,6 +3,8 @@ package area.server.AREA_Back.service.Area;
 import area.server.AREA_Back.dto.AreaActionRequest;
 import area.server.AREA_Back.dto.AreaReactionRequest;
 import area.server.AREA_Back.dto.AreaResponse;
+import area.server.AREA_Back.dto.BatchCreateActionLinksRequest;
+import area.server.AREA_Back.dto.CreateActionLinkRequest;
 import area.server.AREA_Back.dto.CreateAreaWithActionsRequest;
 import area.server.AREA_Back.dto.CreateAreaWithActionsAndLinksRequest;
 import area.server.AREA_Back.entity.ActionDefinition;
@@ -203,6 +205,7 @@ public class AreaService {
 
     private void createActionInstances(Area area, List<AreaActionRequest> actions,
                                       List<AreaReactionRequest> reactions) {
+        List<UUID> actionInstanceIds = new ArrayList<>();
         for (AreaActionRequest action : actions) {
             ActionDefinition actionDef = actionDefinitionRepository
                 .findById(action.getActionDefinitionId()).get();
@@ -229,6 +232,7 @@ public class AreaService {
             }
 
             ActionInstance savedActionInstance = actionInstanceRepository.save(actionInstance);
+            actionInstanceIds.add(savedActionInstance.getId());
 
             if (action.getActivationConfig() != null && !action.getActivationConfig().isEmpty()) {
                 createActivationModes(savedActionInstance, action.getActivationConfig());
@@ -238,6 +242,7 @@ public class AreaService {
             }
         }
 
+        List<UUID> reactionInstanceIds = new ArrayList<>();
         for (AreaReactionRequest reaction : reactions) {
             ActionDefinition actionDef = actionDefinitionRepository
                 .findById(reaction.getActionDefinitionId()).get();
@@ -264,6 +269,7 @@ public class AreaService {
             }
 
             ActionInstance savedReactionInstance = actionInstanceRepository.save(actionInstance);
+            reactionInstanceIds.add(savedReactionInstance.getId());
 
             if (reaction.getActivationConfig() != null && !reaction.getActivationConfig().isEmpty()) {
                 createActivationModes(savedReactionInstance, reaction.getActivationConfig());
@@ -279,6 +285,22 @@ public class AreaService {
                 log.info("Created default CHAIN activation mode for reaction: {}", savedReactionInstance.getId());
             }
         }
+        storeInstanceIdsInArea(area, actionInstanceIds, reactionInstanceIds);
+    }
+    private void storeInstanceIdsInArea(Area area, List<UUID> actionInstanceIds, List<UUID> reactionInstanceIds) {
+        List<Map<String, Object>> actions = area.getActions();
+        if (actions != null && !actions.isEmpty()) {
+            for (int i = 0; i < Math.min(actions.size(), actionInstanceIds.size()); i++) {
+                actions.get(i).put("_instanceId", actionInstanceIds.get(i).toString());
+            }
+        }
+        List<Map<String, Object>> reactions = area.getReactions();
+        if (reactions != null && !reactions.isEmpty()) {
+            for (int i = 0; i < Math.min(reactions.size(), reactionInstanceIds.size()); i++) {
+                reactions.get(i).put("_instanceId", reactionInstanceIds.get(i).toString());
+            }
+        }
+        areaRepository.save(area);
     }
 
     public AreaResponse convertToResponse(Area area) {
@@ -324,32 +346,58 @@ public class AreaService {
 
         List<Map<String, Object>> enriched = new ArrayList<>();
 
-        for (Map<String, Object> item : jsonbData) {
+        for (int index = 0; index < jsonbData.size(); index++) {
+            Map<String, Object> item = jsonbData.get(index);
             Map<String, Object> enrichedItem = new HashMap<>(item);
 
-            String actionDefId = (String) item.get("actionDefinitionId");
-            String name = (String) item.get("name");
-
-            if (actionDefId != null && name != null) {
-                ActionInstance matchingInstance = allInstances.stream()
-                    .filter(ai -> ai.getActionDefinition().getId().toString().equals(actionDefId)
-                        && ai.getName().equals(name)
-                        && ai.getActionDefinition().getIsEventCapable() == isAction)
-                    .findFirst()
-                    .orElse(null);
-
-                if (matchingInstance != null) {
-                    enrichedItem.put("id", matchingInstance.getId().toString());
-
-                    enrichedItem.put("serviceId",
-                        matchingInstance.getActionDefinition().getService().getId().toString());
-                    enrichedItem.put("serviceName", matchingInstance.getActionDefinition().getService().getName());
-                    enrichedItem.put("serviceKey", matchingInstance.getActionDefinition().getService().getKey());
-                    enrichedItem.put("actionKey", matchingInstance.getActionDefinition().getKey());
-                } else {
-                    log.warn("No matching ActionInstance found for actionDefinitionId={}, name={}, isAction={}",
-                        actionDefId, name, isAction);
+            String storedInstanceId = (String) item.get("_instanceId");
+            ActionInstance matchingInstance = null;
+            if (storedInstanceId != null) {
+                try {
+                    UUID instanceId = UUID.fromString(storedInstanceId);
+                    matchingInstance = allInstances.stream()
+                        .filter(ai -> ai.getId().equals(instanceId))
+                        .findFirst()
+                        .orElse(null);
+                    enrichedItem.remove("_instanceId");
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid _instanceId format: {}", storedInstanceId);
                 }
+            }
+            if (matchingInstance == null) {
+                String actionDefId = (String) item.get("actionDefinitionId");
+                String name = (String) item.get("name");
+
+                if (actionDefId != null && name != null) {
+                    List<ActionInstance> matchingInstances = allInstances.stream()
+                        .filter(ai -> ai.getActionDefinition().getId().toString().equals(actionDefId)
+                            && ai.getName().equals(name)
+                            && ai.getActionDefinition().getIsEventCapable() == isAction)
+                        .toList();
+                    if (!matchingInstances.isEmpty()) {
+                        long previousOccurrences = 0;
+                        for (int i = 0; i < index; i++) {
+                            Map<String, Object> prevItem = jsonbData.get(i);
+                            if (actionDefId.equals(prevItem.get("actionDefinitionId"))
+                                && name.equals(prevItem.get("name"))) {
+                                previousOccurrences++;
+                            }
+                        }
+                        int instanceIndex = (int) Math.min(previousOccurrences, matchingInstances.size() - 1);
+                        matchingInstance = matchingInstances.get(instanceIndex);
+                    } else {
+                        log.warn("No matching ActionInstance found for actionDefinitionId={}, name={}, isAction={}",
+                            actionDefId, name, isAction);
+                    }
+                }
+            }
+
+            if (matchingInstance != null) {
+                enrichedItem.put("id", matchingInstance.getId().toString());
+                enrichedItem.put("serviceId", matchingInstance.getActionDefinition().getService().getId().toString());
+                enrichedItem.put("serviceName", matchingInstance.getActionDefinition().getService().getName());
+                enrichedItem.put("serviceKey", matchingInstance.getActionDefinition().getService().getKey());
+                enrichedItem.put("actionKey", matchingInstance.getActionDefinition().getKey());
             }
 
             enriched.add(enrichedItem);
@@ -604,6 +652,7 @@ public class AreaService {
     private Map<String, UUID> createActionInstancesWithMapping(Area area,
             List<AreaActionRequest> actions, List<AreaReactionRequest> reactions) {
         Map<String, UUID> serviceIdMapping = new HashMap<>();
+        List<UUID> actionInstanceIds = new ArrayList<>();
 
         for (int i = 0; i < actions.size(); i++) {
             AreaActionRequest action = actions.get(i);
@@ -633,11 +682,14 @@ public class AreaService {
 
             ActionInstance savedActionInstance = actionInstanceRepository.save(actionInstance);
             serviceIdMapping.put("action_" + i, savedActionInstance.getId());
+            actionInstanceIds.add(savedActionInstance.getId());
 
             if (action.getActivationConfig() != null && !action.getActivationConfig().isEmpty()) {
                 createActivationModes(savedActionInstance, action.getActivationConfig());
             }
         }
+
+        List<UUID> reactionInstanceIds = new ArrayList<>();
 
         for (int i = 0; i < reactions.size(); i++) {
             AreaReactionRequest reaction = reactions.get(i);
@@ -667,11 +719,13 @@ public class AreaService {
 
             ActionInstance savedActionInstance = actionInstanceRepository.save(actionInstance);
             serviceIdMapping.put("reaction_" + i, savedActionInstance.getId());
+            reactionInstanceIds.add(savedActionInstance.getId());
 
             if (reaction.getActivationConfig() != null && !reaction.getActivationConfig().isEmpty()) {
                 createActivationModes(savedActionInstance, reaction.getActivationConfig());
             }
         }
+        storeInstanceIdsInArea(area, actionInstanceIds, reactionInstanceIds);
 
         return serviceIdMapping;
     }
@@ -679,31 +733,40 @@ public class AreaService {
     private void createActionLinks(Area area,
             List<CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest> connections,
             Map<String, UUID> serviceIdMapping) {
+        List<BatchCreateActionLinksRequest.ActionLinkData> linkRequests = new ArrayList<>();
         for (CreateAreaWithActionsAndLinksRequest.ActionConnectionRequest connection : connections) {
             UUID sourceActionId = serviceIdMapping.get(connection.getSourceServiceId());
             UUID targetActionId = serviceIdMapping.get(connection.getTargetServiceId());
-
             if (sourceActionId != null && targetActionId != null) {
-                try {
-                    area.server.AREA_Back.dto.CreateActionLinkRequest linkRequest =
-                        new area.server.AREA_Back.dto.CreateActionLinkRequest();
-                    linkRequest.setSourceActionInstanceId(sourceActionId);
-                    linkRequest.setTargetActionInstanceId(targetActionId);
-                    linkRequest.setLinkType(connection.getLinkType());
-                    linkRequest.setMapping(connection.getMapping());
-                    linkRequest.setCondition(connection.getCondition());
-                    linkRequest.setOrder(connection.getOrder());
-
-                    actionLinkService.createActionLink(linkRequest, area.getId());
-                    log.debug("Created link: {} -> {}", sourceActionId, targetActionId);
-                } catch (Exception e) {
-                    log.error("Failed to create action link from {} to {}: {}",
-                            sourceActionId, targetActionId, e.getMessage());
+                if (sourceActionId.equals(targetActionId)) {
+                    log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
+                            connection.getSourceServiceId(), connection.getTargetServiceId(), sourceActionId);
+                    throw new IllegalArgumentException(
+                        String.format("Invalid connection: %s and %s map to the same ActionInstance. " +
+                                     "Cannot create a link from an action to itself.",
+                                     connection.getSourceServiceId(), connection.getTargetServiceId()));
                 }
+                BatchCreateActionLinksRequest.ActionLinkData linkData = new BatchCreateActionLinksRequest.ActionLinkData();
+                linkData.setSourceActionInstanceId(sourceActionId);
+                linkData.setTargetActionInstanceId(targetActionId);
+                linkData.setLinkType(connection.getLinkType());
+                linkData.setMapping(connection.getMapping());
+                linkData.setCondition(connection.getCondition());
+                linkData.setOrder(connection.getOrder());
+                linkRequests.add(linkData);
+                log.debug("Prepared link: {} -> {} (order: {})", sourceActionId, targetActionId, connection.getOrder());
             } else {
                 log.warn("Cannot create link: source {} or target {} not found in mapping",
                         connection.getSourceServiceId(), connection.getTargetServiceId());
             }
+        }
+        if (!linkRequests.isEmpty()) {
+            log.info("Creating {} links in batch", linkRequests.size());
+            BatchCreateActionLinksRequest batchRequest = new BatchCreateActionLinksRequest();
+            batchRequest.setAreaId(area.getId());
+            batchRequest.setLinks(linkRequests);
+            actionLinkService.createActionLinksBatch(batchRequest);
+            log.info("Successfully created {} links", linkRequests.size());
         }
     }
 
@@ -727,6 +790,14 @@ public class AreaService {
             UUID targetActionId = serviceIdMapping.get(targetServiceId);
 
             if (sourceActionId != null && targetActionId != null) {
+                if (sourceActionId.equals(targetActionId)) {
+                    log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
+                            sourceServiceId, targetServiceId, sourceActionId);
+                    throw new IllegalStateException(
+                        String.format("Invalid link configuration: %s and %s map to the same ActionInstance %s. " +
+                                     "This indicates duplicate reactions are not properly handled.",
+                                     sourceServiceId, targetServiceId, sourceActionId));
+                }
                 try {
                     area.server.AREA_Back.dto.CreateActionLinkRequest linkRequest =
                         new area.server.AREA_Back.dto.CreateActionLinkRequest();
@@ -740,7 +811,11 @@ public class AreaService {
                 } catch (Exception e) {
                     log.error("Failed to create linear action link from {} to {}: {}",
                             sourceActionId, targetActionId, e.getMessage());
+                    throw e;
                 }
+            } else {
+                log.warn("Cannot create link: source {} ({}) or target {} ({}) not found in mapping",
+                        sourceServiceId, sourceActionId, targetServiceId, targetActionId);
             }
         }
     }

@@ -50,6 +50,7 @@ class ExecutionTriggerServiceTest {
         area = new Area();
         area.setId(UUID.randomUUID());
         area.setName("Test Area");
+        area.setEnabled(true);
 
         actionDefinition = new ActionDefinition();
         actionDefinition.setId(UUID.randomUUID());
@@ -62,6 +63,7 @@ class ExecutionTriggerServiceTest {
         actionInstance.setArea(area);
         actionInstance.setActionDefinition(actionDefinition);
         actionInstance.setParams(new HashMap<>());
+        actionInstance.setEnabled(true);
 
         targetActionInstance = new ActionInstance();
         targetActionInstance.setId(UUID.randomUUID());
@@ -69,6 +71,7 @@ class ExecutionTriggerServiceTest {
         targetActionInstance.setArea(area);
         targetActionInstance.setActionDefinition(actionDefinition);
         targetActionInstance.setParams(new HashMap<>());
+        targetActionInstance.setEnabled(true);
 
         execution = new Execution();
         execution.setId(UUID.randomUUID());
@@ -152,18 +155,25 @@ class ExecutionTriggerServiceTest {
     @Test
     void triggerAreaExecution_WithLinkedActions_ShouldTriggerLinkedReactions() {
         // Given
+        // Make source action event-only (not executable)
+        ActionDefinition eventOnlyDef = new ActionDefinition();
+        eventOnlyDef.setId(UUID.randomUUID());
+        eventOnlyDef.setKey("test.event");
+        eventOnlyDef.setIsExecutable(false);
+        actionInstance.setActionDefinition(eventOnlyDef);
+        
         ActionLink actionLink = new ActionLink();
         actionLink.setSourceActionInstance(actionInstance);
         actionLink.setTargetActionInstance(targetActionInstance);
         actionLink.setArea(area);
 
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId()))
-                .thenReturn(List.of(actionLink));
+                .thenReturn(new ArrayList<>(List.of(actionLink)));
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(targetActionInstance.getId()))
                 .thenReturn(Collections.emptyList());
         when(executionService.createExecutionWithActivationType(
                 eq(targetActionInstance),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         )).thenReturn(execution);
@@ -175,7 +185,7 @@ class ExecutionTriggerServiceTest {
         verify(actionLinkRepository).findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());
         verify(actionLinkRepository).findBySourceActionInstanceIdWithTargetFetch(targetActionInstance.getId());
         
-        // Should not create execution for the source action
+        // Should not create execution for the source action (event-only)
         verify(executionService, never()).createExecutionWithActivationType(
                 eq(actionInstance),
                 any(),
@@ -186,20 +196,31 @@ class ExecutionTriggerServiceTest {
         // Should create execution for the target action
         verify(executionService).createExecutionWithActivationType(
                 eq(targetActionInstance),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         );
+        
+        // Should publish event only for the target action
+        verify(redisEventService, times(1)).publishAreaEvent(any(AreaEventMessage.class));
     }
 
     @Test
     void triggerAreaExecution_WithMultipleLinkedActions_ShouldTriggerAllReactions() {
         // Given
+        // Make source action event-only (not executable)
+        ActionDefinition eventOnlyDef = new ActionDefinition();
+        eventOnlyDef.setId(UUID.randomUUID());
+        eventOnlyDef.setKey("test.event");
+        eventOnlyDef.setIsExecutable(false);
+        actionInstance.setActionDefinition(eventOnlyDef);
+        
         ActionInstance targetAction2 = new ActionInstance();
         targetAction2.setId(UUID.randomUUID());
         targetAction2.setName("Target Action 2");
         targetAction2.setArea(area);
         targetAction2.setActionDefinition(actionDefinition);
+        targetAction2.setEnabled(true);
 
         ActionLink actionLink1 = new ActionLink();
         actionLink1.setSourceActionInstance(actionInstance);
@@ -212,14 +233,14 @@ class ExecutionTriggerServiceTest {
         actionLink2.setArea(area);
 
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId()))
-                .thenReturn(List.of(actionLink1, actionLink2));
+                .thenReturn(new ArrayList<>(List.of(actionLink1, actionLink2)));
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(targetActionInstance.getId()))
                 .thenReturn(Collections.emptyList());
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(targetAction2.getId()))
                 .thenReturn(Collections.emptyList());
         when(executionService.createExecutionWithActivationType(
                 any(ActionInstance.class),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         )).thenReturn(execution);
@@ -231,20 +252,29 @@ class ExecutionTriggerServiceTest {
         verify(actionLinkRepository).findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId());
         verify(executionService, times(2)).createExecutionWithActivationType(
                 any(ActionInstance.class),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         );
+        verify(redisEventService, times(2)).publishAreaEvent(any(AreaEventMessage.class));
     }
 
     @Test
     void triggerAreaExecution_WithLinkedActionFailure_ShouldContinueWithOtherReactions() {
         // Given
+        // Make source action event-only (not executable)
+        ActionDefinition eventOnlyDef = new ActionDefinition();
+        eventOnlyDef.setId(UUID.randomUUID());
+        eventOnlyDef.setKey("test.event");
+        eventOnlyDef.setIsExecutable(false);
+        actionInstance.setActionDefinition(eventOnlyDef);
+        
         ActionInstance targetAction2 = new ActionInstance();
         targetAction2.setId(UUID.randomUUID());
         targetAction2.setName("Target Action 2");
         targetAction2.setArea(area);
         targetAction2.setActionDefinition(actionDefinition);
+        targetAction2.setEnabled(true);
 
         ActionLink actionLink1 = new ActionLink();
         actionLink1.setSourceActionInstance(actionInstance);
@@ -257,14 +287,20 @@ class ExecutionTriggerServiceTest {
         actionLink2.setArea(area);
 
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId()))
-                .thenReturn(List.of(actionLink1, actionLink2));
+                .thenReturn(new ArrayList<>(List.of(actionLink1, actionLink2)));
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(targetActionInstance.getId()))
                 .thenThrow(new RuntimeException("Test error"));
         when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(targetAction2.getId()))
                 .thenReturn(Collections.emptyList());
         when(executionService.createExecutionWithActivationType(
+                eq(targetActionInstance),
+                eq(ActivationModeType.CHAIN),
+                eq(inputPayload),
+                any(UUID.class)
+        )).thenReturn(execution);
+        when(executionService.createExecutionWithActivationType(
                 eq(targetAction2),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         )).thenReturn(execution);
@@ -280,7 +316,7 @@ class ExecutionTriggerServiceTest {
         // Should still process the second action despite first failure
         verify(executionService).createExecutionWithActivationType(
                 eq(targetAction2),
-                eq(ActivationModeType.MANUAL),
+                eq(ActivationModeType.CHAIN),
                 eq(inputPayload),
                 any(UUID.class)
         );
@@ -315,13 +351,11 @@ class ExecutionTriggerServiceTest {
     @Test
     void triggerAreaExecution_WhenExecutionServiceFails_ShouldThrowException() {
         // Given
-        when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId()))
-                .thenReturn(Collections.emptyList());
         when(executionService.createExecutionWithActivationType(
-                any(),
-                any(),
-                any(),
-                any()
+                eq(actionInstance),
+                eq(ActivationModeType.MANUAL),
+                eq(inputPayload),
+                any(UUID.class)
         )).thenThrow(new RuntimeException("Database error"));
 
         // When & Then
@@ -335,13 +369,11 @@ class ExecutionTriggerServiceTest {
     @Test
     void triggerAreaExecution_WhenRedisServiceFails_ShouldThrowException() {
         // Given
-        when(actionLinkRepository.findBySourceActionInstanceIdWithTargetFetch(actionInstance.getId()))
-                .thenReturn(Collections.emptyList());
         when(executionService.createExecutionWithActivationType(
-                any(),
-                any(),
-                any(),
-                any()
+                eq(actionInstance),
+                eq(ActivationModeType.MANUAL),
+                eq(inputPayload),
+                any(UUID.class)
         )).thenReturn(execution);
         doThrow(new RuntimeException("Redis connection error"))
                 .when(redisEventService).publishAreaEvent(any());

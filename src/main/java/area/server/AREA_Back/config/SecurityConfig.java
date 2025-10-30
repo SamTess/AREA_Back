@@ -36,14 +36,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",
-            "http://localhost:*",
             "https://*.areaaaaaaaaaaaaaaaaaaa.space",
-            "https://areaaaaaaaaaaaaaaaaaaa.space",
-            "https://*.ngrok-free.app",
-            "https://*.ngrok.io",
-            "http://10.0.2.2:*",
-            "http://192.168.*.*:*",
-            "http://196.168.*.*:*"
+            "https://areaaaaaaaaaaaaaaaaaaa.space"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
@@ -75,7 +69,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/oauth/**").permitAll()
-                .requestMatchers("/oauth-callback").permitAll()
+                .requestMatchers("/api/oauth-callback").permitAll()
                 .requestMatchers("/api/about/**").permitAll()
                 .requestMatchers("/about.json").permitAll()
                 .requestMatchers("/api/services/catalog", "/api/services/catalog/enabled").permitAll()

@@ -320,7 +320,7 @@ class OAuthGoogleServiceTest {
     @Test
     void testAuthUrlContainsCorrectRedirectUri() {
         String authUrl = oauthGoogleService.getUserAuthUrl();
-        assertTrue(authUrl.contains("redirect_uri=http://localhost:3000/oauth-callback"));
+        assertTrue(authUrl.contains("redirect_uri=http://localhost:3000/api/oauth-callback"));
     }
 
     @Test

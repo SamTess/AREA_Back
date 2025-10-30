@@ -7,6 +7,7 @@ import area.server.AREA_Back.dto.AuthResponse;
 import area.server.AREA_Back.dto.OAuthLoginRequest;
 import area.server.AREA_Back.dto.OAuthProvider;
 import area.server.AREA_Back.service.Auth.OAuthService;
+import area.server.AREA_Back.service.Auth.OAuthStateService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
+
 
 @RestController
 @RequestMapping("/api/oauth")
@@ -30,9 +33,11 @@ import java.util.Optional;
 public class OAuthController {
 
     private final List<OAuthService> oauthServices;
+    private final OAuthStateService oauthStateService;
 
-    public OAuthController(List<OAuthService> oauthServices) {
+    public OAuthController(List<OAuthService> oauthServices, OAuthStateService oauthStateService) {
         this.oauthServices = oauthServices;
+        this.oauthStateService = oauthStateService;
     }
 
     @GetMapping("/providers")
@@ -60,22 +65,19 @@ public class OAuthController {
 
         try {
             String authorizationUrl = svc.get().getUserAuthUrl();
-            if (mobile_redirect != null && !mobile_redirect.isEmpty()) {
-                String state = java.util.Base64.getEncoder().encodeToString(
-                    String.format("{\"mobile_redirect\":\"%s\",\"origin\":\"%s\",\"mode\":\"%s\",\"provider\":\"%s\"}",
-                        mobile_redirect,
-                        origin != null ? origin : "web",
-                        mode != null ? mode : "login",
-                        provider.toLowerCase())
-                    .getBytes(java.nio.charset.StandardCharsets.UTF_8)
-                );
-                authorizationUrl += "&state=" + java.net.URLEncoder.encode(state, java.nio.charset.StandardCharsets.UTF_8);
-            }
+            String secureState = oauthStateService.createSecureState(
+                mobile_redirect,
+                origin != null ? origin : "web",
+                mode != null ? mode : "login",
+                provider.toLowerCase()
+            );
+            authorizationUrl += "&state=" + java.net.URLEncoder.encode(secureState, java.nio.charset.StandardCharsets.UTF_8);
             response.setHeader("Location", authorizationUrl);
             response.setStatus(HttpServletResponse.SC_FOUND);
             return ResponseEntity.status(HttpStatus.FOUND).body("Redirecting to " + provider + "...");
 
         } catch (Exception e) {
+            log.error("Failed to create OAuth authorization URL for provider: {}", provider, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Failed to redirect to " + provider + ": " + e.getMessage());
         }

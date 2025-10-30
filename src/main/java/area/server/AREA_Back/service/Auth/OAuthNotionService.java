@@ -95,7 +95,7 @@ public class OAuthNotionService extends OAuthService {
             "Notion",
             "https://img.icons8.com/color/48/notion--v1.png",
             "https://api.notion.com/v1/oauth/authorize?client_id=" + notionClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&response_type=code"
                 + "&owner=user",
             notionClientId,
@@ -308,7 +308,7 @@ public class OAuthNotionService extends OAuthService {
             Map<String, String> body = new HashMap<>();
             body.put("grant_type", "authorization_code");
             body.put("code", authorizationCode);
-            body.put("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.put("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
 
             HttpEntity<Map<String, String>> notionRequest = new HttpEntity<>(body, headers);
 

@@ -81,7 +81,7 @@ public class OAuthDiscordService extends OAuthService {
             "Discord",
             "https://img.icons8.com/color/48/discord-logo.png",
             "https://discord.com/api/oauth2/authorize?client_id=" + discordClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&response_type=code"
                 + "&scope=bot%20identify%20guilds%20email%20messages.read"
                 + "&permissions=8",
@@ -309,7 +309,7 @@ public class OAuthDiscordService extends OAuthService {
             body.add("client_secret", this.clientSecret);
             body.add("grant_type", "authorization_code");
             body.add("code", authorizationCode);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
 
             HttpEntity<MultiValueMap<String, String>> discordRequest = new HttpEntity<>(body, headers);
 

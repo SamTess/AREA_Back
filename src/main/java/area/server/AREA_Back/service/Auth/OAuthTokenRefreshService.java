@@ -169,6 +169,7 @@ public class OAuthTokenRefreshService {
             return false;
         }
         LocalDateTime now = LocalDateTime.now();
-        return expiresAt.isBefore(now) || expiresAt.minusMinutes(REFRESH_BUFFER_MINUTES).isBefore(now);
+        LocalDateTime refreshThreshold = expiresAt.minusMinutes(REFRESH_BUFFER_MINUTES);
+        return now.isAfter(refreshThreshold) || now.isEqual(refreshThreshold);
     }
 }

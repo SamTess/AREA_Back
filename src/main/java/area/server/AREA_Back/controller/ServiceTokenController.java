@@ -1,6 +1,5 @@
 package area.server.AREA_Back.controller;
 
-import area.server.AREA_Back.constants.AuthTokenConstants;
 import area.server.AREA_Back.dto.ServiceTokenResponse;
 import area.server.AREA_Back.dto.ServiceTokenStatusResponse;
 import area.server.AREA_Back.dto.StoreTokenRequest;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -192,9 +190,13 @@ public class ServiceTokenController {
 
     private UUID getUserIdFromRequest(HttpServletRequest request) {
         try {
-            String accessToken = extractAccessTokenFromCookies(request);
+            UUID userId = area.server.AREA_Back.util.AuthenticationUtils.getCurrentUserId();
+            if (userId != null) {
+                return userId;
+            }
+            String accessToken = area.server.AREA_Back.util.AuthenticationUtils.extractAccessToken(request);
             if (accessToken == null) {
-                throw new RuntimeException("Access token not found in cookies");
+                throw new RuntimeException("Access token not found");
             }
 
             return jwtService.extractUserIdFromAccessToken(accessToken);
@@ -202,18 +204,5 @@ public class ServiceTokenController {
             log.error("Failed to extract user ID from request: {}", e.getMessage());
             throw new RuntimeException("Failed to extract user ID", e);
         }
-    }
-
-    private String extractAccessTokenFromCookies(HttpServletRequest request) {
-        if (request.getCookies() == null) {
-            return null;
-        }
-
-        for (Cookie cookie : request.getCookies()) {
-            if (AuthTokenConstants.ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
-                return cookie.getValue();
-            }
-        }
-        return null;
     }
 }

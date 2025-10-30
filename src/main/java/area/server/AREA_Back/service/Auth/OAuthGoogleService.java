@@ -94,7 +94,7 @@ public class OAuthGoogleService extends OAuthService {
             "Google",
             "https://img.icons8.com/?size=100&id=17949&format=png&color=000000",
             "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + googleClientId
-                + "&redirect_uri=" + redirectBaseUrl + "/oauth-callback"
+                + "&redirect_uri=" + redirectBaseUrl + "/api/oauth-callback"
                 + "&response_type=code"
                 + "&scope=openid%20email%20profile"
                 + "%20https://www.googleapis.com/auth/gmail.readonly"
@@ -262,7 +262,7 @@ public class OAuthGoogleService extends OAuthService {
             body.add("code", authorizationCode);
             body.add("client_id", this.clientId);
             body.add("client_secret", this.clientSecret);
-            body.add("redirect_uri", this.redirectBaseUrl + "/oauth-callback");
+            body.add("redirect_uri", this.redirectBaseUrl + "/api/oauth-callback");
             body.add("grant_type", "authorization_code");
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
@@ -511,6 +511,40 @@ public class OAuthGoogleService extends OAuthService {
         }
     }
 
+    private String generateUsernameFromProfile(UserProfileData profileData) {
+        String baseUsername;
+        if (profileData.givenName != null && !profileData.givenName.trim().isEmpty()) {
+            baseUsername = profileData.givenName.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else if (profileData.name != null && !profileData.name.trim().isEmpty()) {
+            baseUsername = profileData.name.trim().toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else if (profileData.email != null && !profileData.email.isEmpty()) {
+            baseUsername = profileData.email.split("@")[0].toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+        } else {
+            baseUsername = "user";
+        }
+        if (baseUsername.isEmpty()) {
+            baseUsername = "user";
+        }
+        String username = baseUsername;
+        int suffix = 1;
+        int maxAttempts = 100;
+        int attempts = 0;
+        while (userRepository.findByUsername(username).isPresent()) {
+            if (attempts >= maxAttempts) {
+                log.error("Failed to generate unique username after {} attempts for base: {}", maxAttempts, baseUsername);
+                throw new RuntimeException(
+                    "Unable to generate unique username after " + maxAttempts + " attempts. Please try again."
+                );
+            }
+            username = baseUsername + suffix;
+            suffix++;
+            attempts++;
+        }
+        return username;
+    }
     private static class UserProfileData {
         String email;
         String userIdentifier;
@@ -551,44 +585,5 @@ public class OAuthGoogleService extends OAuthService {
             this.locale = locale;
             this.verifiedEmail = verifiedEmail;
         }
-    }
-
-    /**
-     * Génère un username unique à partir des données du profil OAuth.
-     * Tente d'utiliser le nom, sinon la partie avant @ de l'email.
-     * Ajoute un suffixe numérique si le username existe déjà.
-     */
-    private String generateUsernameFromProfile(UserProfileData profileData) {
-        String baseUsername;
-        
-        // Essayer d'utiliser le givenName ou name
-        if (profileData.givenName != null && !profileData.givenName.trim().isEmpty()) {
-            baseUsername = profileData.givenName.trim().toLowerCase()
-                .replaceAll("[^a-z0-9]", ""); // Enlever caractères spéciaux
-        } else if (profileData.name != null && !profileData.name.trim().isEmpty()) {
-            baseUsername = profileData.name.trim().toLowerCase()
-                .replaceAll("[^a-z0-9]", "");
-        } else if (profileData.email != null && !profileData.email.isEmpty()) {
-            // Fallback: utiliser la partie avant @ de l'email
-            baseUsername = profileData.email.split("@")[0].toLowerCase()
-                .replaceAll("[^a-z0-9]", "");
-        } else {
-            baseUsername = "user";
-        }
-        
-        // S'assurer que le username n'est pas vide
-        if (baseUsername.isEmpty()) {
-            baseUsername = "user";
-        }
-        
-        // Vérifier si le username existe déjà, ajouter un suffixe si nécessaire
-        String username = baseUsername;
-        int suffix = 1;
-        while (userRepository.findByUsername(username).isPresent()) {
-            username = baseUsername + suffix;
-            suffix++;
-        }
-        
-        return username;
     }
 }

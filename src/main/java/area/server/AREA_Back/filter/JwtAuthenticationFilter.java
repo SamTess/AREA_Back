@@ -125,7 +125,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
         }
-        return authHeader.substring(7); // Remove "Bearer " prefix
+        return authHeader.substring(7);
     }
 
     private boolean isPublicEndpoint(final String path) {
@@ -135,6 +135,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                || path.equals("/api/auth/reset-password")
                || path.equals("/api/auth/verify")
                || path.startsWith("/api/oauth/")
+               || path.equals("/api/oauth-callback")
                || path.startsWith("/swagger-ui/")
                || path.startsWith("/v3/api-docs/")
                || path.equals("/swagger-ui.html")

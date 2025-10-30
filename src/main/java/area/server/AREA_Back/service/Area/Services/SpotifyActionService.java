@@ -131,7 +131,6 @@ public class SpotifyActionService {
                 return Collections.emptyList();
             }
 
-            // Add userId to params for state tracking
             Map<String, Object> enrichedParams = new HashMap<>(actionParams);
             enrichedParams.put("_internal_user_id", userId);
 

@@ -18,10 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class OAuthCallbackController {
 
-	private final OAuthStateService oauthStateService;
+    private final OAuthStateService oauthStateService;
 
 	@GetMapping("/api/oauth-callback")
-	public void handleOAuthCallback(
+    public void handleOAuthCallback(
 			@RequestParam(required = false) String code,
 			@RequestParam(required = false) String state,
 			@RequestParam(required = false) String error,

@@ -192,8 +192,8 @@ class AreaServiceTest {
         assertNotNull(response);
         assertEquals("Test Area", response.getName());
         assertEquals(testUserId, response.getUserId());
-        verify(areaRepository, times(1)).save(any(Area.class));
-        verify(actionInstanceRepository, atLeast(2)).save(any(ActionInstance.class));
+        verify(areaRepository, times(2)).save(any(Area.class)); // Saved twice: initially and after adding instance IDs
+        verify(actionInstanceRepository, times(2)).save(any(ActionInstance.class)); // 1 action + 1 reaction
     }
 
     @Test
@@ -1026,7 +1026,7 @@ class AreaServiceTest {
             return instance;
         });
         when(activationModeRepository.save(any(ActivationMode.class))).thenAnswer(i -> i.getArgument(0));
-        when(actionLinkService.createActionLink(any(), any())).thenReturn(null);
+        when(actionLinkService.createActionLinksBatch(any())).thenReturn(null);
         when(actionLinkService.getActionLinksByArea(any(UUID.class))).thenReturn(new ArrayList<>());
 
         // Act
@@ -1034,7 +1034,7 @@ class AreaServiceTest {
 
         // Assert
         assertNotNull(response);
-        verify(actionLinkService, times(1)).createActionLink(any(), eq(testAreaId));
+        verify(actionLinkService, times(1)).createActionLinksBatch(any());
     }
 
     @Test

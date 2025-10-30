@@ -640,7 +640,7 @@ class SlackEventPollingServiceTest {
         // Given
         ActivationMode activationMode = new ActivationMode();
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 600);
+        config.put("poll_interval", 600);
         activationMode.setConfig(config);
 
         // Use reflection to call private method
@@ -681,7 +681,7 @@ class SlackEventPollingServiceTest {
         ActivationMode activationMode = new ActivationMode();
         activationMode.setActionInstance(actionInstance);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         LocalDateTime expectedTime = LocalDateTime.now().minusSeconds(100);
@@ -713,7 +713,7 @@ class SlackEventPollingServiceTest {
         ActivationMode activationMode = new ActivationMode();
         activationMode.setActionInstance(actionInstance);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         // Use reflection to call private method
@@ -784,7 +784,7 @@ class SlackEventPollingServiceTest {
         activationMode.setType(ActivationModeType.POLL);
         activationMode.setEnabled(true);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         Map<String, Object> event1 = new HashMap<>();
@@ -832,7 +832,7 @@ class SlackEventPollingServiceTest {
         activationMode.setType(ActivationModeType.POLL);
         activationMode.setEnabled(true);
         Map<String, Object> config = new HashMap<>();
-        config.put("pollingInterval", 300);
+        config.put("poll_interval", 300);
         activationMode.setConfig(config);
 
         when(activationModeRepository.findByActionInstanceAndTypeAndEnabled(

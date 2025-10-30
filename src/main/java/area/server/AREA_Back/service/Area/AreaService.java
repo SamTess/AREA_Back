@@ -335,7 +335,11 @@ public class AreaService {
             boolean isAction) {
 
         if (jsonbData == null || jsonbData.isEmpty()) {
-            return jsonbData != null ? jsonbData : new ArrayList<>();
+            if (jsonbData != null) {
+                return jsonbData;
+            } else {
+                return new ArrayList<>();
+            }
         }
 
         List<Map<String, Object>> enriched = new ArrayList<>();

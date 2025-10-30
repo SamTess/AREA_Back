@@ -11,8 +11,10 @@ import area.server.AREA_Back.service.Auth.JwtService;
 import area.server.AREA_Back.service.Auth.OAuthDiscordService;
 import area.server.AREA_Back.service.Auth.TokenEncryptionService;
 import area.server.AREA_Back.service.Redis.RedisTokenService;
+import area.server.AREA_Back.service.Webhook.DiscordWelcomeService;
 import area.server.AREA_Back.repository.UserOAuthIdentityRepository;
 import area.server.AREA_Back.repository.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +81,10 @@ class OAuthDiscordServiceTest {
     @Mock
     private JwtCookieProperties jwtCookieProperties;
 
-    private SimpleMeterRegistry meterRegistry;
+    @Mock
+    private DiscordWelcomeService discordWelcomeService;
+
+    private MeterRegistry meterRegistry;
     private OAuthDiscordService oauthDiscordService;
 
     @BeforeEach
@@ -92,6 +97,9 @@ class OAuthDiscordServiceTest {
         lenient().when(jwtCookieProperties.isSecure()).thenReturn(false);
         lenient().when(jwtCookieProperties.getSameSite()).thenReturn("Strict");
         lenient().when(jwtCookieProperties.getDomain()).thenReturn(null);
+
+        // Setup DiscordWelcomeService mock
+        lenient().doNothing().when(discordWelcomeService).sendWelcomeMessagesToNewGuilds(anyString());
 
         oauthDiscordService = new OAuthDiscordService(
             "test-client-id",
@@ -106,6 +114,7 @@ class OAuthDiscordServiceTest {
             userOAuthIdentityRepository,
             userRepository,
             authService,
+            discordWelcomeService,
             restTemplate
         );
 

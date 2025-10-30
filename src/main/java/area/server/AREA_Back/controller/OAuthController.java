@@ -9,6 +9,7 @@ import area.server.AREA_Back.dto.OAuthProvider;
 import area.server.AREA_Back.service.Auth.OAuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/oauth")
 @Tag(name = "OAuth", description = "API for managing oauth and providers")
+@Slf4j
 public class OAuthController {
 
     private final List<OAuthService> oauthServices;
@@ -80,9 +82,9 @@ public class OAuthController {
     }
 
     @PostMapping("/{provider}/exchange")
-    public ResponseEntity<AuthResponse> exchangeToken(@PathVariable("provider") String provider,
-                                                        @RequestBody Map<String, String> requestBody,
-                                                        HttpServletResponse response) {
+    public ResponseEntity<?> exchangeToken(@PathVariable("provider") String provider,
+                                           @RequestBody Map<String, String> requestBody,
+                                           HttpServletResponse response) {
 
         String authorizationCode = requestBody.get("code");
         if (authorizationCode == null || authorizationCode.trim().isEmpty()) {
@@ -104,7 +106,23 @@ public class OAuthController {
         } catch (UnsupportedOperationException e) {
             return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("OAuth authentication failed for provider {}: {}", provider, e.getMessage(), e);
+
+            if (e.getMessage() != null && (e.getMessage().contains("already linked")
+                    || e.getMessage().contains("duplicate")
+                    || e.getMessage().contains("unique constraint"))) {
+                Map<String, String> error = Map.of(
+                    "error", "already_linked",
+                    "message", "This " + provider + " account is already linked to your user account"
+                );
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+            }
+
+            Map<String, String> error = Map.of(
+                "error", "oauth_failed",
+                "message", e.getMessage() != null ? e.getMessage() : "OAuth authentication failed"
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }

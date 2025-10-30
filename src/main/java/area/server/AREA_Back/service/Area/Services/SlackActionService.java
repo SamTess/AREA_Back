@@ -23,10 +23,14 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +47,8 @@ public class SlackActionService {
 
     private Counter slackActionsExecuted;
     private Counter slackActionsFailed;
+
+    private final Map<String, Set<String>> knownChannelMembers = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -96,17 +102,20 @@ public class SlackActionService {
                 return Collections.emptyList();
             }
 
+            Map<String, Object> enrichedParams = new HashMap<>(actionParams);
+            enrichedParams.put("_internal_user_id", userId);
+
             switch (actionKey) {
                 case "new_message":
-                    return checkNewMessages(slackToken, actionParams, lastCheck);
+                    return checkNewMessages(slackToken, enrichedParams, lastCheck);
                 case "new_channel":
-                    return checkNewChannels(slackToken, actionParams, lastCheck);
+                    return checkNewChannels(slackToken, enrichedParams, lastCheck);
                 case "user_joined":
-                    return checkUserJoined(slackToken, actionParams, lastCheck);
+                    return checkUserJoined(slackToken, enrichedParams, lastCheck);
                 case "reaction_added":
-                    return checkReactionAdded(slackToken, actionParams, lastCheck);
+                    return checkReactionAdded(slackToken, enrichedParams, lastCheck);
                 case "file_shared":
-                    return checkFileShared(slackToken, actionParams, lastCheck);
+                    return checkFileShared(slackToken, enrichedParams, lastCheck);
                 default:
                     log.warn("Unknown Slack event action: {}", actionKey);
                     return Collections.emptyList();
@@ -426,6 +435,13 @@ public class SlackActionService {
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null || !Boolean.TRUE.equals(responseBody.get("ok"))) {
+            String errorMsg;
+            if (responseBody != null) {
+                errorMsg = String.valueOf(responseBody.get("error"));
+            } else {
+                errorMsg = "Unknown error";
+            }
+            log.warn("Failed to fetch Slack channel members for channel '{}': {}", channel, errorMsg);
             return Collections.emptyList();
         }
 
@@ -435,12 +451,54 @@ public class SlackActionService {
             return Collections.emptyList();
         }
 
+        Object userIdObj = params.get("_internal_user_id");
+        UUID userId = null;
+        if (userIdObj instanceof UUID) {
+            userId = (UUID) userIdObj;
+        } else if (userIdObj instanceof String) {
+            try {
+                userId = UUID.fromString((String) userIdObj);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid userId format in params: {}", userIdObj);
+            }
+        }
+
+        String userIdString;
+        if (userId != null) {
+            userIdString = userId.toString();
+        } else {
+            userIdString = "unknown";
+        }
+        String stateKey = userIdString + ":" + channel;
+
+        Set<String> previousMembers = knownChannelMembers.get(stateKey);
+        Set<String> currentMembers = new HashSet<>(members);
+
+        knownChannelMembers.put(stateKey, currentMembers);
+
+        if (previousMembers == null) {
+            log.debug("First check for channel '{}', storing {} existing members", channel, currentMembers.size());
+            return Collections.emptyList();
+        }
+
+        Set<String> newMembers = new HashSet<>(currentMembers);
+        newMembers.removeAll(previousMembers);
+
+        if (newMembers.isEmpty()) {
+            log.trace("No new members in channel '{}'", channel);
+            return Collections.emptyList();
+        }
+
+        log.debug("Found {} new member(s) in channel '{}'", newMembers.size(), channel);
+
         List<Map<String, Object>> events = new ArrayList<>();
-        for (String userId : members) {
+        List<String> sortedNewMembers = newMembers.stream().sorted().collect(Collectors.toList());
+        for (String newUserId : sortedNewMembers) {
             Map<String, Object> event = new HashMap<>();
             event.put("type", "user_joined");
             event.put("channel", channel);
-            event.put("user", userId);
+            event.put("user", newUserId);
+            event.put("timestamp", LocalDateTime.now().toString());
             events.add(event);
         }
 

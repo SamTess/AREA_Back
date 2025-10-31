@@ -82,31 +82,31 @@ public class JwtService {
         if (accessTokenSecret == null || accessTokenSecret.trim().isEmpty()) {
             log.error("JWT_ACCESS_SECRET is not set! Application cannot start securely.");
             throw new IllegalStateException(
-                "JWT_ACCESS_SECRET is mandatory. Please set it in environment variables. " +
-                "Generate with: openssl rand -base64 32"
+                "JWT_ACCESS_SECRET is mandatory. Please set it in environment variables. "
+                + "Generate with: openssl rand -base64 32"
             );
         }
         if (refreshTokenSecret == null || refreshTokenSecret.trim().isEmpty()) {
             log.error("JWT_REFRESH_SECRET is not set! Application cannot start securely.");
             throw new IllegalStateException(
-                "JWT_REFRESH_SECRET is mandatory. Please set it in environment variables. " +
-                "Generate with: openssl rand -base64 32"
+                "JWT_REFRESH_SECRET is mandatory. Please set it in environment variables. "
+                + "Generate with: openssl rand -base64 32"
             );
         }
         try {
             byte[] accessKeyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(accessTokenSecret);
             if (accessKeyBytes.length < MIN_KEY_LENGTH_BYTES) {
                 throw new IllegalStateException(
-                    String.format("JWT_ACCESS_SECRET must be at least 256 bits (32 bytes). " +
-                    "Current: %d bits. Generate with: openssl rand -base64 32",
+                    String.format("JWT_ACCESS_SECRET must be at least 256 bits (32 bytes). "
+                    + "Current: %d bits. Generate with: openssl rand -base64 32",
                     accessKeyBytes.length * BITS_PER_BYTE)
                 );
             }
             byte[] refreshKeyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(refreshTokenSecret);
             if (refreshKeyBytes.length < MIN_KEY_LENGTH_BYTES) {
                 throw new IllegalStateException(
-                    String.format("JWT_REFRESH_SECRET must be at least 256 bits (32 bytes). " +
-                    "Current: %d bits. Generate with: openssl rand -base64 32",
+                    String.format("JWT_REFRESH_SECRET must be at least 256 bits (32 bytes). "
+                    + "Current: %d bits. Generate with: openssl rand -base64 32",
                     refreshKeyBytes.length * BITS_PER_BYTE)
                 );
             }

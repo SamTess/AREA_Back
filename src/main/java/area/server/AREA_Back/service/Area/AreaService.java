@@ -742,11 +742,12 @@ public class AreaService {
                     log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
                             connection.getSourceServiceId(), connection.getTargetServiceId(), sourceActionId);
                     throw new IllegalArgumentException(
-                        String.format("Invalid connection: %s and %s map to the same ActionInstance. " +
-                                     "Cannot create a link from an action to itself.",
+                        String.format("Invalid connection: %s and %s map to the same ActionInstance. "
+                                    + "Cannot create a link from an action to itself.",
                                      connection.getSourceServiceId(), connection.getTargetServiceId()));
                 }
-                BatchCreateActionLinksRequest.ActionLinkData linkData = new BatchCreateActionLinksRequest.ActionLinkData();
+                BatchCreateActionLinksRequest.ActionLinkData linkData =
+                    new BatchCreateActionLinksRequest.ActionLinkData();
                 linkData.setSourceActionInstanceId(sourceActionId);
                 linkData.setTargetActionInstanceId(targetActionId);
                 linkData.setLinkType(connection.getLinkType());
@@ -754,7 +755,8 @@ public class AreaService {
                 linkData.setCondition(connection.getCondition());
                 linkData.setOrder(connection.getOrder());
                 linkRequests.add(linkData);
-                log.debug("Prepared link: {} -> {} (order: {})", sourceActionId, targetActionId, connection.getOrder());
+                log.debug("Prepared link: {} -> {} (order: {})",
+                        sourceActionId, targetActionId, connection.getOrder());
             } else {
                 log.warn("Cannot create link: source {} or target {} not found in mapping",
                         connection.getSourceServiceId(), connection.getTargetServiceId());
@@ -793,14 +795,14 @@ public class AreaService {
                 if (sourceActionId.equals(targetActionId)) {
                     log.error("Cannot create self-referencing link: {} -> {} (both map to {})",
                             sourceServiceId, targetServiceId, sourceActionId);
-                    throw new IllegalStateException(
-                        String.format("Invalid link configuration: %s and %s map to the same ActionInstance %s. " +
-                                     "This indicates duplicate reactions are not properly handled.",
-                                     sourceServiceId, targetServiceId, sourceActionId));
+                    String errorMsg = String.format(
+                            "Invalid link configuration: %s and %s map to the same ActionInstance %s. "
+                            + "This indicates duplicate reactions are not properly handled.",
+                            sourceServiceId, targetServiceId, sourceActionId);
+                    throw new IllegalStateException(errorMsg);
                 }
                 try {
-                    area.server.AREA_Back.dto.CreateActionLinkRequest linkRequest =
-                        new area.server.AREA_Back.dto.CreateActionLinkRequest();
+                    CreateActionLinkRequest linkRequest = new CreateActionLinkRequest();
                     linkRequest.setSourceActionInstanceId(sourceActionId);
                     linkRequest.setTargetActionInstanceId(targetActionId);
                     linkRequest.setLinkType("chain");

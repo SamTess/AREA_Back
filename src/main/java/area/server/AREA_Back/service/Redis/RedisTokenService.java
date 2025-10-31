@@ -141,8 +141,8 @@ public class RedisTokenService {
             String usedKey = AuthTokenConstants.REDIS_USED_REFRESH_PREFIX + refreshToken;
             Boolean wasUsed = redisTemplate.hasKey(usedKey);
             if (Boolean.TRUE.equals(wasUsed)) {
-                log.error("SECURITY ALERT: Refresh token reuse detected for user {}. " +
-                    "This indicates a possible token theft. Revoking all tokens.", userId);
+                log.error("SECURITY ALERT: Refresh token reuse detected for user {}. "
+                        + "This indicates a possible token theft. Revoking all tokens.", userId);
                 try {
                     deleteAllTokensForUser(userId, null);
                 } catch (Exception e) {
@@ -209,7 +209,7 @@ public class RedisTokenService {
 
         if (oldToken != null && !oldToken.isEmpty()) {
             String usedKey = AuthTokenConstants.REDIS_USED_REFRESH_PREFIX + oldToken;
-            redisTemplate.opsForValue().set(usedKey, "used", Duration.ofDays(7));
+            redisTemplate.opsForValue().set(usedKey, "used", AuthTokenConstants.USED_REFRESH_TOKEN_TTL);
             log.debug("Marked old refresh token as used for user: {}", userId);
         }
         deleteRefreshToken(userId);

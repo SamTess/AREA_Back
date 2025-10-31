@@ -217,7 +217,7 @@ class EmailServiceTest {
             .thenThrow(new RuntimeException("Resend failed"));
 
         // Mock failed SMTP
-        doThrow(new MailException("SMTP failed") {}).when(mailSender).send(any(SimpleMailMessage.class));
+        doThrow(new MailException("SMTP failed") { }).when(mailSender).send(any(SimpleMailMessage.class));
 
         // When
         boolean result = emailService.sendEmail(to, subject, body);
@@ -238,7 +238,7 @@ class EmailServiceTest {
         String subject = "Test Subject";
         String body = "Test Body";
 
-        doThrow(new MailException("SMTP failed") {}).when(mailSender).send(any(SimpleMailMessage.class));
+        doThrow(new MailException("SMTP failed") { }).when(mailSender).send(any(SimpleMailMessage.class));
 
         // When
         boolean result = emailService.sendEmail(to, subject, body);

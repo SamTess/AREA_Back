@@ -27,8 +27,9 @@ import java.util.UUID;
 public class OAuthStateService {
 
     private static final String HMAC_ALGORITHM = "HmacSHA256";
-    private static final long STATE_EXPIRATION_MS = 300000; // 5 minutes
+    private static final long STATE_EXPIRATION_MS = 300000;
     private static final String REDIS_NONCE_PREFIX = "oauth:nonce:";
+    private static final Duration NONCE_TTL = Duration.ofMinutes(10);
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -126,7 +127,7 @@ public class OAuthStateService {
             String nonceKey = REDIS_NONCE_PREFIX + nonce;
 
             Boolean wasSet = redisTemplate.opsForValue()
-                .setIfAbsent(nonceKey, "used", Duration.ofMinutes(10));
+                .setIfAbsent(nonceKey, "used", NONCE_TTL);
 
             if (wasSet == null || !wasSet) {
                 log.warn("OAuth state nonce already used: {}", nonce);

@@ -59,7 +59,8 @@ public class DiscordWebhookService {
     }
 
     @Transactional
-    public Map<String, Object> processWebhook(Map<String, Object> payload, String signature, String timestamp, byte[] rawBodyBytes) {
+    public Map<String, Object> processWebhook(Map<String, Object> payload, String signature,
+                                              String timestamp, byte[] rawBodyBytes) {
         webhookCounter.increment();
         log.info("Processing Discord webhook");
 

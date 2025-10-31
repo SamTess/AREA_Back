@@ -254,6 +254,7 @@ class DiscordGatewayServiceTest {
         
         when(objectMapper.readTree(messageContent)).thenReturn(mockPayload);
         when(objectMapper.convertValue(eq(dNode), eq(Map.class))).thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsBytes(any())).thenReturn("test_payload_bytes".getBytes());
 
         // When
         ReflectionTestUtils.invokeMethod(discordGatewayService, "handleGatewayMessage", messageContent);
@@ -261,7 +262,7 @@ class DiscordGatewayServiceTest {
         // Then
         @SuppressWarnings("unchecked")
         Class<Map<String, Object>> mapClass = (Class<Map<String, Object>>) (Class<?>) Map.class;
-        verify(discordWebhookService, times(1)).processWebhook(any(mapClass), isNull(), isNull());
+        verify(discordWebhookService, times(1)).processWebhook(any(mapClass), isNull(), isNull(), any(byte[].class));
     }
 
     @Test
@@ -555,6 +556,7 @@ class DiscordGatewayServiceTest {
         when(mockPayload.get("d")).thenReturn(dNode);
         
         when(objectMapper.convertValue(eq(dNode), eq(Map.class))).thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsBytes(any())).thenReturn("test_payload_bytes".getBytes());
 
         // When
         ReflectionTestUtils.invokeMethod(discordGatewayService, "handleDispatchEvent", mockPayload);
@@ -562,7 +564,7 @@ class DiscordGatewayServiceTest {
         // Then
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass((Class<Map<String, Object>>) (Class<?>) Map.class);
-        verify(discordWebhookService, times(1)).processWebhook(payloadCaptor.capture(), isNull(), isNull());
+        verify(discordWebhookService, times(1)).processWebhook(payloadCaptor.capture(), isNull(), isNull(), any(byte[].class));
         
         Map<String, Object> capturedPayload = payloadCaptor.getValue();
         assertEquals("MESSAGE_CREATE", capturedPayload.get("t"));
@@ -747,6 +749,7 @@ class DiscordGatewayServiceTest {
         
         when(objectMapper.readTree(messageContent)).thenReturn(mockPayload);
         when(objectMapper.convertValue(eq(dNode), eq(Map.class))).thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsBytes(any())).thenReturn("test_payload_bytes".getBytes());
 
         // When
         ReflectionTestUtils.invokeMethod(discordGatewayService, "handleGatewayMessage", messageContent);

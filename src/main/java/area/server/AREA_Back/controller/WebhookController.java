@@ -95,7 +95,7 @@ public class WebhookController {
             }
 
             ResponseEntity<Object> serviceResponse = processServiceSpecificWebhook(
-                service, action, payload, userId, eventId, startTime, request);
+                service, action, payload, userId, eventId, startTime, request, rawBody);
             if (serviceResponse != null) {
                 return serviceResponse;
             }
@@ -162,22 +162,26 @@ public class WebhookController {
 
         try {
             byte[] rawBodyBytes = rawBody.getBytes(StandardCharsets.UTF_8);
-            if (!validateSignature("discord", request, rawBodyBytes)) {
-                log.warn("Discord interaction signature validation failed");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("{\"error\": \"Invalid signature\"}");
-            }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> payload = objectMapper.readValue(rawBody, Map.class);
 
+            if (!validateSignature("discord", request, rawBodyBytes)) {
+                log.warn("Discord signature validation failed");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\": \"Invalid signature\"}");
+            }
+
             Integer type = (Integer) payload.get("type");
             if (type != null && type == 1) {
-                log.debug("Responding to Discord ping");
                 return ResponseEntity.ok()
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .body("{\"type\":1}");
             }
+
+            String signature = request.getHeader("X-Signature-Ed25519");
+            String timestamp = request.getHeader("X-Signature-Timestamp");
+            discordWebhookService.processWebhook(payload, signature, timestamp, rawBodyBytes);
 
             return ResponseEntity.ok("{\"type\": 5}");
 
@@ -430,7 +434,7 @@ public class WebhookController {
      */
     private ResponseEntity<Object> processServiceSpecificWebhook(String service, String action,
             Map<String, Object> payload, UUID userId, String eventId, long startTime,
-            HttpServletRequest request) {
+            HttpServletRequest request, byte[] rawBodyBytes) {
 
         Map<String, Object> serviceResult = new HashMap<>();
 
@@ -447,7 +451,7 @@ public class WebhookController {
         } else if ("discord".equalsIgnoreCase(service)) {
             String signature = request.getHeader("X-Signature-Ed25519");
             String timestamp = request.getHeader("X-Signature-Timestamp");
-            serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp);
+            serviceResult = discordWebhookService.processWebhook(payload, signature, timestamp, rawBodyBytes);
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("Discord webhook processed: action={}, time={}ms", action, processingTime);
             return createServiceResponse(service, action, eventId, processingTime, serviceResult);

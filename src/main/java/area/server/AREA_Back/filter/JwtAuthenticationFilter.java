@@ -120,12 +120,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .orElse(null);
     }
 
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
+
     private String extractTokenFromAuthorizationHeader(final HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             return null;
         }
-        return authHeader.substring(7);
+        return authHeader.substring(BEARER_PREFIX_LENGTH);
     }
 
     private boolean isPublicEndpoint(final String path) {

@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public final class AuthenticationUtils {
 
+    private static final int BEARER_PREFIX_LENGTH = 7;
+
     private AuthenticationUtils() {
         throw new UnsupportedOperationException("Utility class");
     }
@@ -63,7 +65,7 @@ public final class AuthenticationUtils {
         return null;
     }
 
-    public static String extractAccessToken(HttpServletRequest request) {
+    public static String extractAccessToken(final HttpServletRequest request) {
         String tokenFromCookie = extractAccessTokenFromCookies(request);
         if (tokenFromCookie != null) {
             return tokenFromCookie;
@@ -77,7 +79,7 @@ public final class AuthenticationUtils {
         return null;
     }
 
-    private static String extractAccessTokenFromCookies(HttpServletRequest request) {
+    private static String extractAccessTokenFromCookies(final HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;
         }
@@ -90,10 +92,10 @@ public final class AuthenticationUtils {
         return null;
     }
 
-    private static String extractAccessTokenFromAuthorizationHeader(HttpServletRequest request) {
+    private static String extractAccessTokenFromAuthorizationHeader(final HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            return authHeader.substring(BEARER_PREFIX_LENGTH);
         }
         return null;
     }

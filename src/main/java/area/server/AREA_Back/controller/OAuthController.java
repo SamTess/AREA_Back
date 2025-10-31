@@ -16,14 +16,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import lombok.extern.slf4j.Slf4j;
 
 
 @RestController
@@ -50,9 +49,9 @@ public class OAuthController {
 
     @GetMapping("/{provider}/authorize")
     public ResponseEntity<String> authorize(@PathVariable("provider") String provider,
-                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String mobile_redirect,
-                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String origin,
-                                          @org.springframework.web.bind.annotation.RequestParam(required = false) String mode,
+                                          @RequestParam(required = false) String mobileRedirect,
+                                          @RequestParam(required = false) String origin,
+                                          @RequestParam(required = false) String mode,
                                           HttpServletResponse response) {
 
         Optional<OAuthService> svc = oauthServices.stream()
@@ -66,12 +65,13 @@ public class OAuthController {
         try {
             String authorizationUrl = svc.get().getUserAuthUrl();
             String secureState = oauthStateService.createSecureState(
-                mobile_redirect,
+                mobileRedirect,
                 origin != null ? origin : "web",
                 mode != null ? mode : "login",
                 provider.toLowerCase()
             );
-            authorizationUrl += "&state=" + java.net.URLEncoder.encode(secureState, java.nio.charset.StandardCharsets.UTF_8);
+            authorizationUrl += "&state=" + java.net.URLEncoder.encode(secureState,
+                java.nio.charset.StandardCharsets.UTF_8);
             response.setHeader("Location", authorizationUrl);
             response.setStatus(HttpServletResponse.SC_FOUND);
             return ResponseEntity.status(HttpStatus.FOUND).body("Redirecting to " + provider + "...");

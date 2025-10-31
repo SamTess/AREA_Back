@@ -40,7 +40,10 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-id")
 @ConditionalOnProperty(name = "spring.security.oauth2.client.registration.google.client-secret")
 @Service
+@SuppressWarnings("ParameterNumber")
 public class OAuthGoogleService extends OAuthService {
+
+    private static final int MAX_USERNAME_GENERATION_ATTEMPTS = 100;
 
     private final RestTemplate restTemplate;
     private final String redirectBaseUrl;
@@ -530,11 +533,12 @@ public class OAuthGoogleService extends OAuthService {
         }
         String username = baseUsername;
         int suffix = 1;
-        int maxAttempts = 100;
+        int maxAttempts = MAX_USERNAME_GENERATION_ATTEMPTS;
         int attempts = 0;
         while (userRepository.findByUsername(username).isPresent()) {
             if (attempts >= maxAttempts) {
-                log.error("Failed to generate unique username after {} attempts for base: {}", maxAttempts, baseUsername);
+                log.error("Failed to generate unique username after {} attempts for base: {}",
+                    maxAttempts, baseUsername);
                 throw new RuntimeException(
                     "Unable to generate unique username after " + maxAttempts + " attempts. Please try again."
                 );
@@ -566,6 +570,7 @@ public class OAuthGoogleService extends OAuthService {
          * @param locale User locale
          * @param verifiedEmail Email verification status
          */
+        @SuppressWarnings("ParameterNumber")
         UserProfileData(
             final String email,
             final String userIdentifier,

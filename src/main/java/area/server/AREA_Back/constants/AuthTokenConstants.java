@@ -51,6 +51,11 @@ public final class AuthTokenConstants {
     public static final String REDIS_USED_REFRESH_PREFIX = "used:refresh:";
 
     /**
+     * TTL for used refresh tokens (7 days)
+     */
+    public static final java.time.Duration USED_REFRESH_TOKEN_TTL = java.time.Duration.ofDays(7);
+
+    /**
      * Token type in the JWT payload for access tokens
      */
     public static final String ACCESS_TOKEN_TYPE = "access";

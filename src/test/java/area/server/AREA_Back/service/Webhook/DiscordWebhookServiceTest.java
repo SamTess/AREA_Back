@@ -83,7 +83,7 @@ class DiscordWebhookServiceTest {
         // directly rather than going through meterRegistry.counter()
         // The initMetrics functionality is implicitly tested by all other tests that verify
         // counter.increment() is called, which proves the counters were properly initialized
-        
+
         // Just verify the method can be called without exceptions
         assertDoesNotThrow(() -> discordWebhookService.initMetrics());
     }
@@ -95,7 +95,7 @@ class DiscordWebhookServiceTest {
         payload.put("type", 1);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -115,7 +115,7 @@ class DiscordWebhookServiceTest {
         Map<String, Object> payload = new HashMap<>();
         payload.put("type", 0);
         payload.put("t", "MESSAGE_CREATE");
-        
+
         String signature = "invalid_signature";
         String timestamp = "1234567890";
         String secret = "test_secret";
@@ -130,7 +130,7 @@ class DiscordWebhookServiceTest {
         )).thenReturn(false);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, signature, timestamp);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, signature, timestamp, "{}".getBytes());
 
         // Then
         assertNotNull(result);
@@ -174,7 +174,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, signature, timestamp);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, signature, timestamp, "{}".getBytes());
 
         // Then
         assertNotNull(result);
@@ -191,7 +191,7 @@ class DiscordWebhookServiceTest {
         // No "t" field
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -209,7 +209,7 @@ class DiscordWebhookServiceTest {
         // No "d" field
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -228,7 +228,7 @@ class DiscordWebhookServiceTest {
         when(webhookSecretService.getServiceSecret("discord")).thenThrow(new RuntimeException("Test exception"));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, "sig", "123");
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, "sig", "123", "{}".getBytes());
 
         // Then
         assertNotNull(result);
@@ -258,7 +258,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -292,7 +292,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -315,7 +315,7 @@ class DiscordWebhookServiceTest {
         payload.put("d", eventData);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -334,7 +334,7 @@ class DiscordWebhookServiceTest {
         payload.put("d", eventData);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -359,7 +359,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then - Should handle the error gracefully
         assertNotNull(result);
@@ -383,7 +383,7 @@ class DiscordWebhookServiceTest {
         when(deduplicationService.checkAndMark("discord_message_msg_duplicate", "discord")).thenReturn(true);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -412,7 +412,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then - Should return error due to NPE from Map.of() with null messageId
         assertNotNull(result);
@@ -443,7 +443,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -472,7 +472,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -497,7 +497,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then - Should return error due to NPE from Map.of() with null emoji name
         assertNotNull(result);
@@ -526,7 +526,7 @@ class DiscordWebhookServiceTest {
         when(deduplicationService.checkAndMark(anyString(), eq("discord"))).thenReturn(true);
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -570,7 +570,7 @@ class DiscordWebhookServiceTest {
             .thenReturn(Collections.singletonList(actionInstance));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -615,7 +615,7 @@ class DiscordWebhookServiceTest {
             .thenReturn(Collections.singletonList(actionInstance));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -656,7 +656,7 @@ class DiscordWebhookServiceTest {
             .thenReturn(Collections.singletonList(actionInstance));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -702,7 +702,7 @@ class DiscordWebhookServiceTest {
             .thenReturn(Arrays.asList(actionInstance1, actionInstance2));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -750,7 +750,7 @@ class DiscordWebhookServiceTest {
             .when(executionTriggerService).triggerAreaExecution(any(), any(), any());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -780,7 +780,7 @@ class DiscordWebhookServiceTest {
             .thenThrow(new RuntimeException("Repository error"));
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);
@@ -826,7 +826,7 @@ class DiscordWebhookServiceTest {
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
 
         // When
-        discordWebhookService.processWebhook(payload, null, null);
+        discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         verify(executionTriggerService).triggerAreaExecution(
@@ -882,7 +882,7 @@ class DiscordWebhookServiceTest {
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
 
         // When
-        discordWebhookService.processWebhook(payload, null, null);
+        discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         verify(executionTriggerService).triggerAreaExecution(
@@ -921,7 +921,7 @@ class DiscordWebhookServiceTest {
         when(actionInstanceRepository.findEnabledActionInstancesByService("discord")).thenReturn(Collections.emptyList());
 
         // When
-        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null);
+        Map<String, Object> result = discordWebhookService.processWebhook(payload, null, null, new byte[0]);
 
         // Then
         assertNotNull(result);

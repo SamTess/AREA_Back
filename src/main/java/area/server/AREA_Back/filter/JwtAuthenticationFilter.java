@@ -121,7 +121,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
+    private static final int BEARER_PREFIX_LENGTH = 7;
 
     private String extractTokenFromAuthorizationHeader(final HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");

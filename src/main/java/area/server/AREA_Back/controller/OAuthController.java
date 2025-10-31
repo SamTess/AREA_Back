@@ -49,7 +49,7 @@ public class OAuthController {
 
     @GetMapping("/{provider}/authorize")
     public ResponseEntity<String> authorize(@PathVariable("provider") String provider,
-                                          @RequestParam(required = false) String mobileRedirect,
+                                          @RequestParam(required = false) String mobile_redirect,
                                           @RequestParam(required = false) String origin,
                                           @RequestParam(required = false) String mode,
                                           HttpServletResponse response) {
@@ -65,7 +65,7 @@ public class OAuthController {
         try {
             String authorizationUrl = svc.get().getUserAuthUrl();
             String secureState = oauthStateService.createSecureState(
-                mobileRedirect,
+                mobile_redirect,
                 origin != null ? origin : "web",
                 mode != null ? mode : "login",
                 provider.toLowerCase()

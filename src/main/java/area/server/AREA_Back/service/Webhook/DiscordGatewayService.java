@@ -243,7 +243,8 @@ public class DiscordGatewayService {
             webhookPayload.put("d", objectMapper.convertValue(eventData, Map.class));
             webhookPayload.put("op", 0);
 
-            discordWebhookService.processWebhook(webhookPayload, null, null);
+            byte[] payloadBytes = objectMapper.writeValueAsBytes(webhookPayload);
+            discordWebhookService.processWebhook(webhookPayload, null, null, payloadBytes);
 
         } catch (Exception e) {
             log.error("Failed to process Discord Gateway event {}: {}", eventType, e.getMessage());

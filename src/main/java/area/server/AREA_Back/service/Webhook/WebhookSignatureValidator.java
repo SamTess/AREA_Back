@@ -145,8 +145,9 @@ public class WebhookSignatureValidator {
         }
 
         if (signature == null || timestamp == null) {
-            log.debug("No Discord signature headers provided, allowing request for ping verification");
-            return true;
+            log.warn("Missing Discord signature or timestamp headers - signature={}, timestamp={}",
+                signature, timestamp);
+            return false;
         }
 
         try {
@@ -166,7 +167,6 @@ public class WebhookSignatureValidator {
 
             String message = timestamp + new String(payload, StandardCharsets.UTF_8);
             byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-
             Ed25519PublicKeyParameters publicKeyParams = new Ed25519PublicKeyParameters(publicKeyBytes, 0);
             Ed25519Signer signer = new Ed25519Signer();
             signer.init(false, publicKeyParams);
@@ -177,7 +177,7 @@ public class WebhookSignatureValidator {
             if (!isValid) {
                 log.warn("Discord signature verification failed - invalid signature");
             } else {
-                log.debug("Discord signature verification passed");
+                log.info("Discord signature verification PASSED");
             }
 
             return isValid;
@@ -194,14 +194,18 @@ public class WebhookSignatureValidator {
      * @param provider The provider name (github, slack, etc.)
      * @param payload The raw payload bytes
      * @param signature The signature to validate
-     * @param secret The secret key
+     * @param secret The secret key (or public key for Discord)
      * @param timestamp Optional timestamp for providers that require it
      * @return true if signature is valid
      */
     public boolean validateSignature(final String provider, final byte[] payload, final String signature,
                                    final String secret, final String timestamp) {
+        if ("discord".equalsIgnoreCase(provider)) {
+            return validateDiscordSignature(payload, signature, secret, timestamp);
+        }
+
         if (secret == null || secret.trim().isEmpty()) {
-            log.warn("No secret provided for signature validation");
+            log.warn("No secret provided for signature validation for provider: {}", provider);
             return false;
         }
 

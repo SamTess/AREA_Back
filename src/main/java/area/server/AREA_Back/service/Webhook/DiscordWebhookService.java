@@ -59,7 +59,7 @@ public class DiscordWebhookService {
     }
 
     @Transactional
-    public Map<String, Object> processWebhook(Map<String, Object> payload, String signature, String timestamp) {
+    public Map<String, Object> processWebhook(Map<String, Object> payload, String signature, String timestamp, byte[] rawBodyBytes) {
         webhookCounter.increment();
         log.info("Processing Discord webhook");
 
@@ -80,7 +80,7 @@ public class DiscordWebhookService {
             if (secret != null && signature != null) {
                 boolean isValidSignature = signatureValidator.validateSignature(
                     "discord",
-                    payload.toString().getBytes(),
+                    rawBodyBytes,
                     signature,
                     secret,
                     timestamp

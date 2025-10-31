@@ -145,7 +145,7 @@ public class WebhookSignatureValidator {
         }
 
         if (signature == null || timestamp == null) {
-            log.info("Discord ping verification - allowing null signature or timestamp");
+            log.info("Discord validation - allowing absent sig/timestamp headers (ping events)");
             return true;
         }
 

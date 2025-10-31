@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -86,18 +87,8 @@ public class ExecutionTriggerService {
                 log.info("Action {} has {} linked reactions, triggering them in order",
                          actionInstance.getName(), linkedActions.size());
                 linkedActions.sort((l1, l2) -> {
-                    Integer order1;
-                    if (l1.getOrder() != null) {
-                        order1 = l1.getOrder();
-                    } else {
-                        order1 = 0;
-                    }
-                    Integer order2;
-                    if (l2.getOrder() != null) {
-                        order2 = l2.getOrder();
-                    } else {
-                        order2 = 0;
-                    }
+                    Integer order1 = Objects.requireNonNullElse(l1.getOrder(), 0);
+                    Integer order2 = Objects.requireNonNullElse(l2.getOrder(), 0);
                     return order1.compareTo(order2);
                 });
 

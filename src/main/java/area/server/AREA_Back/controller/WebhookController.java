@@ -166,22 +166,17 @@ public class WebhookController {
             @SuppressWarnings("unchecked")
             Map<String, Object> payload = objectMapper.readValue(rawBody, Map.class);
 
+            if (!validateSignature("discord", request, rawBodyBytes)) {
+                log.warn("Discord signature validation failed");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\": \"Invalid signature\"}");
+            }
+
             Integer type = (Integer) payload.get("type");
             if (type != null && type == 1) {
-                if (!validateSignature("discord", request, rawBodyBytes)) {
-                    log.warn("Discord ping signature validation failed");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("{\"error\": \"Invalid signature\"}");
-                }
                 return ResponseEntity.ok()
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .body("{\"type\":1}");
-            }
-
-            if (!validateSignature("discord", request, rawBodyBytes)) {
-                log.warn("Discord interaction signature validation failed");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("{\"error\": \"Invalid signature\"}");
             }
 
             String signature = request.getHeader("X-Signature-Ed25519");
